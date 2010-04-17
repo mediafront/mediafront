@@ -1,0 +1,9 @@
+; $Id$
+name = MediaFront Audio
+description = Provides support for the Audio module
+package = "MediaFront : Plugins"
+dependencies[] = mediafront
+dependencies[] = audio
+version = VERSION
+core = 6.x
+

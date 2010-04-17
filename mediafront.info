@@ -1,0 +1,6 @@
+; $Id$
+name = MediaFront
+description = A front end media solution for Drupal.
+package = MediaFront
+version = VERSION
+core = 6.x

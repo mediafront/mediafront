@@ -1,0 +1,67 @@
+<?php
+// Drupal Free Tagging Service
+// Written by Travis Tidwell @ www.travistidwell.com
+
+/**
+ * Implementation of hook_help().
+ */
+function tagging_service_help($section = 'admin/help#services_tagging') {
+  switch ($section) {
+    case 'admin/settings/modules#description':
+      return t('Provides free tagging methods to services applications. Requires services.module.');
+  }
+}
+
+/**
+ * Implementation of hook_service()
+ */
+function tagging_service_service() {
+   return array(
+      array(
+         '#method'   => 'tag.addTag',
+         '#callback' => 'tagging_service_add_tag',
+         '#args'     => array(
+           array(
+             '#name'         => 'nid',
+             '#type'         => 'int',
+             '#description'  => t('The node ID of the node you are tagging.')),
+           array(
+             '#name'         => 'vid',
+             '#type'         => 'int',
+             '#description'  => t('The vocabulary ID of the term you would like to add.')),           
+           array(
+             '#name'         => 'tag',
+             '#type'         => 'string',
+             '#description'  => t('The tag you would like to associate with this node.'))                        
+         ),
+         '#return'   => 'array',         
+         '#help'     => t('Add a new tag.')
+      )
+   );
+}
+
+function tagging_service_add_tag($nid, $vid, $tag) {
+   $node = db_fetch_object(db_query("SELECT * FROM {node} WHERE nid=%d", $nid));
+   $terms = taxonomy_node_get_terms($node);
+   $typed_terms = array();
+   foreach ($terms as $term) {   
+      if ($term->vid == $vid) {
+         $typed_terms[] = $term->name;
+      }
+      else
+      {
+         $tags[$term->vid] = $term->tid;
+      }
+   }
+
+   $typed_string = implode(', ', $typed_terms);
+   $typed_string .= ', ' . $tag;   
+   $tags['tags'][$vid] = $typed_string;
+   taxonomy_node_save( $node, $tags );
+   $result = db_query(db_rewrite_sql('SELECT t.* FROM {term_node} r INNER JOIN {term_data} t ON r.tid = t.tid INNER JOIN {vocabulary} v ON t.vid = v.vid WHERE r.nid = %d ORDER BY v.weight, t.weight, t.name', 't', 'tid'), $nid);
+   $terms = array();
+   while ($term = db_fetch_object($result)) {
+      $terms[$term->tid] = $term;
+   }
+   return $terms;
+}

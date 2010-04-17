@@ -1,0 +1,7 @@
+; $Id$
+name = Open Standards Media Player
+description = The Open Standards Media player plugin for the MediaFront module.
+package = "MediaFront : Players"
+dependencies[] = mediafront
+version = VERSION
+core = 6.x

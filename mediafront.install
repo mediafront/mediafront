@@ -1,0 +1,89 @@
+<?php
+/**
+ * Implements hook_schema().
+ */
+function mediafront_schema() {
+  $schema['mediafront_preset'] = array(
+    'description' => 'The preset table for MediaFront.',
+    'fields' => array(
+      'pid' => array(
+        'description' => 'The primary identifier for a MediaFront preset.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'description' => 'The name of this preset.',
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+      ),    
+      'description' => array(
+        'description' => 'A brief description of this preset.',
+        'type' => 'text',
+        'size' => 'medium',      
+        'translatable' => TRUE,
+      ),
+      'player' => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',      
+      ),
+      'connect' => array(
+        'type' => 'text',
+        'size' => 'medium',
+        'serialize' => TRUE,        
+        'description' => 'Serialized player connection settings.',
+      ),      
+      'settings' => array(
+        'type' => 'text',
+        'size' => 'medium',
+        'serialize' => TRUE,        
+        'description' => 'Serialized player settings that do not warrant a dedicated column.',
+      ),      
+    ),
+    'unique keys' => array(
+      'name' => array('name'),
+    ),    
+    'primary key' => array('pid'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implementation of hook_enable().
+ */
+function mediafront_enable() {
+  if (module_exists('content')) {
+    module_load_include('inc', 'mediafront', 'mediafront_field');
+    content_notify('enable', 'mediafront');
+  }
+}
+
+/**
+ * Implementation of hook_disable().
+ */
+function mediafront_disable() {
+  if (module_exists('content')) {
+    content_notify('disable', 'mediafront');
+  }
+}
+
+function mediafront_install() {
+  drupal_install_schema('mediafront');
+  if (module_exists('content')) {  
+    content_notify('install', 'mediafront');
+  }  
+}
+
+function mediafront_uninstall() {
+  drupal_uninstall_schema('mediafront');
+  if (module_exists('content')) {
+    content_notify('uninstall', 'mediafront');
+  }    
+}
+
+?>

@@ -1,0 +1,83 @@
+<?php
+// Drupal Voting Service
+// Written by Travis Tidwell @ www.travistidwell.com
+
+/**
+ * Implementation of hook_help().
+ */
+function favorites_service_help($section = 'admin/help#services_favorites') {
+  switch ($section) {
+    case 'admin/settings/modules#description':
+      return t('Provides favorites methods to services applications. Requires services.module.');
+  }
+}
+
+/**
+ * Implementation of hook_service()
+ */
+function favorites_service_service() {
+  return array(    
+    // vote.get
+    array(
+      '#method'   => 'favorites.getFavorites',
+      '#callback' => 'favorites_service_get_favorites',
+      '#key'      => FALSE,
+      '#args'     => array(
+        array(
+          '#name'         => 'uid',
+          '#type'         => 'int',
+          '#description'  => t('The user ID for which you are retrieving the favorites for.')),
+        array(
+          '#name'         => 'type',
+          '#type'         => 'text',
+          '#description'  => t('The node type of the favorites to get.')),
+        array(
+          '#name'         => 'limit',
+          '#type'         => 'int',
+          '#description'  => t('The limit of the amount of items to get.'))     
+      ),
+      '#return'   => 'int',
+      '#help'     => t('Returns the favorite nodes of a user.')),
+      
+    // favorite.set
+    array(
+      '#method'   => 'favorites.setFavorite',
+      '#callback' => 'favorites_service_set_favorite',
+      '#args'     => array(
+        array(
+          '#name'         => 'nid',
+          '#type'         => 'int',
+          '#description'  => t('The node ID which you would like to set as your favorite.'))                       
+      ),
+      '#return'   => 'int',         
+      '#help'     => t('Submit a new favorite.')),
+    
+    // favorite.delete
+    array(
+      '#method'   => 'favorites.deleteFavorite',
+      '#callback' => 'favorites_service_delete_favorite',
+      '#args'     => array(
+        array(
+          '#name'         => 'nid',
+          '#type'         => 'int',
+          '#description'  => t('The node ID which you would like to delete as your favorite.'))
+      ),
+      '#return'   => 'int',      
+      '#help'     => t('Delete a favorite.')),
+  );
+}
+
+/**
+ * Returns a specified node.
+ */
+function favorites_service_get_favorites($uid, $type, $limit) {
+   return favorite_nodes_get($uid, $type, $limit);
+}
+
+function favorites_service_set_favorite($nid) {
+   return favorite_nodes_add($nid) ? 1 : 0;
+}
+
+function favorites_service_delete_favorite($content_type, $content_id, $tag = "favorite") {
+   favorite_nodes_delete($nid);
+}

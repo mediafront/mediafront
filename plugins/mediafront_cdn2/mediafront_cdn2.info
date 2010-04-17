@@ -1,0 +1,9 @@
+; $Id$
+name = MediaFront CDN2
+description = Provides support for the CDN2 Video module
+package = "MediaFront : Plugins"
+dependencies[] = mediafront
+dependencies[] = dash_media_player
+dependencies[] = cdn2
+version = VERSION
+core = 6.x

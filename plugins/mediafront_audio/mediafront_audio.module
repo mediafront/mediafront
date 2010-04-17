@@ -1,0 +1,28 @@
+<?php
+/**
+ * Implementation of hook_playlist_node
+ */
+function mediafront_audio_playlist_node( $node, $args ) {
+   $additions = array();   
+   if( $node->audio_tags ) {
+		if( $node->audio_tags["album"] && !$node->field_album ) {
+			$additions["field_album"][0]["value"] = $node->audio_tags["album"];
+		}
+		
+		if( $node->audio_tags["artist"] && !$node->field_artist ) {
+			$additions["field_artist"][0]["value"] = $node->audio_tags["artist"];
+		}
+		
+		if( $node->audio_tags["title"] && !$node->field_song ) {
+			$additions["field_song"][0]["value"] = $node->audio_tags["title"];
+		}			
+	}
+	if( $node->audio ) {
+		$media_file = mediafront_get_media_file($node->audio['file']);
+      $mFile = new stdClass();
+      $mFile->path = $media_file->file;
+      $mFile->bytesTotal = $node->audio['file']->filesize;
+      $additions["mediafiles"]["media"]["media"] = $mFile;
+	}
+   return $additions;		   
+}

@@ -1,0 +1,93 @@
+<?php
+// mediafront User Module
+// Written by Travis Tidwell @ www.travistidwell.com
+
+/**
+ * Implementation of hook_service()
+ */
+function mediafront_user_service() {
+  return array(
+    // mediafront.setUserStatus
+    array(
+      '#method'   => 'mediafront.setUserStatus',
+      '#callback' => 'mediafront_user_set_status',
+      '#args'     => array(          
+        array(
+          '#name'         => 'verb',
+          '#type'         => 'string',
+          '#description'  => t('What this person is doing. "Travis is <strong>listening to</strong>."')),
+        array(
+          '#name'         => 'noun',
+          '#type'         => 'string',
+          '#description'  => t('The noun associated with the verb. "Travis is listening to <strong>music</strong>"'))    
+      ),
+      '#return'   => 'bool',
+      '#help'     => t('Returns if a successful status was made.')
+    )
+  );
+}
+
+function mediafront_user_set_status($verb, $noun) {	
+	global $user;
+		
+	if( $user->uid ) {
+		// Look for an existing status by looking for the same user & verb.
+		if( db_result( db_query("SELECT COUNT(*) FROM {mediafront_user} WHERE uid=%d", $user->uid )) > 0 ) {	
+			// We just need to update the current status.
+			db_query( "UPDATE {mediafront_user} SET verb='%s', noun='%s' WHERE uid=%d", $verb, $noun, $user->uid );		
+		}
+		else {
+			// Insert a new user status into the mediafront_user database.
+			db_query( "INSERT INTO {mediafront_user} (uid, verb, noun) VALUES (%d, '%s', '%s')", $user->uid, $verb, $noun );
+		}
+	}
+	
+	return true;
+}
+
+/**
+ * Returns the user status.
+ */
+function mediafront_user_get_status( $uid )
+{
+	return db_fetch_object( db_query( "SELECT * FROM {mediafront_user} WHERE uid=%d", $uid ) );
+}
+
+/**
+ * Implementation of hook_token_list().
+ */
+function mediafront_user_token_list($type = 'all') {
+  if ($type == 'user' || $type == 'all') {
+    $tokens['user']['user-verb'] = t('What this person is doing. "Travis is <strong>listening to</strong>."');
+    $tokens['user']['user-noun'] = t('The noun associated with the verb. "Travis is listening to <strong>music</strong>"');
+    return $tokens;
+  }
+}
+
+/**
+ * Implementation of hook_token_values().
+ */
+function mediafront_user_token_values($type, $object = NULL) {
+  switch ($type) {
+    case 'user':
+    case 'all' :
+      // Get the user...
+      if (isset($object)) {
+        $object = (object)$object;
+        $uid = $object->uid;
+      }
+      else {
+        global $user;
+        $uid = $user->uid;
+      }
+
+	  // Get the user status.
+	  $status = mediafront_user_get_status( $uid );
+
+	  // Set the verb and noun of this token.
+      $values['user-verb'] = check_plain( $status->verb );
+      $values['user-noun'] = check_plain( $status->noun );
+      return $values;
+  }
+}
+?>

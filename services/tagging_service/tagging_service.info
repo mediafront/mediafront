@@ -1,0 +1,15 @@
+; $Id$
+name = Tagging Service
+description = Provides a service that allows you to tag content in the Drupal system.
+package = "Services - services"
+dependencies[] = services
+dependencies[] = taxonomy
+version = VERSION
+core = 6.x
+
+; Information added by drupal.org packaging script on 2009-08-01
+version = "6.x-1.7"
+core = "6.x"
+project = "dashplayer"
+datestamp = "1249103717"
+

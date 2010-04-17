@@ -1,0 +1,17 @@
+<?php
+/**
+ * Implementation of hook_playlist_node
+ */
+function mediafront_s3_playlist_node( $node, $args ) {
+   $additions = array();
+   $video = flashvideo_get_video_object( $node );
+	if( $video["file"] != "" ) {
+		$additions["mediafiles"]["media"]["media"] = $video["file"];
+	}
+	
+	$image = flashvideo_get_thumbnail( $node, array(), TRUE );
+	if( $image != "" ) {
+		$additions["mediafiles"]["images"]["image"] = $image;
+	}	
+   return $additions;   
+}

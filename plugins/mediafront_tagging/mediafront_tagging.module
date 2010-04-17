@@ -1,0 +1,13 @@
+<?php
+/**
+ * Implementation of hook_playlist_node
+ */
+function mediafront_tagging_playlist_node( $node, $args ) {
+   $additions = array();
+   $sql = "SELECT v.vid FROM {vocabulary} v LEFT JOIN {vocabulary_node_types} vt ON v.vid=vt.vid WHERE vt.type='%s' AND v.tags=1";
+   $tagging_vid = db_result(db_query($sql, $node->type));
+   if( $tagging_vid ) {
+      $additions["tagging_vid"] = $tagging_vid;
+   }
+   return $additions;   
+}

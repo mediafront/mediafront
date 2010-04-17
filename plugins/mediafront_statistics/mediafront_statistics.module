@@ -1,0 +1,47 @@
+<?php
+/**
+ * Implementation of hook_service()
+ */
+function mediafront_statistics_service() {
+  return array(    
+    array(
+      '#method'   => 'mediafront.incrementNodeCounter',
+      '#callback' => 'mediafront_statistics_increment_node_counter',  
+      '#args'     => array(
+        array(
+          '#name'         => 'nid',
+          '#type'         => 'int',
+          '#description'  => t('The node to increment the counter for.'))            
+      ),
+      '#return'   => 'int',
+      '#help'     => t('Increments the node counter for any given node.')
+    )  
+  );
+}
+
+/**
+ * Increments the node counter.
+ */
+function mediafront_statistics_increment_node_counter( $nid ) {
+   if( $nid ) {
+      db_query('UPDATE {node_counter} SET daycount = daycount + 1, totalcount = totalcount + 1, timestamp = %d WHERE nid = %d', time(), $nid);
+      if (!db_affected_rows()) {
+        db_query('INSERT INTO {node_counter} (nid, daycount, totalcount, timestamp) VALUES (%d, 1, 1, %d)', $nid, time());
+      }  
+      return db_result(db_query("SELECT totalcount FROM {node_counter} WHERE nid=%d", $nid));           
+   }
+   else
+   {
+      return 0;
+   }
+}
+
+/**
+ * Implementation of hook_playlist_node
+ */
+function mediafront_statistics_playlist_node( $node, $args ) {
+   $additions = array();
+   $node_count = db_result(db_query("SELECT totalcount FROM {node_counter} WHERE nid=%d", $node->nid));           
+   $additions["node_counter"] = number_format($node_count);
+   return $additions;   
+}

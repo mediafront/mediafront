@@ -1,0 +1,8 @@
+; $Id$
+name = MediaFront S3
+description = Provides Amazon S3 support for the MediaFront module
+package = "MediaFront : Plugins"
+dependencies[] = mediafront
+dependencies[] = flashvideo_s3
+version = VERSION
+core = 6.x

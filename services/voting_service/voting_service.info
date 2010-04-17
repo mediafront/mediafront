@@ -1,0 +1,15 @@
+; $Id$
+name = Voting Service
+description = Provides a voting service.
+package = "Services - services"
+dependencies[] = services
+dependencies[] = votingapi
+version = VERSION
+core = 6.x
+
+; Information added by drupal.org packaging script on 2009-08-01
+version = "6.x-1.7"
+core = "6.x"
+project = "dashplayer"
+datestamp = "1249103717"
+

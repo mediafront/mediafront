@@ -1,0 +1,10 @@
+; $Id$
+name = Favorites Service
+description = Provides a node favorites service.
+package = "Services - services"
+dependencies[] = services
+dependencies[] = favorite_nodes
+version = VERSION
+core = 6.x
+
+

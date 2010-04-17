@@ -1,0 +1,9 @@
+; $Id$
+name = MediaFront Tagging
+description = Provides media tagging support
+package = "MediaFront : Plugins"
+dependencies[] = mediafront
+dependencies[] = taxonomy
+dependencies[] = tagging_service
+version = VERSION
+core = 6.x

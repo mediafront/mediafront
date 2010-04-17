@@ -1,0 +1,32 @@
+<?php
+/**
+ * Implementation of hook_playlist_node
+ */
+function mediafront_emfield_playlist_node( $node, $args ) {
+   $additions = array();   
+   foreach( $node as $fieldname => $field ) {
+		if( strpos( $fieldname, 'field_' ) === 0 ) {
+			$provider = $field[0]["provider"];
+			switch( $provider ) {
+				case 'youtube':
+	            $newfile["path"] = $field[0]["data"]["thumbnail"]["url"];
+	            $additions["mediafiles"]["images"]["image"] = $newfile;
+               $media_file = new stdClass();
+               $media_file->path = $field[0]["value"];
+               $media_file->player = $provider;
+               $additions["mediafiles"]["media"]["media"] = $media_file; 					
+					break;
+				case 'vimeo':
+				case 'dailymotion':
+					$media_file = new stdClass();
+					$media_file->filepath = $field[0]["data"]["emthumb"]["filepath"];
+					$additions["mediafiles"]["images"]["image"] = mediafront_get_media_file( $media_file );
+					$media_file->path = $field[0]["value"];
+					$media_file->player = $provider;
+               $additions["mediafiles"]["media"]["media"] = $media_file;   					
+					break;
+			}
+		}			
+	}
+   return $additions;	
+}
