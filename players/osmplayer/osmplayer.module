@@ -132,7 +132,7 @@ function osmplayer_get_theme_css( $theme ) {
    // Now search this folder for the CSS file...
    if($contents = opendir($theme_folder)) {
    	while(($node = readdir($contents)) !== false) {
-   		if( preg_match('/.*\.css$/', basename($node)) ) {
+   		if( preg_match('/\.css$/', $node) ) {
    			$theme_css = $node;
    			break;
    		}
