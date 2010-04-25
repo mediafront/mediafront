@@ -608,9 +608,6 @@ function mediafront_playlist_node( $node ) {
       $additions["mediafiles"]["images"]["image"] = $node->field_mediafront_image[0]['value'];
    } 
    
-   // Useful for debugging...  
-   // drupal_set_message("<pre>" . print_r( $node, true ) . "</pre>" );
-   
    // Now look for any file fields.
    foreach( $node as $fieldname => $field ) {
    	// This is a filefield.
