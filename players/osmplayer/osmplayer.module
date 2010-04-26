@@ -167,7 +167,7 @@ function osmplayer_write_css( $preset, $css_file, $handle ) {
    // Make sure we don't overwrite anything within brackets...
    $match = 0;
    $matches = array();
-   preg_match_all('/\{.*\}/', $contents, $matches, PREG_OFFSET_CAPTURE);
+   preg_match_all('/\{.*\}/sU', $contents, $matches, PREG_OFFSET_CAPTURE);
 
    $match_len = strlen( $matches[0][$match][0] );
    
