@@ -834,7 +834,7 @@ function template_preprocess_osmplayer(&$variables) {
    foreach( $variables['player_params'] as $setting => $value ) {
    	switch( gettype($value) ) {
    		case 'array':
-   		   $settings[] = $setting . ':[' . implode(',', $value) . ']';	
+   		   $settings[] = $setting . ':' . json_encode($value);	
    		   break;
    		case 'string':
    			// Make sure we are not dealing with a JSON string here.  If so, then don't include the quotes.
