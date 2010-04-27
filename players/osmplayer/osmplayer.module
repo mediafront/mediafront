@@ -294,6 +294,7 @@ function osmplayer_get_player_params() {
 	  'image' => '', 	
 	  'volume' => 80, 
 	  'autostart' => false, 
+	  'autoLoad' => true,
 	  'streamer' => "", 
 	  'apiKey' => "",
 	  'sessid' => "", 
@@ -408,9 +409,15 @@ function osmplayer_player_settings_form( $preset ) {
    $form['media_settings']['autostart'] = array(
      '#type' => 'checkbox',
      '#title' => t('Auto Start'),
-     '#description' => t('If checked, the media will automatically play once the page loads.'),
+     '#description' => t('If checked, the media will automatically load and play once the page loads.'),
      '#default_value' => $preset->settings['autostart']
-   );        
+   );
+   $form['media_settings']['autoLoad'] = array(
+     '#type' => 'checkbox',
+     '#title' => t('Auto Load'),
+     '#description' => t('If checked, the media will automatically start loading once the page loads.'),
+     '#default_value' => $preset->settings['autoLoad']
+   );            
    $form['media_settings']['streamer'] = array(
      '#type' => 'textfield',
      '#title' => t('Media Stream'),
