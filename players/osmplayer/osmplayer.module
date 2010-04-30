@@ -132,7 +132,7 @@ function osmplayer_get_theme_css( $theme ) {
    // Now search this folder for the CSS file...
    if($contents = opendir($theme_folder)) {
    	while(($node = readdir($contents)) !== false) {
-   		if( fnmatch("*.css", $node) ) {
+   		if( preg_match('/\.css$/', $node) ) {
    			$theme_css = $node;
    			break;
    		}
@@ -167,7 +167,7 @@ function osmplayer_write_css( $preset, $css_file, $handle ) {
    // Make sure we don't overwrite anything within brackets...
    $match = 0;
    $matches = array();
-   preg_match_all('/\{.*\}/', $contents, $matches, PREG_OFFSET_CAPTURE);
+   preg_match_all('/\{.*\}/sU', $contents, $matches, PREG_OFFSET_CAPTURE);
 
    $match_len = strlen( $matches[0][$match][0] );
    
@@ -294,6 +294,7 @@ function osmplayer_get_player_params() {
 	  'image' => '', 	
 	  'volume' => 80, 
 	  'autostart' => false, 
+	  'autoLoad' => true,
 	  'streamer' => "", 
 	  'apiKey' => "",
 	  'sessid' => "", 
@@ -408,9 +409,15 @@ function osmplayer_player_settings_form( $preset ) {
    $form['media_settings']['autostart'] = array(
      '#type' => 'checkbox',
      '#title' => t('Auto Start'),
-     '#description' => t('If checked, the media will automatically play once the page loads.'),
+     '#description' => t('If checked, the media will automatically load and play once the page loads.'),
      '#default_value' => $preset->settings['autostart']
-   );        
+   );
+   $form['media_settings']['autoLoad'] = array(
+     '#type' => 'checkbox',
+     '#title' => t('Auto Load'),
+     '#description' => t('If checked, the media will automatically start loading once the page loads.'),
+     '#default_value' => $preset->settings['autoLoad']
+   );            
    $form['media_settings']['streamer'] = array(
      '#type' => 'textfield',
      '#title' => t('Media Stream'),
@@ -834,7 +841,7 @@ function template_preprocess_osmplayer(&$variables) {
    foreach( $variables['player_params'] as $setting => $value ) {
    	switch( gettype($value) ) {
    		case 'array':
-   		   $settings[] = $setting . ':[' . implode(',', $value) . ']';	
+   		   $settings[] = $setting . ':' . json_encode($value);	
    		   break;
    		case 'string':
    			// Make sure we are not dealing with a JSON string here.  If so, then don't include the quotes.

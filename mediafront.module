@@ -580,11 +580,13 @@ function mediafront_playlist_node( $node ) {
    //drupal_set_message("<pre>" . print_r( $node, true ) . "</pre>" );
    
    // Iterate through the files.
-   foreach( $node->files as $fid => $file ) {
-      if( $media_file = mediafront_get_media_file($file) ) {
-         $additions["mediafiles"][$media_file->class][$media_file->type] = $media_file;
-      }  
-   } 
+   if( $node->files ) {
+	   foreach( $node->files as $fid => $file ) {
+	      if( $media_file = mediafront_get_media_file($file) ) {
+	         $additions["mediafiles"][$media_file->class][$media_file->type] = $media_file;
+	      }  
+	   } 
+   }
   
    // If they provide the field_dashplayer_media field.
    if( isset($node->field_dashplayer_media) && $node->field_dashplayer_media[0]['value'] ) {
@@ -605,9 +607,6 @@ function mediafront_playlist_node( $node ) {
    if( isset($node->field_mediafront_image) && $node->field_mediafront_image[0]['value'] ) {
       $additions["mediafiles"]["images"]["image"] = $node->field_mediafront_image[0]['value'];
    } 
-   
-   // Useful for debugging...  
-   // drupal_set_message("<pre>" . print_r( $node, true ) . "</pre>" );
    
    // Now look for any file fields.
    foreach( $node as $fieldname => $field ) {

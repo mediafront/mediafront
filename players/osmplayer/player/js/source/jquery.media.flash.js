@@ -73,7 +73,8 @@
                config:settings.config,
                id:settings.id,
                file:videoFile.path,
-               skin:settings.skin
+               skin:settings.skin,
+               autostart:settings.autostart
             };
             if( videoFile.stream ) {
                flashvars.stream = videoFile.stream;
@@ -100,7 +101,7 @@
                this.videoFile = videoFile;             
                
                // Load the new media file into the Flash player.
-               this.player.loadMedia( videoFile.path ); 
+               this.player.loadMedia( videoFile.path, videoFile.stream ); 
                
                // Let them know the player is ready.          
                onUpdate( {type:"playerready"} );                 
