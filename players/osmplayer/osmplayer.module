@@ -286,6 +286,7 @@ function osmplayer_get_player_settings() {
  */
 function osmplayer_get_player_params() {
    $playerpath = drupal_get_path('module', 'osmplayer') . '/player';   
+   $hasServices = module_exists('services');   
 	return array( 
 	  'id' => 'mediaplayer',
 	  'showPlaylist' => true,   
@@ -313,7 +314,7 @@ function osmplayer_get_player_params() {
 	  'shuffle' => false,
 	  'loop' => false,
 	  'pageLimit' => 10,
-	  'protocol' => "auto",
+	  'protocol' => $hasServices ? "auto" : "json",
 	  'server' => "drupal",
 	  'template' => "default",
 	  'baseURL' => "",
@@ -830,6 +831,7 @@ function template_preprocess_osmplayer(&$variables) {
    $variables['player_params']['baseURL'] = $base_url;
    $variables['player_params']['gateway'] = $base_url . '/services/xmlrpc';
    $variables['player_params']['prefix'] = $prefix;
+   $variables['player_params']['protocol'] = $variables['params']['protocol'];
    $variables['player_params']['flashplayer'] = $variables['params']['playerurl'] . '/flash/mediafront.swf';
    $variables['player_params']['logo'] = $variables['player_params']['logo'] ? $base_url . '/' . $variables['player_params']['logo'] : ($variables['params']['playerurl'] . '/' . OSMPLAYER_DEFAULT_LOGO);
    if( $user->sid ) {
