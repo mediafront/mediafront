@@ -344,7 +344,6 @@ function osmplayer_get_player_params() {
  * Implementation of hook_player_settings_form
  */
 function osmplayer_player_settings_form( $preset ) {
-	global $base_url;   
 	$playerpath = drupal_get_path('module', 'osmplayer') . '/player';
 	$form['presentation'] = array(
       '#type' => 'fieldset',
@@ -811,7 +810,7 @@ function template_preprocess_osmplayer(&$variables) {
    $preset = $variables['params']['preset'];
    $template = $variables['params']['template'] = $variables['params']['template'] ? $variables['params']['template'] : 'default';
    $variables['params']['theme'] = $variables['params']['theme'] ? $variables['params']['theme'] : 'dark-hive';
-   $variables['params']['version'] = file_get_contents( $base_url . '/' . $playerpath . '/version' );
+   $variables['params']['version'] = file_get_contents( getcwd() . '/' . $playerpath . '/version' );
 
    // Add the javascript files.
    osmplayer_add_js( $template, $playerpath, $variables['params']['debug'] );
