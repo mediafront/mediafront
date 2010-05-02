@@ -7,15 +7,15 @@ define('OSMPLAYER_DEFAULT_LOGO', 'logo.png');
  * Implementation of hook_get_player()
  */
 function osmplayer_get_player( $params ) {
-	$template = $params->template ? $params->template : "default";
+	$template = (isset($params['template']) && $params['template']) ? $params['template'] : "default";
 
 	// If they provide the playlist object, encode it as JSON.
-	if( $params['playlistObj'] ) {
+	if( isset($params['playlistObj']) && $params['playlistObj'] ) {
 	  $params['playlist'] = json_encode( $params['playlistObj'] );
 	}
 	
    // If they provide the node object, encode it as JSON.	
-	if( $params['nodeObj'] ) {
+	if( isset($params['nodeObj']) && $params['nodeObj'] ) {
 		$params['node'] = json_encode( $params['nodeObj'] );
 	}
 	
@@ -833,7 +833,9 @@ function template_preprocess_osmplayer(&$variables) {
    $variables['player_params']['prefix'] = $prefix;
    $variables['player_params']['protocol'] = $variables['params']['protocol'];
    $variables['player_params']['flashplayer'] = $variables['params']['playerurl'] . '/flash/mediafront.swf';
-   $variables['player_params']['logo'] = $variables['player_params']['logo'] ? $base_url . '/' . $variables['player_params']['logo'] : ($variables['params']['playerurl'] . '/' . OSMPLAYER_DEFAULT_LOGO);
+   
+   $logo = isset($variables['player_params']['logo']) ? $variables['player_params']['logo'] : '';
+   $variables['player_params']['logo'] = $logo ? $base_url . '/' . $logo : ($variables['params']['playerurl'] . '/' . OSMPLAYER_DEFAULT_LOGO);
    if( $user->sid ) {
       $variables['player_params']['sessid'] = $user->sid;
    }
@@ -921,13 +923,13 @@ function template_preprocess_osmplayer(&$variables) {
    $variables['playlist'] = theme( 'osmplayer_' . $template . '_playlist', $variables['params'] );
    
    // Create the player in javascript.
-   $js = 'var ' . $playerId . ' = $("#' . $playerId . '").mediaplayer({' . implode(',', $settings) . '});';
+   $js = 'var ' . $playerId . ' = jQuery("#' . $playerId . '").mediaplayer({' . implode(',', $settings) . '});';
    
    // Now that the player has made it's way through the loading process... hide the busy cursor.
-   $js .= '$("#'. $playerId .'_loading").hide();';
+   $js .= 'jQuery("#'. $playerId .'_loading").hide();';
    
    // Now add our playlist connections to the javascript.
-   if( $variables['params']['connect']['isplaylist'] ) {
+   if( isset($variables['params']['connect']) && $variables['params']['connect']['isplaylist'] ) {
 	   foreach( $variables['params']['connect']['isplaylist'] as $playlist ) {
 	      $playlist = 'mediafront_' . $playlist;
 	   	$js .= 'jQuery.media.addPlaylist("' . $playlist . '",' . $playerId . ');';
@@ -935,7 +937,7 @@ function template_preprocess_osmplayer(&$variables) {
    }
    
    // Now add our controller connections to the javascript.   
-   if( $variables['params']['connect']['iscontroller'] ) {
+   if( isset($variables['params']['connect']) && $variables['params']['connect']['iscontroller'] ) {
 	   foreach( $variables['params']['connect']['iscontroller'] as $controller ) {
 	   	$controller = 'mediafront_' . $controller;
 	      $js .= 'jQuery.media.addController("' . $controller . '",' . $playerId . ');';
@@ -943,7 +945,7 @@ function template_preprocess_osmplayer(&$variables) {
    }
    
    // Add the JavaScript for this player.
-   drupal_add_js('$(document).ready(function() {' . $js . '});', 'inline');
+   drupal_add_js('jQuery(document).ready(function() {' . $js . '});', 'inline');
 }
 
 /**
@@ -993,9 +995,6 @@ function template_preprocess_osmplayer_playlist(&$variables) {
    	$variables['scrollBar'] = theme( 'osmplayer_' . $variables['params']['template'] . '_hscrollbar', $variables['params'] );
    }
    
-   if( $variables['params']['links'] ) {
-      $variables['links'] = theme( 'osmplayer_' . $variables['params']['template'] . '_links', $variables['params'] );  
-   }
-    
+   $variables['links'] = $variables['params']['links'] ? theme( 'osmplayer_' . $variables['params']['template'] . '_links', $variables['params'] ) : '';  
    $variables['pager'] = theme( 'osmplayer_' . $variables['params']['template'] . '_pager', $variables['params'] );
 }
