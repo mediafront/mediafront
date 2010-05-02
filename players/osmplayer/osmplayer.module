@@ -174,8 +174,8 @@ function osmplayer_write_css( $preset, $css_file, $handle ) {
    // Iterate through all the characters.
    for( $i=0; $i<$len; $i++ ) {
    
-      // See if we need to increment the current match.
-      if( $i > $matches[0][$match+1][1] ) {
+      // See if we need to increment the current match.   
+      if( isset( $matches[0][$match+1] ) && ($i > $matches[0][$match+1][1]) ) {
          $match++;
          $match_len = strlen( $matches[0][$match][0] );
       }
