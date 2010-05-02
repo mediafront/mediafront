@@ -45,7 +45,7 @@ function mediafront_preset_form(&$form_state, $preset) {
 
    $form['preview']['player'] = array(
       '#type' => 'markup',
-      '#value' => mediafront_get_player($params) . '<br/><div class="mediadebug"></div>'
+      '#value' => mediafront_get_player($params)
    );
 
    // Get all of the settings for this player.
@@ -160,6 +160,7 @@ function mediafront_preset_validate($form, &$form_state) {
  * Submit handler for the preset form.
  */
 function mediafront_preset_submit($form, &$form_state) {
+  $preset = new stdClass();
   $preset->pid = $form_state['values']['pid'];
   $preset->name = $form_state['values']['name'];
   $preset->description = $form_state['values']['description'];
