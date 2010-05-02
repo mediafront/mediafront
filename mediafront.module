@@ -204,11 +204,13 @@ function mediafront_get_params( $player, $params, $playeronly = true ) {
    
    // Iterate through all of the default settings.
    foreach( $defaults as $setting => $value ) {
-      // Only set the settings if the setting was provided and is different than the default.
-      $param = mediafront_parse_param( $params[$setting], getType($value) );
-      if( isset($params[$setting]) && ($param != $value) ) {
-         // Set the necessary setting...
-         $player_params[$setting] = $param;
+      if( isset($params[$setting]) ) {
+         // Only set the settings if the setting was provided and is different than the default.
+         $param = mediafront_parse_param( $params[$setting], getType($value) );
+         if( $param != $value ) {
+            // Set the necessary setting...
+            $player_params[$setting] = $param;
+         }
       }
    }
    return $player_params;   
@@ -476,13 +478,37 @@ function mediafront_get_node( $nid, $args = null ) {
 }
 
 /**
+ * An implementation of "array_replace_recursive" that works for all PHP versions.
+ * 
+ * See http://php.mirror.camelnetwork.com/manual/kr/function.array-replace-recursive.php for more info.
+ */
+function mediafront_array_replace_recursive( $toArray, $fromArray ) {
+   // Loop through array key/value pairs
+   foreach ($fromArray as $key => $value) {
+      // Value is an array
+      if (is_array($value)) {
+         // Traverse the array; replace or add result to original array
+         $toArray[$key] = mediafront_array_replace_recursive($toArray[$key], $fromArray[$key]);
+      }
+      // Value is not an array
+      else {
+         // Replace or add current value to original array
+         $toArray->{$key} = $value;
+      }
+   }
+
+   // Return the joined array
+   return $toArray;
+} 
+
+/**
  * Merge the node additions.
  */
 function mediafront_playlist_node_merge( $original, $additions ) {
    $merged = $original;
    foreach( $additions as $field => $value ) {
       if( isset($original[$field]) ) {
-         $merged[$field] = array_merge_recursive( $original[$field], $value );
+         $merged[$field] = mediafront_array_replace_recursive( $original[$field], $value );
       }
       else {
          $merged[$field] = $value;
