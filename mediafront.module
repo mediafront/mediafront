@@ -430,7 +430,10 @@ function mediafront_get_playlist( $playlist, $limit = 0, $page = 0, $args = arra
   }
   
   // Setup our view for query.
-  $view->set_use_pager(FALSE);
+  if (method_exists($view, 'set_use_pager')) {
+    $view->set_use_pager(FALSE);
+  }
+  
   $view->set_items_per_page($limit);
   $view->set_offset($page*$limit);
   $view->set_arguments($args);
@@ -449,8 +452,8 @@ function mediafront_get_playlist_from_view( $view ) {
   $playlist = array();
   $playlist['nodes'] = array();
   $playlist['name'] = $view->name;
-  $playlist['total_rows'] = $view->total_rows;  	
-	
+  $playlist['total_rows'] = $view->total_rows ? $view->total_rows : $view->query->pager->get_total_items();
+  
   // Iterate through our result and get our player nodes.
   foreach( $view->result as $node ) {
      $playlist['nodes'][] = mediafront_get_node($node->nid, $args);
@@ -637,7 +640,8 @@ function mediafront_playlist_node( $node ) {
    // Now look for any file fields.
    foreach( $node as $fieldname => $field ) {
    	// This is a filefield.
-   	if( isset($node->{$fieldname}[0]) && is_array($node->{$fieldname}[0]) && isset($node->{$fieldname}[0]['filepath']) ) {
+   	if( is_array($node->{$fieldname}) && isset($node->{$fieldname}[0]) && 
+   	    is_array($node->{$fieldname}[0]) && isset($node->{$fieldname}[0]['filepath']) ) {
    		if( $media_file = mediafront_get_media_file( mediafront_array_to_object($node->{$fieldname}[0]) ) ) {
    	   	$media_file->duration = $node->{$fieldname}[0]['data']['duration'];
    	   	$media_file->bytesTotal = $node->{$fieldname}[0]['filesize'];
@@ -689,7 +693,7 @@ function mediafront_get_player() {
    	$params['connect'] = $params['connect'] ? $params['connect'] : $preset->connect;
       $params['id'] = $params['id'] ? $params['id'] : 'mediafront_' . $preset->name;
    }   
-   
+
    if( $params ) {
 	   $player = ($params && $params['player']) ? $params['player'] : 'osmplayer';
 	   $getPlayer = $player . '_get_player';
