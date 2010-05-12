@@ -1,5 +1,6 @@
 <?php
 // Open Standard Media Player:  Provides the osmplayer functionality to the MediaFront module.
+require_once( drupal_get_path('module', 'osmplayer') . '/player/OSMPlayer.php' );
 
 define('OSMPLAYER_DEFAULT_LOGO', 'logo.png');
 
@@ -121,141 +122,16 @@ function osmplayer_theme() {
 }
 
 /**
- * Returns the path to the jQuery-UI theme.
- */
-function osmplayer_get_theme_css( $theme ) {
-	$osmpath = drupal_get_path('module', 'osmplayer');
-   $playerpath = $osmpath . '/player';
-   $theme_folder = $playerpath . '/jquery-ui/css/' . $theme;
-   $theme_css = '';
-   
-   // Now search this folder for the CSS file...
-   if($contents = opendir($theme_folder)) {
-   	while(($node = readdir($contents)) !== false) {
-   		if( preg_match('/\.css$/', $node) ) {
-   			$theme_css = $node;
-   			break;
-   		}
-   	}
-   }
-   
-   // Add the theme.
-   if( $theme_css ) {
-      return ($theme_folder . '/' . $theme_css);
-   }
-   else {
-      return '';
-   }
-}
-
-/**
- * Writes the contents of one CSS file to another, but renames the classes and id's
- * according to the preset name.  This keeps the presets from stomping on one another.
- */
-function osmplayer_write_css( $preset, $css_file, $handle ) {
-	global $base_url;
-	
-   // Get the file contents and length.
-   $contents = file_get_contents(getcwd() . '/' . $css_file);
-   
-   // Change all of the images to the correct path...
-   $contents = str_replace( 'images/', $base_url . '/' . str_replace( basename($css_file), '', $css_file ) . 'images/', $contents );
-   
-   // Get the length of the contents.
-   $len = strlen( $contents );
-   
-   // Make sure we don't overwrite anything within brackets...
-   $match = 0;
-   $matches = array();
-   preg_match_all('/\{.*\}/sU', $contents, $matches, PREG_OFFSET_CAPTURE);
-
-   $match_len = strlen( $matches[0][$match][0] );
-   
-   // Iterate through all the characters.
-   for( $i=0; $i<$len; $i++ ) {
-   
-      // See if we need to increment the current match.   
-      if( isset( $matches[0][$match+1] ) && ($i > $matches[0][$match+1][1]) ) {
-         $match++;
-         $match_len = strlen( $matches[0][$match][0] );
-      }
-      
-      // Get the char at this index.
-      $char = $contents[$i];
-      
-      // If this is a class or an id, and is not within brackets...
-      if( (($char == '#') || ($char == '.')) && 
-          !(($i > $matches[0][$match][1]) && ($i <= ($matches[0][$match][1]+$match_len))) ) {
-         fwrite( $handle, $char . $preset . '_' );
-      }
-      else {
-         fwrite( $handle, $char );
-      }
-   } 
-}
-
-/**
- * Create's a new preset CSS file, given the preset, template, and theme.
- */
-function osmplayer_create_preset_css( $preset, $theme, $template ) {
-   $cwd = getcwd();
-   $playerpath = drupal_get_path('module', 'osmplayer') . '/player';
-   $template_css = $playerpath . '/templates/' . $template . '/osmplayer_' . $template . '.css';
-   $ie_css = $playerpath . '/templates/' . $template . '/osmplayer_' . $template . '_ie.css';
-   $theme_css = osmplayer_get_theme_css( $theme );
-   
-   // Now make sure that the osmplayer CSS directory exists.
-   $css_dir = $cwd . '/' . file_directory_path() . '/css';
-   if( !is_dir($css_dir) ) { 
-      mkdir($css_dir, 0775);
-   }     
-   $css_dir .= '/osmplayer';
-   if( !is_dir($css_dir) ) { 
-      mkdir($css_dir, 0775);
-   }  
-   
-   // Now get the css file name.
-   $css_file = $css_dir . '/' . $preset . '.css';
-   
-   // Now remove any previous preset css, and create a new one.
-   file_delete( $css_file ); 
-   
-   // Now open up the new css file.
-   $handle = fopen( $css_file, 'a+' );
-   if( $handle ) {
-      osmplayer_write_css( $preset, $template_css, $handle );
-      osmplayer_write_css( $preset, $theme_css, $handle );
-      fclose( $handle );
-   }
-   
-   // Now create an IE css file if one exists.
-   if( is_file( $cwd . '/' . $ie_css ) ) {
-      // Now get the IE css file name.
-      $ie_css_file = $css_dir . '/' . $preset . '_ie.css';
-      
-      // Now remove any previous preset css, and create a new one.
-      file_delete( $ie_css_file ); 
-      
-      // Now open up the new css file.
-      $handle = fopen( $ie_css_file, 'a+' );
-      if( $handle ) {
-         osmplayer_write_css( $preset, $ie_css, $handle );
-         fclose( $handle );
-      }   
-   }
-}
-
-/**
  * Implementation of hook_mediafront_preset_save
  */
-function osmplayer_mediafront_preset_save( $params ) {
-   // Get ALL the settings for the preset save.
-   $settings = mediafront_get_settings( 'osmplayer', $params->settings );
-   
+function osmplayer_mediafront_preset_save( $params ) {  
    // Now create the preset CSS files.   This keeps different presets from stomping on 
    // each other when multiple presets are on the same page.  It also makes this module play nice
    // with the jQuery-UI module.
-   osmplayer_create_preset_css( $params->name, $settings['theme'], $settings['template'] );
+   $player = new OSMPlayer( $params->settings );
+   $player->setId( $params->name );
+   $player->deleteCSS();
+   $player->createCSS();
 }
 
 /**
@@ -264,19 +140,8 @@ function osmplayer_mediafront_preset_save( $params ) {
  * These are the settings that the module implements...
  */
 function osmplayer_get_player_settings() {
-	return array(
-	  'width' => MEDIAFRONT_DEFAULT_WIDTH,
-	  'height' => MEDIAFRONT_DEFAULT_HEIGHT,
-	  'theme' => 'dark-hive',
-	  'version' => '0.01',
-	  'showController' => true,
-	  'disablePlaylist' => false,
-	  'playlistOnly' => false,
-	  'controllerOnly' => false,
-	  'showNodeVoter' => true,
-	  'showTeaserVoter' => true,
-	  'showTitleBar' => true
-	);
+   $player = new OSMPlayer();
+   return $player->getPlayerSettings();
 }
 
 /**
@@ -286,59 +151,12 @@ function osmplayer_get_player_settings() {
  */
 function osmplayer_get_player_params() {
    $playerpath = drupal_get_path('module', 'osmplayer') . '/player';   
-   $hasServices = module_exists('services');   
-	return array( 
-	  'id' => 'mediaplayer',
-	  'showPlaylist' => true,   
-	  'file' => '',
-	  'flashplayer' => './flash/mediafront.swf',
-	  'image' => '', 	
-	  'volume' => 80, 
-	  'autostart' => false, 
-	  'autoLoad' => true,
-	  'streamer' => "", 
-	  'apiKey' => "",
-	  'sessid' => "", 
-	  'api' => 2, 
-	  'version' => 6,
-	  'links' => array(),
-	  'linksvertical' => false,
-	  'logo' => ($playerpath . '/' . OSMPLAYER_DEFAULT_LOGO),
-	  'link' => "http://www.mediafront.org",
-     'logopos' => 'sw',
-	  'logoWidth' => 49,
-	  'logoHeight' => 15,
-     'logox' => 5,
-     'logoy' => 5,
-	  'node' => "",
-	  'shuffle' => false,
-	  'loop' => false,
-	  'pageLimit' => 10,
-	  'protocol' => $hasServices ? "auto" : "json",
-	  'server' => "drupal",
-	  'template' => "default",
-	  'baseURL' => "",
-	  'draggable' => false,
-	  'resizable' => false,
-	  'playlist' => "",
-	  'args' => array(),
-	  'wildcard' => "*",
-	  'gateway' => "",
-	  'vertical' => true,
-	  'scrollSpeed' => 15,
-	  'updateTimeout' => 20,
-	  'hysteresis' => 40,
-	  'dynamic' => false,
-	  'scrollMode' => "auto",
-	  'pageLink' => false,
-	  'debug' => false,
-	  'embedWidth' => 450,
-	  'embedHeight' => 337,
-	  'skin' => 'default',
-	  'autoNext' => true,
-	  'prefix' => '',
-	  'showScrollbar' => true
-  );
+   $hasServices = module_exists('services');
+   $player = new OSMPlayer();
+   $params = $player->getPlayerParams();     
+   $params['logo'] = ($playerpath . '/' . OSMPLAYER_DEFAULT_LOGO);
+   $params['protocol'] = $hasServices ? "auto" : "json";
+   return $params;
 }
 
 /**
@@ -713,83 +531,6 @@ function osmplayer_get_skins() {
    return osmplayer_get_directories('player/flash/skins');
 }
 
-function osmplayer_add_js( $template, $playerpath, $debug ) {  
-   // If we are debugging, then add the debug javascript files.
-   if( $debug ) { 	
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.debug.js');       
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.drupal.js');
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.parser.js');
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.auto.js');    
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.rpc.js');
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.json.js');   
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.sha256.js');
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.utils.js');       
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.control.js');
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.flash.js'); 
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.html5.js');          
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.image.js');
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.link.js');
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.links.js');
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.display.js');
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.minplayer.js');      
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.menu.js');     
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.node.js');
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.pager.js');
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.player.js');
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.playlist.js');
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.playlistlink.js');
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.slider.js');
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.teaser.js');   
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.titlebar.js');   
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.scroll.js');
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.voter.js');
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.youtube.js');  
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.vimeo.js');
-	   drupal_add_js( $playerpath . '/js/source/jquery.media.dailymotion.js'); 	   
-	   drupal_add_js( $playerpath . '/templates/' . $template . '/jquery.media.template.' . $template . '.js'); 
-   }
-   else {
-   	// Otherwise, add the compressed JS for faster performance on live sites.
-	   drupal_add_js( $playerpath . '/js/jquery.osmplayer.compressed.js');                 
-	   drupal_add_js( $playerpath . '/templates/' . $template . '/jquery.media.template.' . $template . '.compressed.js'); 
-   }
-}
-
-function _osmplayer_add_css( $preset ) {
-   // Now make sure that the osmplayer CSS directory exists.
-   $css_dir = file_directory_path() . '/css/osmplayer';
-   $cwd = getcwd();
-   
-   // Now get the preset css file name.
-   $css_file = $css_dir . '/' . $preset . '.css';
-   if( is_file( $cwd . '/' . $css_file ) ) {
-      // Add the preset CSS
-      drupal_add_css( $css_file ); 
-         
-      // Now add the IE hack CSS.
-      $iecss = $css_dir . '/' . $preset . '_ie.css';
-      if( is_file( $cwd . '/' . $iecss ) ) {
-         drupal_set_html_head('<!--[if IE]><link rel="stylesheet" type="text/css" href="' . $iecss . '" /><![endif]-->');
-      }
-      
-      return TRUE;           
-   }
-
-   return FALSE;
-}
-
-function osmplayer_add_css( $preset, $theme, $template ) {
-	// Try to add the css file.
-   if( !_osmplayer_add_css( $preset ) ) {
-   	// Create the file if it does not exist.
-   	osmplayer_create_preset_css( $preset, $theme, $template );
-   	
-   	// Then try to add it again.
-   	return _osmplayer_add_css( $preset );
-   }
-   return TRUE;
-}
-
 /**
  * The template preprocess function for the osm media player.
  * 
@@ -797,155 +538,71 @@ function osmplayer_add_css( $preset, $theme, $template ) {
  * @return unknown_type
  */
 function template_preprocess_osmplayer(&$variables) {
-   global $base_url;	
-   global $user;
+   global $base_url, $user;
 	
 	// Let the mediafront populate all the variables for us.
 	mediafront_template_preprocess( $variables );
+	
+	// Setup our parameters.
+	$params = $variables['params'];
+	$params['id'] = $params['id'] ? $params['id'] : 'mediafront_' . $params['preset'];
+   $params['baseURL'] = $base_url;
+   $params['gateway'] = $base_url . '/services/xmlrpc';
+
+	// Get the media player.
+	$player = new OSMPlayer( $params );
+	
+	// Set the session id for the player.
+	$player->setSessionId( $user->sid );	
 	
 	// Cache the player path.
 	$osmpath = drupal_get_path('module', 'osmplayer');
    $playerpath = $osmpath . '/player';
 
-   // Make sure they always have a template and theme...
-   $preset = $variables['params']['preset'];
-   $template = $variables['params']['template'] = $variables['params']['template'] ? $variables['params']['template'] : 'default';
-   $variables['params']['theme'] = $variables['params']['theme'] ? $variables['params']['theme'] : 'dark-hive';
-   $variables['params']['version'] = file_get_contents( getcwd() . '/' . $playerpath . '/version' );
+   // Now add our playlist connections.
+   if( isset($variables['params']['connect']) && $variables['params']['connect']['isplaylist'] ) {
+	   foreach( $variables['params']['connect']['isplaylist'] as $playlist ) {
+	      $player->addPlaylist( $playlist );
+	   }
+   }
+   
+   // Now add our controller connections.   
+   if( isset($variables['params']['connect']) && $variables['params']['connect']['iscontroller'] ) {
+	   foreach( $variables['params']['connect']['iscontroller'] as $controller ) {
+	   	$player->addController( $controller );
+	   }
+   }
 
    // Add the javascript files.
-   osmplayer_add_js( $template, $playerpath, $variables['params']['debug'] );
+   $js_files = $player->getJSFiles();
+   foreach( $js_files as $js_file ) {
+      drupal_add_js( $playerpath . '/' . $js_file);  
+   }
+
+   // Add the JavaScript for this player.
+   drupal_add_js( $player->getPlayerJS(), 'inline');
       
    // Add the CSS files.
-   $has_prefix = osmplayer_add_css( $preset, $variables['params']['theme'], $template );
+   $css_files = $player->getCSSFiles();
+   drupal_add_css( ($playerpath . '/' . $css_files[0]) );
+   drupal_set_html_head('<!--[if IE]><link rel="stylesheet" type="text/css" href="' . ($playerpath . '/' . $css_files[1]) . '" /><![endif]-->');
+
+   // Make sure they always have a template, theme, and version...
+   $template = $variables['params']['template'] = $player->getTemplate();
+   $variables['params']['theme'] = $player->getTheme();
+   $variables['params']['version'] = $player->getVersion();
    
    // Now set up the prefix for the template.
-   $prefix = $variables['params']['prefix'] = $has_prefix ? ($preset . '_') : '';
+   $variables['params']['prefix'] = $player->getId() . '_';
 
    // Store the player path as a variable.
    $variables['params']['playerurl'] = $base_url . '/' . $playerpath;
-   
-   $playerId = $variables['params']['id'];
-   
-   // Set the baseURL and gateway.
-   $variables['player_params']['baseURL'] = $base_url;
-   $variables['player_params']['gateway'] = $base_url . '/services/xmlrpc';
-   $variables['player_params']['prefix'] = $prefix;
-   $variables['player_params']['protocol'] = $variables['params']['protocol'];
-   $variables['player_params']['flashplayer'] = $variables['params']['playerurl'] . '/flash/mediafront.swf';
-   
-   $logo = isset($variables['player_params']['logo']) ? $variables['player_params']['logo'] : '';
-   $variables['player_params']['logo'] = $logo ? $base_url . '/' . $logo : ($variables['params']['playerurl'] . '/' . OSMPLAYER_DEFAULT_LOGO);
-   if( $user->sid ) {
-      $variables['player_params']['sessid'] = $user->sid;
-   }
-   
-   $settings = array();   
-   foreach( $variables['player_params'] as $setting => $value ) {
-   	switch( gettype($value) ) {
-   		case 'array':
-   		   $settings[] = $setting . ':' . json_encode($value);	
-   		   break;
-   		case 'string':
-   			// Make sure we are not dealing with a JSON string here.  If so, then don't include the quotes.
-   			$settings[] = (substr($value, 0, 1) == '{') ? ($setting . ':' . $value) : ($setting . ':"' . str_replace( '"', "'", $value ) . '"');
-   			break;
-   		case 'boolean':
-   			$settings[] = $setting . ':' . ($value ? 'true' : 'false');
-   			break;
-   		default:
-   	      $settings[] = $setting . ':' . $value;
-   	      break;
-   	}
-   }
-   
-   
-   // Adding the new id's for this preset.
-   $ids = array(
-      'loading:".' . $prefix . 'mediaplayerloading"',
-      'player:".' . $prefix . 'mediaplayer"',
-      'menu:".' . $prefix . 'mediamenu"',
-      'titleBar:".' . $prefix . 'mediatitlebar"',
-      'node:".' . $prefix . 'medianode"',
-      'playlist:".' . $prefix . 'mediaplaylist"',
-      'currentTime:".' . $prefix . 'mediacurrenttime"',
-      'totalTime:".' . $prefix . 'mediatotaltime"',
-      'playPause:".' . $prefix . 'mediaplaypause"',
-      'seekUpdate:".' . $prefix . 'mediaseekupdate"',
-      'seekProgress:".' . $prefix . 'mediaseekprogress"',
-      'seekBar:".' . $prefix . 'mediaseekbar"',
-      'seekHandle:".' . $prefix . 'mediaseekhandle"',
-      'volumeUpdate:".' . $prefix . 'mediavolumeupdate"',
-      'volumeBar:".' . $prefix . 'mediavolumebar"',
-      'volumeHandle:".' . $prefix . 'mediavolumehandle"',
-      'mute:".' . $prefix . 'mediamute"',
-      'linkText:".' . $prefix . 'medialinktext"',   
-      'linkScroll:".' . $prefix . 'medialinkscroll"',
-      'close:".' . $prefix . 'mediamenuclose"',
-      'embed:"#' . $prefix . 'mediaembed"',
-      'elink:"#' . $prefix . 'mediaelink"',
-      'email:"#' . $prefix . 'mediaemail"',
-      'busy:".' . $prefix . 'mediabusy"',
-      'preview:".' . $prefix . 'mediapreview"',
-      'play:".' . $prefix . 'mediaplay"',
-      'media:".' . $prefix . 'mediadisplay"',
-      'control:".' . $prefix . 'mediacontrol"',
-      'voter:".' . $prefix . 'mediavoter"',
-      'uservoter:".' . $prefix . 'mediauservoter"',
-      'mediaRegion:".' . $prefix . 'mediaregion"',
-      'field:".' . $prefix . 'mediafield"',
-      'prev:".' . $prefix . 'mediaprev"',
-      'next:".' . $prefix . 'medianext"',
-      'loadPrev:".' . $prefix . 'medialoadprev"',
-      'loadNext:".' . $prefix . 'medialoadnext"',
-      'prevPage:".' . $prefix . 'mediaprevpage"',
-      'nextPage:".' . $prefix . 'medianextpage"',
-      'pager:".' . $prefix . 'mediapager"',
-      'scroll:".' . $prefix . 'mediascroll"',
-      'busy:".' . $prefix . 'mediabusy"',
-      'links:".' . $prefix . 'medialinks"',
-      'listMask:".' . $prefix . 'medialistmask"',
-      'list:".' . $prefix . 'medialist"',
-      'scrollWrapper:".' . $prefix . 'mediascrollbarwrapper"',
-      'scrollBar:".' . $prefix . 'mediascrollbar"',
-      'scrollTrack:".' . $prefix . 'mediascrolltrack"',
-      'scrollHandle:".' . $prefix . 'mediascrollhandle"',
-      'scrollUp:".' . $prefix . 'mediascrollup"',
-      'scrollDown:".' . $prefix . 'mediascrolldown"',
-      'titleLinks:".' . $prefix . 'mediatitlelinks"'                                           
-   );
-   $settings[] = 'ids:{' . implode(',', $ids) . '}';
    
    // Now set up our templates within a template.
    $variables['titlebar'] = theme( 'osmplayer_' . $template . '_titlebar', $variables['params'] );  
    $variables['menu'] = theme( 'osmplayer_' . $template . '_menu', $variables['params'] );     
    $variables['node'] = theme( 'osmplayer_' . $template . '_node', $variables['params'] );
    $variables['playlist'] = theme( 'osmplayer_' . $template . '_playlist', $variables['params'] );
-   
-   // Create the player in javascript.
-   $js = 'var ' . $playerId . ' = jQuery("#' . $playerId . '").mediaplayer({' . implode(',', $settings) . '});';
-   
-   // Now that the player has made it's way through the loading process... hide the busy cursor.
-   $js .= 'jQuery("#'. $playerId .'_loading").hide();';
-   
-   // Now add our playlist connections to the javascript.
-   if( isset($variables['params']['connect']) && $variables['params']['connect']['isplaylist'] ) {
-	   foreach( $variables['params']['connect']['isplaylist'] as $playlist ) {
-	      $playlist = 'mediafront_' . $playlist;
-	   	$js .= 'jQuery.media.addPlaylist("' . $playlist . '",' . $playerId . ');';
-	   }
-   }
-   
-   // Now add our controller connections to the javascript.   
-   if( isset($variables['params']['connect']) && $variables['params']['connect']['iscontroller'] ) {
-	   foreach( $variables['params']['connect']['iscontroller'] as $controller ) {
-	   	$controller = 'mediafront_' . $controller;
-	      $js .= 'jQuery.media.addController("' . $controller . '",' . $playerId . ');';
-	   }
-   }
-   
-   // Add the JavaScript for this player.
-   drupal_add_js('jQuery(document).ready(function() {' . $js . '});', 'inline');
 }
 
 /**
