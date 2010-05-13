@@ -2,8 +2,6 @@
 // Open Standard Media Player:  Provides the osmplayer functionality to the MediaFront module.
 require_once( drupal_get_path('module', 'osmplayer') . '/player/OSMPlayer.php' );
 
-define('OSMPLAYER_DEFAULT_LOGO', 'logo.png');
-
 /**
  * Implementation of hook_get_player()
  */
@@ -154,7 +152,6 @@ function osmplayer_get_player_params() {
    $hasServices = module_exists('services');
    $player = new OSMPlayer();
    $params = $player->getPlayerParams();     
-   $params['logo'] = ($playerpath . '/' . OSMPLAYER_DEFAULT_LOGO);
    $params['protocol'] = $hasServices ? "auto" : "json";
    return $params;
 }
