@@ -436,7 +436,10 @@ class OSMPlayer
             
             // Close the file.
             fclose( $handle );
-         }           
+         }  
+
+         // Now set the file permissions to 775.
+         chmod( $file, 0775 );
       }   
    }
 

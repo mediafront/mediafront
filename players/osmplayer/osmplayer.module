@@ -540,23 +540,23 @@ function osmplayer_get_skins() {
 function template_preprocess_osmplayer(&$variables) {
    global $base_url, $user;
 	
-	// Let the mediafront populate all the variables for us.
-	mediafront_template_preprocess( $variables );
+   // Let the mediafront populate all the variables for us.
+   mediafront_template_preprocess( $variables );
 	
-	// Setup our parameters.
-	$params = $variables['params'];
-	$params['id'] = $params['id'] ? $params['id'] : 'mediafront_' . $params['preset'];
+   // Setup our parameters.
+   $params = $variables['params'];
+   $params['id'] = $params['id'] ? $params['id'] : 'mediafront_' . $params['preset'];
    $params['baseURL'] = $base_url;
    $params['gateway'] = $base_url . '/services/xmlrpc';
 
-	// Get the media player.
-	$player = new OSMPlayer( $params );
+   // Get the media player.
+   $player = new OSMPlayer( $params );
 	
 	// Set the session id for the player.
-	$player->setSessionId( $user->sid );	
+   $player->setSessionId( $user->sid );	
 	
-	// Cache the player path.
-	$osmpath = drupal_get_path('module', 'osmplayer');
+   // Cache the player path.
+   $osmpath = drupal_get_path('module', 'osmplayer');
    $playerpath = $osmpath . '/player';
 
    // Now add our playlist connections.
