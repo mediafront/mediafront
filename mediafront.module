@@ -609,7 +609,7 @@ function mediafront_playlist_node( $node ) {
    //drupal_set_message("<pre>" . print_r( $node, true ) . "</pre>" );
    
    // Iterate through the files.
-   if( $node->files ) {
+   if( $node->files && is_array($node->files) ) {
 	   foreach( $node->files as $fid => $file ) {
 	      if( $media_file = mediafront_get_media_file($file) ) {
 	         $additions["mediafiles"][$media_file->class][$media_file->type] = $media_file;
