@@ -406,17 +406,17 @@ class OSMPlayer
     */   
    public function createCSS()
    {     
-   	// Store the CSS directory for later usage.
-   	$css_dir = dirname(__FILE__) . '/css';
+      // Store the CSS directory for later usage.
+      $css_dir = dirname(__FILE__) . '/css';
    	
-   	// Make sure this directory exists.
-   	if( !is_dir( $css_dir ) ) {
-   	   // Create the directory.
-   	   mkdir( $css_dir, 0775, true );
-   	}
+   	  // Make sure this directory exists.
+   	  if( !is_dir( $css_dir ) ) {
+   	    // Create the directory.
+   	    mkdir( $css_dir, 0775, true );
+   	  }
    	
-   	// Now make sure the directory has the right permissions.
-   	chmod( $css_dir, 0775 );
+   	  // Now make sure the directory has the right permissions.
+   	  chmod( $css_dir, 0775 );
    	
       // Store the template and theme names.
       $template = $this->settings['template'];
