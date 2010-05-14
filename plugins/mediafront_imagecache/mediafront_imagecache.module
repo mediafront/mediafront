@@ -7,7 +7,7 @@ function mediafront_form_alter(&$form, $form_state, $form_id)
     	$form['mediafront_imagecache'] = array(
           "#type" => "fieldset",
           "#weight" => -1,
-          "#title" => "Dash Media Player: ImageCache Settings",
+          "#title" => "MediaFront: ImageCache Settings",
         );
         
         // Get all of the presets.
@@ -23,7 +23,7 @@ function mediafront_form_alter(&$form, $form_state, $form_id)
         $form['mediafront_imagecache']['node_preset'] = array(
 	      '#type' => 'select',
 	      '#title' => t('Node: ImageCache Preset'),
-	      '#description' => t('Select the ImageCache preset that you would like to use for the Dash Player node display.'),
+	      '#description' => t('Select the ImageCache preset that you would like to use for the MediaFront node display.'),
 	      '#options' => $presets,
 	      '#default_value' => ($image_presets ? $image_presets->node_pid : 0),        
         );
@@ -31,7 +31,7 @@ function mediafront_form_alter(&$form, $form_state, $form_id)
         $form['mediafront_imagecache']['thumb_preset'] = array(
 	      '#type' => 'select',
 	      '#title' => t('Thumbnail: ImageCache Preset'),
-	      '#description' => t('Select the ImageCache preset that you would like to use for the Dash Player thumbnail display.'),
+	      '#description' => t('Select the ImageCache preset that you would like to use for the MediaFront thumbnail display.'),
 	      '#options' => $presets,
 	      '#default_value' => ($image_presets ? $image_presets->thumb_pid : 0),          
         );        	
