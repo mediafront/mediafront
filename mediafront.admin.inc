@@ -274,9 +274,9 @@ function mediafront_create_preset_validate($form, &$form_state) {
  * Submit handler for the preset form.
  */
 function mediafront_create_preset_submit($form, &$form_state) {
-  $preset = $form_state['values'];
+  $preset = (object)$form_state['values'];
   mediafront_preset_save($preset);
-  $form_state['redirect'] = 'admin/build/mediafront/preset/manage/' . $preset['name'];
+  $form_state['redirect'] = 'admin/build/mediafront/preset/manage/' . $preset->name;
 }
 
 ?>

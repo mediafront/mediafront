@@ -253,7 +253,7 @@ function mediafront_player_settings_form( $preset ) {
  */
 function mediafront_preset_save( $params ) {
 	// If they provide the pid, then this needs to be an update.
-	$pid = $params->pid ? array('pid') : array();
+	$pid = (isset($params->pid) && $params->pid) ? array('pid') : array();
 	
    // Tell the player about this preset save.
    $player_save = $params->player . '_mediafront_preset_save';
