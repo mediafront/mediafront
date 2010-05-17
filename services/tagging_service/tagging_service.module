@@ -2,6 +2,10 @@
 // Drupal Free Tagging Service
 // Written by Travis Tidwell @ www.travistidwell.com
 
+function tagging_service_perm() {
+   return array('allow remote tagging'); 
+}
+
 /**
  * Implementation of hook_help().
  */
@@ -20,6 +24,7 @@ function tagging_service_service() {
       array(
          '#method'   => 'tag.addTag',
          '#callback' => 'tagging_service_add_tag',
+         '#access arguments' => 'allow remote tagging',      
          '#args'     => array(
            array(
              '#name'         => 'nid',

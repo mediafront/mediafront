@@ -2,6 +2,10 @@
 // Drupal Voting Service
 // Written by Travis Tidwell @ www.travistidwell.com
 
+function favorites_service_perm() {
+   return array('allow remote favorites'); 
+}
+
 /**
  * Implementation of hook_help().
  */
@@ -21,6 +25,7 @@ function favorites_service_service() {
     array(
       '#method'   => 'favorites.getFavorites',
       '#callback' => 'favorites_service_get_favorites',
+      '#access arguments' => 'access content',     
       '#key'      => FALSE,
       '#args'     => array(
         array(
@@ -43,6 +48,7 @@ function favorites_service_service() {
     array(
       '#method'   => 'favorites.setFavorite',
       '#callback' => 'favorites_service_set_favorite',
+      '#access arguments' => 'allow remote favorites',    
       '#args'     => array(
         array(
           '#name'         => 'nid',
@@ -56,6 +62,7 @@ function favorites_service_service() {
     array(
       '#method'   => 'favorites.deleteFavorite',
       '#callback' => 'favorites_service_delete_favorite',
+      '#access arguments' => 'allow remote favorites',    
       '#args'     => array(
         array(
           '#name'         => 'nid',
