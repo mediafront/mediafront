@@ -639,18 +639,26 @@ function mediafront_playlist_node( $node ) {
       $additions["mediafiles"]["images"]["image"] = $node->field_mediafront_image[0]['value'];
    } 
    
-   // Now look for any file fields.
+   // Now look for any CCK fields.
    foreach( $node as $fieldname => $field ) {
-   	// This is a filefield.
-   	if( is_array($node->{$fieldname}) && isset($node->{$fieldname}[0]) && 
-   	    is_array($node->{$fieldname}[0]) && isset($node->{$fieldname}[0]['filepath']) ) {
-   		if( $media_file = mediafront_get_media_file( mediafront_array_to_object($node->{$fieldname}[0]) ) ) {
-   	   	$media_file->duration = $node->{$fieldname}[0]['data']['duration'];
-   	   	$media_file->bytesTotal = $node->{$fieldname}[0]['filesize'];
-   	   	$media_file->width = $node->{$fieldname}[0]['data']['width'];
-   	   	$media_file->height = $node->{$fieldname}[0]['data']['height'];
-   	   	$additions["mediafiles"][$media_file->class][$media_file->type] = $media_file;
-   	   }  		
+   	// This is a CCK filefield.
+   	if( is_array($node->{$fieldname}) && isset($node->{$fieldname}[0]) ) {
+   		// This is a text field.
+   		if( isset($node->{$fieldname}[0]['value']) && is_string($node->{$fieldname}[0]['value']) ) {
+   			$additions[$fieldname] = $node->{$fieldname}[0]['value'];
+   		}
+   		
+   		// This is a file field.
+   		if( is_array($node->{$fieldname}[0]) && isset($node->{$fieldname}[0]['filepath']) ) {
+	         if( $media_file = mediafront_get_media_file( mediafront_array_to_object($node->{$fieldname}[0]) ) ) {
+	            $media_file->duration = $node->{$fieldname}[0]['data']['duration'];
+	            $media_file->bytesTotal = $node->{$fieldname}[0]['filesize'];
+	            $media_file->width = $node->{$fieldname}[0]['data']['width'];
+	            $media_file->height = $node->{$fieldname}[0]['data']['height'];
+	            $additions["mediafiles"][$media_file->class][$media_file->type] = $media_file;
+	         }
+   		}
+
    	}
    }
    
