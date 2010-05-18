@@ -559,15 +559,15 @@ function template_preprocess_osmplayer(&$variables) {
 
    // Now add our playlist connections.
    if( isset($variables['params']['connect']) && $variables['params']['connect']['isplaylist'] ) {
-	   foreach( $variables['params']['connect']['isplaylist'] as $playlist ) {
-	      $player->addPlaylist( $playlist );
+	   foreach( $variables['params']['connect']['isplaylist'] as $toPlayer ) {
+	      $player->addPlaylistTo( $toPlayer );
 	   }
    }
    
    // Now add our controller connections.   
    if( isset($variables['params']['connect']) && $variables['params']['connect']['iscontroller'] ) {
-	   foreach( $variables['params']['connect']['iscontroller'] as $controller ) {
-	   	$player->addController( $controller );
+	   foreach( $variables['params']['connect']['iscontroller'] as $toPlayer ) {
+	   	$player->addControllerTo( $toPlayer );
 	   }
    }
 
