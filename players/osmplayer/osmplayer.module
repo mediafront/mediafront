@@ -570,8 +570,8 @@ function template_preprocess_osmplayer(&$variables) {
    $player = new OSMPlayer( $params );
 	
 	// Set the session id for the player.
-   $player->setSessionId( $user->sid );	
-	
+   $player->setSessionId( $user->sid );      
+   
    // Cache the player path.
    $osmpath = drupal_get_path('module', 'osmplayer');
    $playerpath = $osmpath . '/player';
@@ -599,10 +599,12 @@ function template_preprocess_osmplayer(&$variables) {
    // Add the JavaScript for this player.
    drupal_add_js( $player->getPlayerJS(), 'inline');
       
-   // Add the CSS files.
+   // Set the CSS directory of our OSMPlayer component, and then add the CSS files to the page..
+   $css_dir = file_directory_path() . '/css/osmplayer';
+   $player->setCSSDirectory( getcwd() . '/' . $css_dir );   
    $css_files = $player->getCSSFiles();
-   drupal_add_css( ($playerpath . '/' . $css_files[0]) );
-   drupal_set_html_head('<!--[if IE]><link rel="stylesheet" type="text/css" href="' . ($playerpath . '/' . $css_files[1]) . '" /><![endif]-->');
+   drupal_add_css( ($css_dir . '/' . $css_files[0]) );
+   drupal_set_html_head('<!--[if IE]><link rel="stylesheet" type="text/css" href="' . ($css_dir . '/' . $css_files[1]) . '" /><![endif]-->');
 
    // Make sure they always have a template, theme, and version...
    $template = $variables['params']['template'] = $player->getTemplate();
