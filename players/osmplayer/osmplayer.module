@@ -125,10 +125,29 @@ function osmplayer_theme() {
 function osmplayer_mediafront_preset_save( $params ) {  
    // Now create the preset CSS files.   This keeps different presets from stomping on 
    // each other when multiple presets are on the same page.  It also makes this module play nice
-   // with the jQuery-UI module.
+   // with the jQuery-UI module.   
    $settings = isset( $params->settings ) ? $params->settings : null;
+   
+   // Create the OSMPlayer object with these settings.
    $player = new OSMPlayer( $settings );
+   
+   // Set the ID for this player based on the preset name.
    $player->setId( $params->name );
+   
+   // Now make sure that the osmplayer CSS directory exists.
+   $css_dir = getcwd() . '/' . file_directory_path() . '/css';
+   if( !is_dir($css_dir) ) { 
+      mkdir($css_dir, 0775);
+   }     
+   $css_dir .= '/osmplayer';
+   if( !is_dir($css_dir) ) { 
+      mkdir($css_dir, 0775);
+   }    
+   
+   // Set the CSS directory of our OSMPlayer component.
+   $player->setCSSDirectory( $css_dir );
+   
+   // Now delete the previous CSS files, and then create the new ones.
    $player->deleteCSS();
    $player->createCSS();
 }
