@@ -413,7 +413,7 @@ function mediafront_get_playlist_json( $playlist = null, $limit = null, $page = 
 	$limit = $limit ? $limit : $params[2];
 	$page = $page ? $page : $params[3];
 	$args = $args ? $args : $params[4];
-	print json_encode( mediafront_get_playlist( $playlist, $limit, $page, $args ) );
+	print drupal_to_js( mediafront_get_playlist( $playlist, $limit, $page, $args ) );
 }
 
 /**
@@ -472,7 +472,7 @@ function mediafront_get_node_json( $node = null, $args = null ) {
 	$params = json_decode($_POST['params']);
    $node = $node ? $node : $params[1];
 	$args = $args ? $args : $params[2];   
-   print json_encode( mediafront_get_node( $node, $args ) ); 
+   print drupal_to_js( mediafront_get_node( $node, $args ) ); 
 }
 
 /**
