@@ -226,7 +226,19 @@ function osmplayer_player_settings_form( $preset ) {
      '#title' => t('Show Title Bar'),
      '#description' => t('Specify if you would like to see the title bar of this player'),
      '#default_value' => $preset->settings['showTitleBar']
-   );   
+   );
+   $form['presentation']['wmode'] = array(
+      '#title' => t('Flash Window Mode'),
+      '#type' => 'select',
+      '#options' => array('none' => 'none', 'transparent' => 'transparent', 'window' => 'window'),
+      '#default_value' => $preset->settings['wmode'],
+      '#description' => t('Selects which window mode you would like for the OSM Flash player to operate under (denoted by the <b>wmode</b> parameter in the object code)
+         <ul>
+            <li><b>none</b> - <em>No window mode</em></li>
+            <li><b>wmode=transparent</b> - <em>Allows for other elements to drop in front of the video (like a drop-down list), without the video showing over those elements.</em></li>
+            <li><b>wmode=window</b> - <em>Allows for the video to have full-screen support.</em></li>
+         </ul>')
+   );      
    
    $form['media_settings'] = array(
       '#type' => 'fieldset',
