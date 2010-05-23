@@ -490,18 +490,18 @@ function mediafront_get_node( $nid, $args = null ) {
 function mediafront_array_replace_recursive( $toArray, $fromArray ) {
    // Loop through array key/value pairs
    foreach ($fromArray as $key => $value) {
-      // Value is an array
-      if (is_array($value)) {
+      // Value is an array or an object.
+      if( is_array($value) || is_object($value) ) {
          // Traverse the array; replace or add result to original array
          $toArray[$key] = mediafront_array_replace_recursive($toArray[$key], $fromArray[$key]);
       }
       // Value is not an array
-      else {
+      else {      	
          // Replace or add current value to original array
          $toArray->{$key} = $value;
       }
-   }
-
+   } 
+   
    // Return the joined array
    return $toArray;
 } 

@@ -3,30 +3,58 @@
  * Implementation of hook_install().
  */
 function mediafront_imagecache_install() {
-
-  // Create tables.
-  drupal_install_schema('mediafront_imagecache');   
+   // Create tables.
+   drupal_install_schema('mediafront_imagecache');   
+   
+   // This should override most other modules.
+   db_query("UPDATE {system} SET weight=11 WHERE type='module' AND name='mediafront_imagecache'");   
 }
 
 function mediafront_imagecache_schema() {
-  $schema['mediafront_imagecache'] = array(
-    'fields' => array(
-	  'node_type' => array('type' => 'text', 'not null' => FALSE),  
-	  'field_name' => array('type' => 'text', 'not null' => FALSE), 
-      'node_pid'  => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
-      'thumb_pid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
-    ),
-    'indexes' => array(
-      'node_pid' => array('node_pid'),
-      'thumb_pid' => array('thumb_pid'),
-    ),
-  );
-  return $schema;
+   $schema['mediafront_imagecache'] = array(
+      'fields' => array(
+         'node_type' => array('type' => 'text', 'not null' => FALSE),  
+         'field_name' => array('type' => 'text', 'not null' => FALSE), 
+         'node_preset'  => array('type' => 'text', 'not null' => FALSE),
+         'thumb_preset' => array('type' => 'text', 'not null' => FALSE),
+      )
+   );
+   return $schema;
 }
 
 /**
  * Implementation of hook_uninstall().
  */
 function mediafront_imagecache_uninstall() {
-  drupal_uninstall_schema('mediafront_imagecache');	
+   drupal_uninstall_schema('mediafront_imagecache');	
+}
+
+function mediafront_imagecache_update_6001() {
+   // We changed the schema here.  So, we need to update the database.
+   $update = array();
+   
+   // First update this module so that it has a higher weight.
+   db_query("UPDATE {system} SET weight=11 WHERE type='module' AND name='mediafront_imagecache'");
+   
+   // Add the node_preset and thumb_preset columns.   
+   db_add_field($update, 'mediafront_imagecache', 'node_preset', array('type' => 'text', 'not null' => FALSE));
+   db_add_field($update, 'mediafront_imagecache', 'thumb_preset', array('type' => 'text', 'not null' => FALSE));
+   
+   // Now iterate through the fields in the mediafront_imagecache table, and then set the right values.
+   $result = db_query( "SELECT * FROM {mediafront_imagecache}" );
+   while( $item = db_fetch_object( $result ) ) {
+      $preset_name = db_result( db_query( "SELECT presetname FROM {imagecache_preset} WHERE presetid=%d", $item->node_pid ) );
+      db_query( "UPDATE {mediafront_imagecache} SET node_preset='%s' WHERE node_pid=%d", $preset_name, $item->node_pid );
+      
+      $preset_name = db_result( db_query( "SELECT presetname FROM {imagecache_preset} WHERE presetid=%d", $item->thumb_pid ) );
+      db_query( "UPDATE {mediafront_imagecache} SET thumb_preset='%s' WHERE thumb_pid=%d", $preset_name, $item->thumb_pid );      
+   }
+   
+   // Now remove the id columns.
+   db_drop_index($update, 'mediafront_imagecache', 'node_pid');
+   db_drop_index($update, 'mediafront_imagecache', 'thumb_pid');   
+   db_drop_field($update, 'mediafront_imagecache', 'node_pid');
+   db_drop_field($update, 'mediafront_imagecache', 'thumb_pid');   
+   
+   return $update;
 }

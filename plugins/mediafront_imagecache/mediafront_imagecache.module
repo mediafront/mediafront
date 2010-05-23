@@ -15,7 +15,7 @@ function mediafront_form_alter(&$form, $form_state, $form_id)
         $presets[0] = 'none';
         $result = db_query("SELECT * FROM {imagecache_preset}");
         while( $preset = db_fetch_object( $result ) ) {
-           $presets[$preset->presetid] = $preset->presetname;	
+           $presets[$preset->presetname] = $preset->presetname;	
         }
         
         $image_presets = db_fetch_object( db_query( "SELECT * FROM {mediafront_imagecache} WHERE field_name='%s'", $form['#field']['field_name'] ));
@@ -25,7 +25,7 @@ function mediafront_form_alter(&$form, $form_state, $form_id)
 	      '#title' => t('Node: ImageCache Preset'),
 	      '#description' => t('Select the ImageCache preset that you would like to use for the MediaFront node display.'),
 	      '#options' => $presets,
-	      '#default_value' => ($image_presets ? $image_presets->node_pid : 0),        
+	      '#default_value' => ($image_presets ? $image_presets->node_preset : 0),        
         );
         
         $form['mediafront_imagecache']['thumb_preset'] = array(
@@ -33,7 +33,7 @@ function mediafront_form_alter(&$form, $form_state, $form_id)
 	      '#title' => t('Thumbnail: ImageCache Preset'),
 	      '#description' => t('Select the ImageCache preset that you would like to use for the MediaFront thumbnail display.'),
 	      '#options' => $presets,
-	      '#default_value' => ($image_presets ? $image_presets->thumb_pid : 0),          
+	      '#default_value' => ($image_presets ? $image_presets->thumb_preset : 0),          
         );        	
 		
 		$form['#submit'][] = 'mediafront_imagecache_submit';
@@ -56,23 +56,23 @@ function mediafront_imagecache_submit( $form, &$form_state )
 {
    $node_type = $form['#field']['type_name'];
    $field_name = $form['#field']['field_name'];
-   $node_pid = $form['mediafront_imagecache']['#post']['node_preset'];
-   $thumb_pid = $form['mediafront_imagecache']['#post']['thumb_preset'];
+   $node_preset = $form['mediafront_imagecache']['#post']['node_preset'];
+   $thumb_preset = $form['mediafront_imagecache']['#post']['thumb_preset'];
 
    // Search for this field name in the table.
    if( mediafront_imagecache_exists( $node_type, $field_name ) ) {
-      if( !$node_pid && !$thumb_pid ) {
+      if( !$node_preset && !$thumb_preset ) {
       	 mediafront_imagecache_delete( $node_type, $field_name );
       }
       else {
-      	 $sql = "UPDATE {mediafront_imagecache} SET node_pid=%d, thumb_pid=%d WHERE node_type='%s' AND field_name='%s'";
-         db_query( $sql, $node_pid, $thumb_pid, $node_type, $field_name );	
+      	 $sql = "UPDATE {mediafront_imagecache} SET node_preset='%s', thumb_preset='%s' WHERE node_type='%s' AND field_name='%s'";
+         db_query( $sql, $node_preset, $thumb_preset, $node_type, $field_name );	
       }
    }
    else {
-   	  if( $node_pid || $thumb_pid ) {
-   	  	 $sql = "INSERT INTO {mediafront_imagecache} (node_type, field_name, node_pid, thumb_pid) VALUES ( '%s', '%s', %d, %d )";
-         db_query( $sql, $node_type, $field_name, $node_pid, $thumb_pid );
+   	  if( $node_preset || $thumb_preset ) {
+   	  	 $sql = "INSERT INTO {mediafront_imagecache} (node_type, field_name, node_preset, thumb_preset) VALUES ( '%s', '%s', '%s', '%s' )";
+         db_query( $sql, $node_type, $field_name, $node_preset, $thumb_preset );
    	  }	
    }
 }
@@ -88,11 +88,9 @@ function mediafront_imagecache_content_fieldapi( $op, $field ) {
    }
 }
 
-function mediafront_imagecache_get_file( $presetid, $filename, $type ) 
+function mediafront_imagecache_get_file( $preset_name, $filename, $type ) 
 {
-   $preset_name = db_result( db_query( "SELECT presetname FROM {imagecache_preset} WHERE presetid=%d", $presetid ) );
-   $preset->filename = $type;
-   $preset->filepath = file_directory_path() .'/imagecache/' . $preset_name . '/' . $filename;	
+   $preset->path = file_create_url(file_directory_path() .'/imagecache/' . $preset_name . '/' . $filename);	
    $preset->weight = -8;
    $preset->mediatype = "image";
    $preset->mediaclass = "image";
@@ -110,14 +108,15 @@ function mediafront_imagecache_playlist_node( $node, $args ) {
    if( $image && $node->{$image->field_name} && $node->{$image->field_name}[0] ) {
       $filename = $node->{$image->field_name}[0]['filename'];
    	if( $filename ) {
-	      if( $image->node_pid ) {
-            $additions["mediafiles"]["images"]["image"] = mediafront_imagecache_get_file( $image->node_pid, $filename, "preview" );
-         }
-         if( $image->thumb_pid ) {
-            $additions["mediafiles"]["images"]["thumb"] = mediafront_imagecache_get_file( $image->thumb_pid, $filename, "thumbnail" );        	
+	      if( $image->node_preset ) {
+            $additions["mediafiles"]["images"]["image"] = mediafront_imagecache_get_file( $image->node_preset, $filename, "preview" );
+	      }
+         if( $image->thumb_preset ) {
+            $additions["mediafiles"]["images"]["thumbnail"] = mediafront_imagecache_get_file( $image->thumb_preset, $filename, "thumbnail" );        	
          }	
       }
    }	
+   
    return $additions;   
    
 }
