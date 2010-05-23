@@ -86,7 +86,7 @@ class OSMPlayer
       'mute' => '.mediamute',
       'linkText' => '.medialinktext',   
       'linkScroll' => '.medialinkscroll',
-      'close' => '#mediamenuclose',
+      'close' => '.mediamenuclose',
       'embed' => '#mediaembed',
       'elink' => '#mediaelink',
       'email' => '#mediaemail',
@@ -487,9 +487,9 @@ class OSMPlayer
     */   
    public function getCSSFiles()
    {
-   	// Get the CSS path.
-   	$css_path = $this->css_dir ? $this->css_dir : dirname(__FILE__);
-   	$css_local_path = $this->css_dir ? '' : 'css/';
+      // Get the CSS path.
+      $css_path = $this->css_dir ? $this->css_dir : dirname(__FILE__);
+      $css_local_path = $this->css_dir ? '' : 'css/';
    	
       // Cache the prefix name.
       $id = $this->settings['id'];
