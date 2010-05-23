@@ -1,43 +1,45 @@
 <?php
 function mediafront_form_alter(&$form, $form_state, $form_id)
 {   
-    // See if we are an image field.
-    if( ($form_id == "content_field_edit_form") && ($form["#field"]["type"] == "filefield") && ($form["#field"]["widget"]["type"] == "imagefield_widget") ) {
+   // See if we are an image field.
+   if( ($form_id == "content_field_edit_form") && ($form["#field"]["type"] == "filefield") && ($form["#field"]["widget"]["type"] == "imagefield_widget") ) {
     	
-    	$form['mediafront_imagecache'] = array(
-          "#type" => "fieldset",
-          "#weight" => -1,
-          "#title" => "MediaFront: ImageCache Settings",
-        );
+      $form['mediafront_imagecache'] = array(
+         "#type" => "fieldset",
+         "#weight" => -1,
+         "#title" => "MediaFront: ImageCache Settings",
+      );
         
-        // Get all of the presets.
-        $presets = array();
-        $presets[0] = 'none';
-        $result = db_query("SELECT * FROM {imagecache_preset}");
-        while( $preset = db_fetch_object( $result ) ) {
-           $presets[$preset->presetname] = $preset->presetname;	
-        }
+      // Get all of the presets.
+      $presets = array();
+      $pids = array();
+      $presets[0] = 'none';
+      $result = db_query("SELECT * FROM {imagecache_preset}");
+      while( $preset = db_fetch_object( $result ) ) {
+         $presets[$preset->presetid] = $preset->presetname;
+         $pids[$preset->presetname] = $preset->presetid;	
+      }
         
-        $image_presets = db_fetch_object( db_query( "SELECT * FROM {mediafront_imagecache} WHERE field_name='%s'", $form['#field']['field_name'] ));
-        
-        $form['mediafront_imagecache']['node_preset'] = array(
-	      '#type' => 'select',
+      $image_presets = db_fetch_object( db_query( "SELECT * FROM {mediafront_imagecache} WHERE field_name='%s'", $form['#field']['field_name'] ));
+      
+      $form['mediafront_imagecache']['node_preset'] = array(
+         '#type' => 'select',
 	      '#title' => t('Node: ImageCache Preset'),
 	      '#description' => t('Select the ImageCache preset that you would like to use for the MediaFront node display.'),
 	      '#options' => $presets,
-	      '#default_value' => ($image_presets ? $image_presets->node_preset : 0),        
-        );
+	      '#default_value' => ($image_presets ? $pids[$image_presets->node_preset] : 0),        
+      );
         
-        $form['mediafront_imagecache']['thumb_preset'] = array(
+      $form['mediafront_imagecache']['thumb_preset'] = array(
 	      '#type' => 'select',
 	      '#title' => t('Thumbnail: ImageCache Preset'),
 	      '#description' => t('Select the ImageCache preset that you would like to use for the MediaFront thumbnail display.'),
 	      '#options' => $presets,
-	      '#default_value' => ($image_presets ? $image_presets->thumb_preset : 0),          
-        );        	
+	      '#default_value' => ($image_presets ? $pids[$image_presets->thumb_preset] : 0),          
+      );        	
 		
 		$form['#submit'][] = 'mediafront_imagecache_submit';
-	}		
+   }		
 }
 
 function mediafront_imagecache_exists( $node_type, $field_name ) 
@@ -54,26 +56,29 @@ function mediafront_imagecache_delete( $node_type, $field_name )
 
 function mediafront_imagecache_submit( $form, &$form_state ) 
 {
-   $node_type = $form['#field']['type_name'];
-   $field_name = $form['#field']['field_name'];
-   $node_preset = $form['mediafront_imagecache']['#post']['node_preset'];
-   $thumb_preset = $form['mediafront_imagecache']['#post']['thumb_preset'];
+   $node_type = $form_state['values']['type_name'];
+   $field_name = $form_state['values']['field_name'];
+   $node_pid = $form_state['values']['node_preset'];
+   $sql = "SELECT presetname FROM {imagecache_preset} WHERE presetid=%d";
+   $node_preset = $node_pid ? db_result(db_query($sql, $node_pid)) : '';
+   $thumb_pid = $form_state['values']['thumb_preset'];
+   $thumb_preset = $thumb_pid ? db_result(db_query($sql, $thumb_pid)) : '';
 
    // Search for this field name in the table.
    if( mediafront_imagecache_exists( $node_type, $field_name ) ) {
-      if( !$node_preset && !$thumb_preset ) {
-      	 mediafront_imagecache_delete( $node_type, $field_name );
+      if( !$node_pid && !$thumb_pid ) {
+         mediafront_imagecache_delete( $node_type, $field_name );
       }
       else {
-      	 $sql = "UPDATE {mediafront_imagecache} SET node_preset='%s', thumb_preset='%s' WHERE node_type='%s' AND field_name='%s'";
+         $sql = "UPDATE {mediafront_imagecache} SET node_preset='%s', thumb_preset='%s' WHERE node_type='%s' AND field_name='%s'";
          db_query( $sql, $node_preset, $thumb_preset, $node_type, $field_name );	
       }
    }
    else {
-   	  if( $node_preset || $thumb_preset ) {
-   	  	 $sql = "INSERT INTO {mediafront_imagecache} (node_type, field_name, node_preset, thumb_preset) VALUES ( '%s', '%s', '%s', '%s' )";
+      if( $node_pid || $thumb_pid ) {
+         $sql = "INSERT INTO {mediafront_imagecache} (node_type, field_name, node_preset, thumb_preset) VALUES ( '%s', '%s', '%s', '%s' )";
          db_query( $sql, $node_type, $field_name, $node_preset, $thumb_preset );
-   	  }	
+      }	
    }
 }
 
