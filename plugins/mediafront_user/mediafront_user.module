@@ -27,22 +27,22 @@ function mediafront_user_service() {
   );
 }
 
-function mediafront_user_set_status($verb, $noun) {	
-	global $user;
-		
-	if( $user->uid ) {
-		// Look for an existing status by looking for the same user & verb.
-		if( db_result( db_query("SELECT COUNT(*) FROM {mediafront_user} WHERE uid=%d", $user->uid )) > 0 ) {	
-			// We just need to update the current status.
-			db_query( "UPDATE {mediafront_user} SET verb='%s', noun='%s' WHERE uid=%d", $verb, $noun, $user->uid );		
-		}
-		else {
-			// Insert a new user status into the mediafront_user database.
-			db_query( "INSERT INTO {mediafront_user} (uid, verb, noun) VALUES (%d, '%s', '%s')", $user->uid, $verb, $noun );
-		}
-	}
-	
-	return true;
+function mediafront_user_set_status($verb, $noun) {   
+   global $user;
+      
+   if( $user->uid ) {
+      // Look for an existing status by looking for the same user & verb.
+      if( db_result( db_query("SELECT COUNT(*) FROM {mediafront_user} WHERE uid=%d", $user->uid )) > 0 ) {  
+         // We just need to update the current status.
+         db_query( "UPDATE {mediafront_user} SET verb='%s', noun='%s' WHERE uid=%d", $verb, $noun, $user->uid );     
+      }
+      else {
+         // Insert a new user status into the mediafront_user database.
+         db_query( "INSERT INTO {mediafront_user} (uid, verb, noun) VALUES (%d, '%s', '%s')", $user->uid, $verb, $noun );
+      }
+   }
+   
+   return true;
 }
 
 /**
@@ -50,7 +50,7 @@ function mediafront_user_set_status($verb, $noun) {
  */
 function mediafront_user_get_status( $uid )
 {
-	return db_fetch_object( db_query( "SELECT * FROM {mediafront_user} WHERE uid=%d", $uid ) );
+   return db_fetch_object( db_query( "SELECT * FROM {mediafront_user} WHERE uid=%d", $uid ) );
 }
 
 /**
@@ -81,10 +81,10 @@ function mediafront_user_token_values($type, $object = NULL) {
         $uid = $user->uid;
       }
 
-	  // Get the user status.
-	  $status = mediafront_user_get_status( $uid );
+     // Get the user status.
+     $status = mediafront_user_get_status( $uid );
 
-	  // Set the verb and noun of this token.
+     // Set the verb and noun of this token.
       $values['user-verb'] = check_plain( $status->verb );
       $values['user-noun'] = check_plain( $status->noun );
       return $values;

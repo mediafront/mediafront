@@ -122,8 +122,8 @@ function voting_service_service() {
 }
 
 function voting_service_get_user_vote($content_type, $content_id, $tag = "vote") {
-   global $user;	
-	
+   global $user;  
+   
    if( $user->uid ) {
       $criteria['content_type'] = $content_type;
       $criteria['content_id'] = $content_id;

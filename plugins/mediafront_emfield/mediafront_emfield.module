@@ -14,10 +14,10 @@ function mediafront_emfield_playlist_node( $node, $args ) {
                   $additions["mediafiles"]["images"]["image"] = $newfile;
                }
                $media_file = new stdClass();
-	           $media_file->path = $field[0]["value"];
-	           $media_file->player = $provider;
-	           $additions["mediafiles"]["media"]["media"] = $media_file;
-	           break;
+              $media_file->path = $field[0]["value"];
+              $media_file->player = $provider;
+              $additions["mediafiles"]["media"]["media"] = $media_file;
+              break;
             case 'vimeo':
             case 'dailymotion':
                $media_file = new stdClass();
@@ -27,10 +27,10 @@ function mediafront_emfield_playlist_node( $node, $args ) {
                }
                $media_file->path = $field[0]["value"];
                $media_file->player = $provider;
-               $additions["mediafiles"]["media"]["media"] = $media_file;   					
+               $additions["mediafiles"]["media"]["media"] = $media_file;                  
                break;
          }
-      }			
+      }        
    }
-   return $additions;	
+   return $additions;   
 }

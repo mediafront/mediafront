@@ -6,19 +6,19 @@ require_once( drupal_get_path('module', 'osmplayer') . '/player/OSMPlayer.php' )
  * Implementation of hook_get_player()
  */
 function osmplayer_get_player( $params ) {
-	$template = (isset($params['template']) && $params['template']) ? $params['template'] : "default";
+   $template = (isset($params['template']) && $params['template']) ? $params['template'] : "default";
 
-	// If they provide the playlist object, encode it as JSON.
-	if( isset($params['playlistObj']) && $params['playlistObj'] ) {
-	  $params['playlist'] = json_encode( $params['playlistObj'] );
-	}
-	
-   // If they provide the node object, encode it as JSON.	
-	if( isset($params['nodeObj']) && $params['nodeObj'] ) {
-		$params['node'] = json_encode( $params['nodeObj'] );
-	}
-	
-	return theme( 'osmplayer_' . $template, $params );
+   // If they provide the playlist object, encode it as JSON.
+   if( isset($params['playlistObj']) && $params['playlistObj'] ) {
+     $params['playlist'] = mediafront_json_encode( $params['playlistObj'] );
+   }
+   
+   // If they provide the node object, encode it as JSON.   
+   if( isset($params['nodeObj']) && $params['nodeObj'] ) {
+      $params['node'] = mediafront_json_encode( $params['nodeObj'] );
+   }
+   
+   return theme( 'osmplayer_' . $template, $params );
 }
 
 /**
@@ -31,7 +31,7 @@ function osmplayer_player_info()
      'title' => 'Open Standard Media Player',
      'description' => 'An Open Source - Open Standard, full featured media player.'
    );
-   return $info;	
+   return $info;  
 }
 
 /**
@@ -180,41 +180,41 @@ function osmplayer_get_player_params() {
  * Implementation of hook_player_settings_form
  */
 function osmplayer_player_settings_form( $preset ) {
-	$playerpath = drupal_get_path('module', 'osmplayer') . '/player';
-	$form['presentation'] = array(
+   $playerpath = drupal_get_path('module', 'osmplayer') . '/player';
+   $form['presentation'] = array(
       '#type' => 'fieldset',
       '#title' => t('Presentation Settings'),
       '#weight' => -10,
       '#collapsible' => true,
-      '#collapsed' => true	
-	);
-	$form['presentation']['theme'] = array(
-	   '#type' => 'select',
-	   '#title' => t('Theme'),
-	   '#description' => t('Select the theme you would like to use for this player.  The theme provides the look and feel for the media player.  Select <strong>&lt;none&gt;</strong> if you would not like to use a theme.<br/>You can download new themes for the OSM Player using the jQuery UI <a target="_blank" href="http://jqueryui.com/themeroller">JQuery UI ThemeRoller</a> interface.  Once you have downloaded a new theme, simply place the contents of that download in the <strong>modules/mediafront/players/osmplayer/player/jquery-ui</strong> folder.  Once you refresh the browser, you should see your new theme show up in this list.<br/><br/><strong>IMPORTANT NOTE:  You cannot have more than one theme present on a page at any given time.  This will cause the themes to override one other causing issues.</strong>'),
-	   '#options' => array_merge(array('none'=>t('<none>')), osmplayer_get_themes()),
-	   '#default_value' => $preset->settings['theme']
-	);
-	$form['presentation']['template'] = array(
+      '#collapsed' => true 
+   );
+   $form['presentation']['theme'] = array(
+      '#type' => 'select',
+      '#title' => t('Theme'),
+      '#description' => t('Select the theme you would like to use for this player.  The theme provides the look and feel for the media player.  Select <strong>&lt;none&gt;</strong> if you would not like to use a theme.<br/>You can download new themes for the OSM Player using the jQuery UI <a target="_blank" href="http://jqueryui.com/themeroller">JQuery UI ThemeRoller</a> interface.  Once you have downloaded a new theme, simply place the contents of that download in the <strong>modules/mediafront/players/osmplayer/player/jquery-ui</strong> folder.  Once you refresh the browser, you should see your new theme show up in this list.<br/><br/><strong>IMPORTANT NOTE:  You cannot have more than one theme present on a page at any given time.  This will cause the themes to override one other causing issues.</strong>'),
+      '#options' => array_merge(array('none'=>t('<none>')), osmplayer_get_themes()),
+      '#default_value' => $preset->settings['theme']
+   );
+   $form['presentation']['template'] = array(
       '#type' => 'select',
       '#title' => t('Template'),
       '#description' => t('Select the template you would like to use for this player.  The template provides specific functionality as well as the layout for the media player.  Each template can be found in the <strong>modules/mediafront/players/osmplayer/player/templates</strong> folder.'),
       '#options' => osmplayer_get_templates(),
-      '#default_value' => $preset->settings['template']	
-	);	
+      '#default_value' => $preset->settings['template']  
+   ); 
    $form['presentation']['skin'] = array(
       '#type' => 'select',
       '#title' => t('Flash Player Skin'),
       '#description' => t('Select the Flash Player Skin you would like to use for this player.  The Open Standard Media Player employs a light weight Flash Player to show Flash media within the center black media region.  When this player goes into browser full screen, it will then show the Flash Player Skin for the ControlBar and the Play overlay.  This can be modified by creating custom skins within the <strong>modules/mediafront/players/osmplayer/player/flash/skins</strong> folder.  These skins are provided in this list below for selection.'),
       '#options' => osmplayer_get_skins(),
       '#default_value' => $preset->settings['skin']  
-   );	
+   ); 
    $form['presentation']['width'] = array(
      '#type' => 'textfield',
      '#title' => t('Player Width'),
      '#description' => t('Enter the width of the player.'),
      '#default_value' => $preset->settings['width']
-   ); 	
+   );    
    $form['presentation']['height'] = array(
      '#type' => 'textfield',
      '#title' => t('Player Height'),
@@ -270,7 +270,7 @@ function osmplayer_player_settings_form( $preset ) {
      '#title' => t('Media Stream'),
      '#description' => t('Enter the media stream location.'),
      '#default_value' => $preset->settings['streamer']
-   ); 	
+   );    
 
    /************************* PLAYLIST SETTINGS *************************************/
    $form['playlist_settings'] = array(
@@ -279,13 +279,13 @@ function osmplayer_player_settings_form( $preset ) {
       '#weight' => -8,    
       '#collapsible' => true,
       '#collapsed' => true 
-   );	    
+   );     
    $form['playlist_settings']['playlist'] = array(
      '#type' => 'textfield',
      '#title' => t('Default Playlist'),
      '#description' => t('Enter the name or the URL of the playlist you would like to load by default.  This can either be an external XML file, or the name of the view that represents your playlist.  This, however, will be overridden if you explicitly provide the playlist when adding this preset to a page.'),
      '#default_value' => $preset->settings['playlist']
-   );	
+   ); 
    $form['playlist_settings']['autoNext'] = array(
      '#type' => 'checkbox',
      '#title' => t('Auto Next'),
@@ -375,14 +375,14 @@ function osmplayer_player_settings_form( $preset ) {
       '#collapsible' => true,
       '#collapsed' => true 
    );   
-	$form['node_settings']['node'] = array(
-	  '#type' => 'textfield',
-	  '#title' => t('Node Id'),
-	  '#description' => t('Enter the node Id if you would like to load a single node.'),
-	  '#default_value' => $preset->settings['node']
-	);
-	
-	
+   $form['node_settings']['node'] = array(
+     '#type' => 'textfield',
+     '#title' => t('Node Id'),
+     '#description' => t('Enter the node Id if you would like to load a single node.'),
+     '#default_value' => $preset->settings['node']
+   );
+   
+   
    $form['control_settings'] = array(
       '#type' => 'fieldset',
       '#title' => t('Controller Settings'),
@@ -402,7 +402,7 @@ function osmplayer_player_settings_form( $preset ) {
      '#description' => t('Select if you would like to ONLY see the control bar.'),
      '#default_value' => $preset->settings['controllerOnly']
    );         
-	
+   
    $form['voter_settings'] = array(
       '#type' => 'fieldset',
       '#title' => t('Voter Settings'),
@@ -500,18 +500,18 @@ function osmplayer_player_settings_form( $preset ) {
    if( $hasServices ) {
       $result = db_query("SELECT * FROM {services_keys}");
       while($key = db_fetch_object( $result ) ) {
-      	$apiKeys[$key->kid] = $key->title;
+         $apiKeys[$key->kid] = $key->title;
       }
    }
    
    if( $hasServices ) {
-	   $form['misc']['apiKey'] = array(
-	     '#type' => 'select',
-	     '#title' => t('API Key'),
-	     '#description' => t('Select which API key you would like to use for this preset.'),
-	     '#default_value' => $preset->settings['apiKey'],
-	     '#options' => $apiKeys
-	   ); 
+      $form['misc']['apiKey'] = array(
+        '#type' => 'select',
+        '#title' => t('API Key'),
+        '#description' => t('Select which API key you would like to use for this preset.'),
+        '#default_value' => $preset->settings['apiKey'],
+        '#options' => $apiKeys
+      ); 
    }
    
    $form['misc']['protocol'] = array(
@@ -524,7 +524,7 @@ function osmplayer_player_settings_form( $preset ) {
         'json' => 'Ajax ( JSON )',   
         'rpc' => 'Services ( requires the Services Module )'
      )
-   );	
+   ); 
 
    return $form;
 }
@@ -568,10 +568,10 @@ function osmplayer_get_skins() {
  */
 function template_preprocess_osmplayer(&$variables) {
    global $base_url, $user;
-	
+   
    // Let the mediafront populate all the variables for us.
    mediafront_template_preprocess( $variables );
-	
+   
    // Setup our parameters.
    $params = $variables['params'];
    $params['id'] = $params['id'] ? $params['id'] : 'mediafront_' . $params['preset'];
@@ -580,8 +580,8 @@ function template_preprocess_osmplayer(&$variables) {
 
    // Get the media player.
    $player = new OSMPlayer( $params );
-	
-	// Set the session id for the player.
+   
+   // Set the session id for the player.
    $player->setSessionId( $user->sid );      
    
    // Cache the player path.
@@ -590,16 +590,16 @@ function template_preprocess_osmplayer(&$variables) {
 
    // Now add our playlist connections.
    if( isset($variables['params']['connect']) && $variables['params']['connect']['isplaylist'] ) {
-	   foreach( $variables['params']['connect']['isplaylist'] as $toPlayer ) {
-	      $player->addPlaylistTo( $toPlayer );
-	   }
+      foreach( $variables['params']['connect']['isplaylist'] as $toPlayer ) {
+         $player->addPlaylistTo( $toPlayer );
+      }
    }
    
    // Now add our controller connections.   
    if( isset($variables['params']['connect']) && $variables['params']['connect']['iscontroller'] ) {
-	   foreach( $variables['params']['connect']['iscontroller'] as $toPlayer ) {
-	   	$player->addControllerTo( $toPlayer );
-	   }
+      foreach( $variables['params']['connect']['iscontroller'] as $toPlayer ) {
+         $player->addControllerTo( $toPlayer );
+      }
    }
 
    // Add the javascript files.
@@ -680,7 +680,7 @@ function template_preprocess_osmplayer_playlist(&$variables) {
       $variables['scrollBar'] = theme( 'osmplayer_' . $variables['params']['template'] . '_scrollbar', $variables['params'] );
    }
    else {
-   	$variables['scrollBar'] = theme( 'osmplayer_' . $variables['params']['template'] . '_hscrollbar', $variables['params'] );
+      $variables['scrollBar'] = theme( 'osmplayer_' . $variables['params']['template'] . '_hscrollbar', $variables['params'] );
    }
    
    $variables['links'] = $variables['params']['links'] ? theme( 'osmplayer_' . $variables['params']['template'] . '_links', $variables['params'] ) : '';  

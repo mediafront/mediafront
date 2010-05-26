@@ -3,59 +3,59 @@
 function _mediafront_cdn2_get_file_ext($filepath) { return drupal_strtolower(drupal_substr($filepath, strrpos($filepath, '.') + 1)); }
 function _mediafront_cdn2_is_image( $filepath )
 {
-	$ext = 	_mediafront_cdn2_get_file_ext( $filepath );
-	if( ($ext == 'jpg') || ($ext == 'png') || ($ext == 'gif') ) {
-		return TRUE;	
-	}
-	return FALSE;
+   $ext =   _mediafront_cdn2_get_file_ext( $filepath );
+   if( ($ext == 'jpg') || ($ext == 'png') || ($ext == 'gif') ) {
+      return TRUE;   
+   }
+   return FALSE;
 }
 
 /**
  * Implementation of hook_playlist_node
  */
 function mediafront_cdn2_playlist_node( $node, $args ) {
-	$additions = array();
-	
-	// Determine which presets we would like to have.
-	$presets = array();
-	
-	foreach( $args as $arg ) {
-		if( strpos( $arg, 'preset_' ) === 0 ) {
-			$presets[] = substr( $arg, 7 );
-		}	
-	}
-	
-	$preset_count = count( $presets );	
-	   
+   $additions = array();
+   
+   // Determine which presets we would like to have.
+   $presets = array();
+   
+   foreach( $args as $arg ) {
+      if( strpos( $arg, 'preset_' ) === 0 ) {
+         $presets[] = substr( $arg, 7 );
+      }  
+   }
+   
+   $preset_count = count( $presets );  
+      
    // Iterate through all of the fields in the node.
-	foreach( $node as $fieldname => $field ) {
-	
-		// If this is a CCK field.
-		if( strpos( $fieldname, 'field_' ) === 0 ) {
-			
-			// Get the assets.
-			$assets = $field[0]["assets"];
-			
-			// If the asset exists.
-			if( $assets ) {
-											
-				// Iterate through all of the assets.
-				foreach( $assets as $aindex => $asset ) {
-					
-					$is_image = _mediafront_cdn2_is_image($asset["asset_fetch_url"]);
-					
-					// If the asset is not an image and is not in the presets array.
-					if( $is_image || ($preset_count == 0) || in_array($asset["preset_name"], $presets) ) {
-						if( $is_image ) {
-							$additions["field_dashplayer_image"][0]["value"] = $asset["asset_fetch_url"];
-						}
-						else {
-							$additions["field_dashplayer_media"][0]["value"] = $asset["asset_fetch_url"];
-						}
-					}
-				}										
-			}
-		}
-	}
-	return $additions;	   
+   foreach( $node as $fieldname => $field ) {
+   
+      // If this is a CCK field.
+      if( strpos( $fieldname, 'field_' ) === 0 ) {
+         
+         // Get the assets.
+         $assets = $field[0]["assets"];
+         
+         // If the asset exists.
+         if( $assets ) {
+                                 
+            // Iterate through all of the assets.
+            foreach( $assets as $aindex => $asset ) {
+               
+               $is_image = _mediafront_cdn2_is_image($asset["asset_fetch_url"]);
+               
+               // If the asset is not an image and is not in the presets array.
+               if( $is_image || ($preset_count == 0) || in_array($asset["preset_name"], $presets) ) {
+                  if( $is_image ) {
+                     $additions["field_dashplayer_image"][0]["value"] = $asset["asset_fetch_url"];
+                  }
+                  else {
+                     $additions["field_dashplayer_media"][0]["value"] = $asset["asset_fetch_url"];
+                  }
+               }
+            }                             
+         }
+      }
+   }
+   return $additions;      
 }

@@ -5,13 +5,13 @@
 function mediafront_s3_playlist_node( $node, $args ) {
    $additions = array();
    $video = flashvideo_get_video_object( $node );
-	if( $video["file"] != "" ) {
-		$additions["mediafiles"]["media"]["media"]["path"] = $video["file"];
-	}
-	
-	$image = flashvideo_get_thumbnail( $node, array(), TRUE );
-	if( $image != "" ) {
-		$additions["mediafiles"]["images"]["image"]["path"] = $image;
-	}	
+   if( $video["file"] != "" ) {
+      $additions["mediafiles"]["media"]["media"]["path"] = $video["file"];
+   }
+   
+   $image = flashvideo_get_thumbnail( $node, array(), TRUE );
+   if( $image != "" ) {
+      $additions["mediafiles"]["images"]["image"]["path"] = $image;
+   }  
    return $additions;   
 }
