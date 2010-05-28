@@ -453,11 +453,14 @@ function mediafront_json_encode($var) {
 function mediafront_parse_params($json) { 
    // First trim any whitespace, and also the array brackets from the params.
    $json = trim($json, ' []');  
+   $params = null;
    
-   // Trim any quoted strings.
-   $params = explode(',', $json);
-   foreach( $params as $index => $param ) {
-   	$params[$index] = trim( $param, '"' );
+   if( $json ) {
+	   // Trim any quoted strings and make sure it is plain text.
+	   $params = explode(',', $json);
+	   foreach( $params as $index => $param ) {
+	   	$params[$index] = check_plain(trim( $param, ' "' ));
+	   }
    }
    
    // Now return the array of parameters.   
@@ -469,17 +472,17 @@ function mediafront_parse_params($json) {
  */
 function mediafront_get_playlist_json( $playlist = null, $limit = null, $page = null, $args = null ) {
    $params = mediafront_parse_params($_POST['params']);
-   $playlist = $playlist ? check_plain($playlist) : check_plain(trim($params[1]));
-   $limit = $limit ? check_plain($limit) : check_plain(trim($params[2]));
-   $page = $page ? check_plain($page) : check_plain(trim($params[3]));
-   $args = $args ? check_plain($args) : check_plain(trim($params[4]));
+   $playlist = $playlist ? check_plain($playlist) : $params[1];
+   $limit = $limit ? check_plain($limit) : $params[2];
+   $page = $page ? check_plain($page) : $params[3];
+   $args = $args ? $args : mediafront_parse_params($params[4]);
    print mediafront_json_encode( mediafront_get_playlist( $playlist, $limit, $page, $args ) );
 }
 
 /**
  * Gets a playlist
  */
-function mediafront_get_playlist( $playlist, $limit = 0, $page = 0, $args = array() ) { 
+function mediafront_get_playlist( $playlist, $limit = 10, $page = 0, $args = array() ) { 
   // Get the views object.
   $view = views_get_view($playlist);
   if (is_null($view)) {
@@ -514,7 +517,7 @@ function mediafront_get_playlist_from_view( $view ) {
   $playlist = array();
   $playlist['nodes'] = array();
   $playlist['name'] = $view->name;
-  $playlist['total_rows'] = $view->total_rows ? $view->total_rows : $view->query->pager->get_total_items();
+  $playlist['total_rows'] = $view->total_rows ? $view->total_rows : ($view->query->pager ? $view->query->pager->get_total_items() : 0);
   
   // Iterate through our result and get our player nodes.
   foreach( $view->result as $node ) {
