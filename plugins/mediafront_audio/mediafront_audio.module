@@ -17,10 +17,11 @@ function mediafront_audio_playlist_node( $node, $args ) {
          $additions["field_song"][0]["value"] = $node->audio_tags["title"];
       }        
    }
+   
    if( $node->audio ) {
       $media_file = mediafront_get_media_file($node->audio['file']);
       $mFile = new stdClass();
-      $mFile->path = $media_file->file;
+      $mFile->path = $media_file->path;
       $mFile->bytesTotal = $node->audio['file']->filesize;
       $additions["mediafiles"]["media"]["media"] = $mFile;
    }

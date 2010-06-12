@@ -120,6 +120,44 @@ function osmplayer_theme() {
 }
 
 /**
+ * Clears the osmplayer CSS directory.
+ */
+function osmplayer_clear_css() {
+   $css_dir = osmplayer_get_css_dir();
+   if(is_dir($css_dir)) {
+      if($contents = opendir($css_dir)) {
+         while(($node = readdir($contents)) !== false) {
+            if($node!="." && $node!="..") {
+               $node = $css_dir.DIRECTORY_SEPARATOR.$node;
+               if( is_file( $node ) ) {
+                  unlink( $node );
+               }
+            }
+         }
+      }
+   } 	
+}
+
+/**
+ * Gets the CSS directory.
+ * @return String - The css folder.
+ */
+function osmplayer_get_css_dir() {
+   // Now make sure that the osmplayer CSS directory exists.
+   $css_dir = getcwd() . DIRECTORY_SEPARATOR . file_directory_path() . DIRECTORY_SEPARATOR . 'css';
+   if( !is_dir($css_dir) ) { 
+      mkdir($css_dir, 0775);
+   }     
+   $css_dir .= DIRECTORY_SEPARATOR . 'osmplayer';
+   if( !is_dir($css_dir) ) { 
+      mkdir($css_dir, 0775);
+   } 
+
+   // Return the CSS directory.
+   return $css_dir;
+}
+
+/**
  * Implementation of hook_mediafront_preset_save
  */
 function osmplayer_mediafront_preset_save( $params ) {  
@@ -132,20 +170,10 @@ function osmplayer_mediafront_preset_save( $params ) {
    $player = new OSMPlayer( $settings );
    
    // Set the ID for this player based on the preset name.
-   $player->setId( $params->name );
-   
-   // Now make sure that the osmplayer CSS directory exists.
-   $css_dir = getcwd() . DIRECTORY_SEPARATOR . file_directory_path() . DIRECTORY_SEPARATOR . 'css';
-   if( !is_dir($css_dir) ) { 
-      mkdir($css_dir, 0775);
-   }     
-   $css_dir .= DIRECTORY_SEPARATOR . 'osmplayer';
-   if( !is_dir($css_dir) ) { 
-      mkdir($css_dir, 0775);
-   }    
+   $player->setId( 'mediafront_' . $params->name );
    
    // Set the CSS directory of our OSMPlayer component.
-   $player->setCSSDirectory( $css_dir );
+   $player->setCSSDirectory( osmplayer_get_css_dir() );
    
    // Now delete the previous CSS files, and then create the new ones.
    $player->deleteCSS();
@@ -560,6 +588,22 @@ function osmplayer_get_skins() {
    return osmplayer_get_directories('player' . DIRECTORY_SEPARATOR . 'flash' . DIRECTORY_SEPARATOR . 'skins');
 }
 
+function osmplayer_add_css( $player, $preset ) {
+	static $cssadded; 
+	if( !$cssadded[$preset] ) {
+		$cssadded[$preset] = TRUE;
+   
+		// Set the CSS directory of our OSMPlayer component, and then add the CSS files to the page..
+	   $files_dir = file_directory_path();
+	   $css_path = $files_dir . '/css/osmplayer';
+	   $css_dir = $files_dir . DIRECTORY_SEPARATOR . 'css' . DIRECTORY_SEPARATOR . 'osmplayer';
+	   $player->setCSSDirectory( getcwd() . DIRECTORY_SEPARATOR . $css_dir );   
+	   $css_files = $player->getCSSFiles();
+	   drupal_add_css( ($css_dir . '/' . $css_files[0]) );
+	   drupal_set_html_head('<!--[if IE]><link rel="stylesheet" type="text/css" href="' . ($css_path . '/' . $css_files[1]) . '" /><![endif]-->');
+	}
+}
+
 /**
  * The template preprocess function for the osm media player.
  * 
@@ -567,14 +611,14 @@ function osmplayer_get_skins() {
  * @return unknown_type
  */
 function template_preprocess_osmplayer(&$variables) {
-   global $base_url, $user;
+   global $base_url, $user;  
    
    // Let the mediafront populate all the variables for us.
    mediafront_template_preprocess( $variables );
    
    // Setup our parameters.
    $params = $variables['params'];
-   $params['id'] = $params['id'] ? $params['id'] : 'mediafront_' . $params['preset'];
+   $variables['params']['id'] = $params['id'] = 'mediafront_' . $params['preset'];
    $params['baseURL'] = $base_url;
    $params['gateway'] = $base_url . '/services/xmlrpc';
 
@@ -610,16 +654,10 @@ function template_preprocess_osmplayer(&$variables) {
 
    // Add the JavaScript for this player.
    drupal_add_js( $player->getPlayerJS(), 'inline');
-      
-   // Set the CSS directory of our OSMPlayer component, and then add the CSS files to the page..
-   $files_dir = file_directory_path();
-   $css_path = $files_dir . '/css/osmplayer';
-   $css_dir = $files_dir . DIRECTORY_SEPARATOR . 'css' . DIRECTORY_SEPARATOR . 'osmplayer';
-   $player->setCSSDirectory( getcwd() . DIRECTORY_SEPARATOR . $css_dir );   
-   $css_files = $player->getCSSFiles();
-   drupal_add_css( ($css_dir . '/' . $css_files[0]) );
-   drupal_set_html_head('<!--[if IE]><link rel="stylesheet" type="text/css" href="' . ($css_path . '/' . $css_files[1]) . '" /><![endif]-->');
 
+   // Add the CSS files for this player.
+   osmplayer_add_css( $player, $params['preset'] );
+  
    // Make sure they always have a template, theme, and version...
    $template = $variables['params']['template'] = $player->getTemplate();
    $variables['params']['theme'] = $player->getTheme();

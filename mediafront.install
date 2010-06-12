@@ -86,4 +86,13 @@ function mediafront_uninstall() {
   }    
 }
 
+function mediafront_update_6001() {
+   $update = array();
+   
+   // Clear the OSM CSS folder..
+   osmplayer_clear_css();   
+   
+   return $update;
+}
+
 ?>

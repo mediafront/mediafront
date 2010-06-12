@@ -76,17 +76,17 @@
    
    // Set up our defaults for this component.
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      currentTime:".mediacurrenttime",
-      totalTime:".mediatotaltime",
-      playPause:".mediaplaypause",
-      seekUpdate:".mediaseekupdate",
-      seekProgress:".mediaseekprogress",
-      seekBar:".mediaseekbar",
-      seekHandle:".mediaseekhandle",
-      volumeUpdate:".mediavolumeupdate",
-      volumeBar:".mediavolumebar",
-      volumeHandle:".mediavolumehandle",
-      mute:".mediamute"   
+      currentTime:"#mediacurrenttime",
+      totalTime:"#mediatotaltime",
+      playPause:"#mediaplaypause",
+      seekUpdate:"#mediaseekupdate",
+      seekProgress:"#mediaseekprogress",
+      seekBar:"#mediaseekbar",
+      seekHandle:"#mediaseekhandle",
+      volumeUpdate:"#mediavolumeupdate",
+      volumeBar:"#mediavolumebar",
+      volumeHandle:"#mediavolumehandle",
+      mute:"#mediamute"   
    });    
    
    jQuery.fn.mediacontrol = function( settings ) { 
@@ -473,82 +473,6 @@
       })( this, options, onUpdate );
    };
   /**
- *  Copyright (c) 2010 Alethia Inc,
- *  http://www.alethia-inc.com
- *  Developed by Travis Tidwell | travist at alethia-inc.com 
- *
- *  License:  GPL version 3.
- *
- *  Permission is hereby granted, free of charge, to any person obtaining a copy
- *  of this software and associated documentation files (the "Software"), to deal
- *  in the Software without restriction, including without limitation the rights
- *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- *  copies of the Software, and to permit persons to whom the Software is
- *  furnished to do so, subject to the following conditions:
- *  
- *  The above copyright notice and this permission notice shall be included in
- *  all copies or substantial portions of the Software.
-
- *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- *  THE SOFTWARE.
- */
-
-   jQuery.media = jQuery.extend( {}, {
-      checkPoints : {},
-      checkPoint : function( name ) {
-         var thisTime = new Date().getTime();
-         var lastTime = jQuery.media.checkPoints[name] ? jQuery.media.checkPoints[name] : 0;
-         jQuery.media.checkPoints[name] = thisTime - lastTime;
-      },
-      finalPoint : function() {
-         jQuery.media.debug( jQuery.media.checkPoints );
-         jQuery.media.checkPoints = {};            
-      },
-      debug : function( text ) {
-         var _this = this;
-
-         this.dump = function(arr, level) {
-            var dumped_text = "";
-            var level_padding = "";
-                        
-            if(!level) {
-               level = 0;
-            }
-            
-            for(var j=0;j<=level;j++) {
-               level_padding += "   ";
-            }
-            if(typeof(arr) == 'object') {
-               for(var key in arr) {
-                  if( arr.hasOwnProperty(key) ) {
-                     var value = arr[key];
-                     if(typeof(value) == 'object') {
-                        dumped_text += level_padding + "'" + key + "' ...\n";
-                        dumped_text += _this.dump(value,level+1);
-                     } else {
-                        dumped_text += level_padding + "'" + key + "' => \"" + value + "\"\n";
-                     }                      
-                  }
-               }
-            } else {
-               dumped_text = "- "+ arr +" ("+typeof(arr)+")";
-            }
-            return dumped_text;
-         };   
-
-         if( arguments[1] ) {
-            jQuery(".mediadebug").empty();
-         }
-         jQuery(".mediadebug").append( "<pre>" + this.dump( text ) + "</pre><br/>" );
-      }
-   }, jQuery.media );  
-
-/**
  *  Copyright (c) 2010 Alethia Inc,
  *  http://www.alethia-inc.com
  *  Developed by Travis Tidwell | travist at alethia-inc.com 
@@ -1520,9 +1444,9 @@
    /**
     * Load and scale an image while maintining original aspect ratio.
     */
-   jQuery.fn.mediaimage = function( link ) {
+   jQuery.fn.mediaimage = function( link, fitToImage ) {
       if( this.length === 0 ) { return null; }
-      return new (function( container, link ) {
+      return new (function( container, link, fitToImage ) {
          this.display = container;
          var _this = this;
          
@@ -1542,15 +1466,15 @@
          
          // Now add the image object.
          var code = link ? '<a target="_blank" href="' + link + '"><img src=""></img></a>' : '<img src=""></img>';
-         this.image = container.empty().append( code ).find("img");    
+         this.image = container.append( code ).find("img");    
          
          // Set the container to not show any overflow...       
          container.css("overflow", "hidden");
          
          // Resize the image.
          this.resize = function( newWidth, newHeight ) {
-            this.width = newWidth ? newWidth : this.width ? this.width : this.display.width();
-            this.height = newHeight ? newHeight : this.height ? this.height : this.display.height();
+            this.width = fitToImage ? this.imgLoader.width : (newWidth ? newWidth : this.width ? this.width : this.display.width());
+            this.height = fitToImage ? this.imgLoader.height : (newHeight ? newHeight : this.height ? this.height : this.display.height());
             if( this.width && this.height && loaded ) {  
                // Resize the wrapper.
                this.display.css({width:this.width, height:this.height});
@@ -1573,6 +1497,7 @@
                this.image.hide();               
                this.image.attr( "src", "" );
             }
+            container.empty();
          };
          
          // Refreshes the image.
@@ -1585,7 +1510,7 @@
             this.image.hide();
             this.imgLoader.src = src;
          };
-      })( this, link );     
+      })( this, link, fitToImage );     
    };
 
 /**
@@ -1814,7 +1739,7 @@
    }); 
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      linkScroll:".medialinkscroll"               
+      linkScroll:"#medialinkscroll"               
    });    
    
    jQuery.fn.medialinks = function( settings ) {  
@@ -1901,7 +1826,7 @@
    
    // Set up our defaults for this component.
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      close:".mediamenuclose",
+      close:"#mediamenuclose",
       embed:"#mediaembed",
       elink:"#mediaelink",
       email:"#mediaemail"           
@@ -2029,11 +1954,11 @@
    }); 
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      busy:".mediabusy",
-      preview:".mediapreview",
-      play:".mediaplay",
-      media:".mediadisplay",
-      control:".mediacontrol"                 
+      busy:"#mediabusy",
+      preview:"#mediapreview",
+      play:"#mediaplay",
+      media:"#mediadisplay",
+      control:"#mediacontrol"                 
    });    
    
    jQuery.fn.minplayer = function( settings ) {
@@ -2068,7 +1993,7 @@
          });
          this.playImg = this.play.find("img");
          this.playWidth = this.playImg.width();
-         this.playHeight = this.playImg.height();         
+         this.playHeight = this.playImg.height();
          
          // Store the preview image.
          this.preview = player.find( settings.ids.preview ).mediaimage();
@@ -2087,6 +2012,7 @@
          this.previewVisible = false;
          this.controllerVisible = true;
          this.hasMedia = false;
+         this.playing = false;         
          
          // Cache the width and height.
          this.width = this.display.width();
@@ -2192,15 +2118,18 @@
          this.onMediaUpdate = function( data ) {
             switch( data.type ) {
                case "paused":
+                  this.playing = false;
                   this.showPlay(true);
                   this.showBusy(false);
                   break;
                case "playing":
+                  this.playing = true;
                   this.showPlay(false);
                   this.showBusy(false);
                   this.showPreview((this.media.mediaFile.type == "audio"));
                   break;
                case "initialize":
+                  this.playing = false;
                   this.showPlay(true);
                   this.showBusy(true);
                   this.showPreview(true);
@@ -2357,6 +2286,7 @@
          // Reset to previous state...
          this.reset = function() {
             this.hasMedia = false;
+            this.playing = false;
             if( this.controller ) {
                this.controller.reset();   
             }
@@ -2454,9 +2384,9 @@
    }); 
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      voter:".mediavoter",
-      uservoter:".mediauservoter",
-      mediaRegion:".mediaregion",
+      voter:"#mediavoter",
+      uservoter:"#mediauservoter",
+      mediaRegion:"#mediaregion",
       field:".mediafield"                 
    });   
    
@@ -2711,12 +2641,12 @@
    });
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      prev:".mediaprev",
-      next:".medianext",
-      loadPrev:".medialoadprev",
-      loadNext:".medialoadnext",
-      prevPage:".mediaprevpage",
-      nextPage:".medianextpage"         
+      prev:"#mediaprev",
+      next:"#medianext",
+      loadPrev:"#medialoadprev",
+      loadNext:"#medialoadnext",
+      prevPage:"#mediaprevpage",
+      nextPage:"#medianextpage"         
    });   
    
    jQuery.fn.mediapager = function( settings ){
@@ -3192,12 +3122,12 @@
    });    
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      loading:".mediaplayerloading",
-      player:".mediaplayer",
-      menu:".mediamenu",
-      titleBar:".mediatitlebar",
-      node:".medianode",
-      playlist:".mediaplaylist"   
+      loading:"#mediaplayerloading",
+      player:"#mediaplayer",
+      menu:"#mediamenu",
+      titleBar:"#mediatitlebar",
+      node:"#medianode",
+      playlist:"#mediaplaylist"   
    });   
    
    // Initialize our players, playlists, and controllers.   
@@ -3275,6 +3205,9 @@
          // Add some keyboard event handlers.
          $(window).keypress( function( event ) {
             switch( event.keyCode ) {
+               case 0:   /* SpaceBar */
+                  _this.onSpaceBar();
+                  break;
                case 27:  /* ESC Key */
                   _this.onEscKey();
                   break;
@@ -3331,6 +3264,20 @@
                   this.node.player.fullScreen( this.fullScreen );
                }              
             }            
+         };
+         
+         // When they press the space bar, we will toggle the player play/pause state.
+         this.onSpaceBar = function() {
+            if( this.fullScreen ) {            
+               if( this.node && this.node.player && this.node.player.media && this.node.player.media.player ) {
+                  if( this.node.player.playing ) {
+                     this.node.player.media.player.pauseMedia();  
+                  }
+                  else {
+                     this.node.player.media.player.playMedia(); 
+                  }
+               } 
+            }
          };
          
          // Setup the title bar.
@@ -3579,10 +3526,10 @@
    }); 
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      pager:".mediapager",
-      scroll:".mediascroll",
-      busy:".mediabusy",
-      links:".medialinks"       
+      pager:"#mediapager",
+      scroll:"#mediascroll",
+      busy:"#mediabusy",
+      links:"#medialinks"       
    });   
    
    jQuery.fn.mediaplaylist = function( server, settings ) {
@@ -3919,7 +3866,7 @@
    
    // Set up our defaults for this component.
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      linkText:".medialinktext"
+      linkText:"#medialinktext"
    });    
    
    jQuery.fn.playlistlink = function( settings, linkInfo ) {  
@@ -3945,6 +3892,161 @@
       })( this, settings, linkInfo );
    };
 
+/**
+ *  Copyright (c) 2010 Alethia Inc,
+ *  http://www.alethia-inc.com
+ *  Developed by Travis Tidwell | travist at alethia-inc.com 
+ *
+ *  License:  GPL version 3.
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the "Software"), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *  
+ *  The above copyright notice and this permission notice shall be included in
+ *  all copies or substantial portions of the Software.
+
+ *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+   jQuery.media.defaults = jQuery.extend( jQuery.media.defaults, {
+      rotatorTimeout:5000,
+      rotatorTransition:"fade",
+      rotatorEasing:"swing",
+      rotatorSpeed:"slow",
+      rotatorHover:false       
+   });  
+
+   jQuery.fn.mediarotator = function( settings ) {
+      if( this.length === 0 ) { return null; }
+      return new (function( rotator, settings ) {
+         settings = jQuery.media.utils.getSettings(settings);   
+         var _this = this;     
+         this.images = []; 
+         this.imageIndex = 0;
+         this.imageInterval = null;
+         this.width = 0;
+         this.height = 0;
+         
+         this.onImageLoaded = function() {
+            this.width = this.images[0].imgLoader.width;
+            this.height = this.images[0].imgLoader.height;
+            rotator.css({width:this.width + "px", height:this.height + "px"});
+            var sliderWidth = (settings.rotatorTransition == "hscroll") ? (2*this.width) : this.width;
+            var sliderHeight = (settings.rotatorTransition == "vscroll") ? (2*this.height) : this.height;
+            this.display.css({width:sliderWidth, height:sliderHeight});      
+         };
+         
+         this.addImage = function() {
+            var image = $("<div></div>").mediaimage(null, true);
+            this.display.append( image.display );
+            
+            if( (settings.rotatorTransition == "hscroll") || (settings.rotatorTransition == "vscroll") ) {
+               image.display.css({"float":"left"});
+            }
+            else {
+               image.display.css({position:"absolute",zIndex:(200 - this.images.length), top:0, left:0});
+            }
+            return image;         
+         };
+         
+         this.loadImages = function( _images ) {
+            this.images = [];
+            this.imageIndex = 0;
+            
+            jQuery.each( _images, function( index ) {
+               var image = _this.addImage();
+               if( index === 0 ) {
+                  image.display.bind("imageLoaded", function() {
+                     _this.onImageLoaded();
+                  }).show();
+               }   
+               image.loadImage( this );
+               _this.images.push( image );
+            });
+            
+            if( settings.rotatorHover ) {
+               this.display.bind( "mouseenter", function() {
+                  _this.startRotator();
+               }).bind( "mouseleave", function() {
+                  clearInterval( _this.imageInterval );
+               });
+            }
+            else {
+               this.startRotator();
+            }     
+         };
+      
+         this.startRotator = function() {
+            clearInterval( this.imageInterval );
+            this.imageInterval = setInterval( function() {
+               _this.showNextImage();
+            }, settings.rotatorTimeout );     
+         };
+         
+         this.showNextImage = function() {
+            this.hideImage( this.images[this.imageIndex].display );
+            this.imageIndex = (this.imageIndex + 1) % this.images.length;         
+            this.showImage( this.images[this.imageIndex].display );
+         };     
+      
+         this.showImage = function( image ) {
+            if( settings.rotatorTransition === 'fade' ) {
+               image.fadeIn(settings.rotatorSpeed);
+            }
+            else {
+               image.css({marginLeft:0, marginTop:0}).show();
+            }    
+         };
+         
+         this.hideImage = function( image ) {
+            switch( settings.rotatorTransition ) {
+               case "fade":
+                  image.fadeOut(settings.rotatorSpeed);
+                  break;
+               case "hscroll":
+                  image.animate({marginLeft:-this.width}, settings.rotatorSpeed, settings.rotatorEasing, function() {
+                     image.css({marginLeft:0}).remove();
+                     _this.display.append( image );
+                  });
+                  break;             
+               case "vscroll":
+                  image.animate({marginTop:-this.height}, settings.rotatorSpeed, settings.rotatorEasing, function() {
+                     image.css({marginTop:0}).remove();
+                     _this.display.append( image );
+                  });
+                  break;                                            
+               default:
+                  image.hide();
+                  break;
+            }         
+         };
+   
+         // Find all the images in the rotator container.
+         var _images = [];
+         rotator.find("img").each( function() {
+            _images.push( $(this).attr("src") );
+         });
+         
+         // Empty the container and setup the inner rotator.
+         rotator.empty().css("overflow", "hidden").append( $('<div class="imagerotatorinner"></div>') );
+         this.display = rotator.find(".imagerotatorinner");      
+
+         // If they provided images, then we will want to load them.
+         if( _images.length ) {
+            this.loadImages( _images );
+         }
+    })( this, settings );
+  };
 /**
  *  Copyright (c) 2010 Alethia Inc,
  *  http://www.alethia-inc.com
@@ -4181,14 +4283,14 @@
    });   
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      listMask:".medialistmask",
-      list:".medialist",
-      scrollWrapper:".mediascrollbarwrapper",
-      scrollBar:".mediascrollbar",
-      scrollTrack:".mediascrolltrack",
-      scrollHandle:".mediascrollhandle",
-      scrollUp:".mediascrollup",
-      scrollDown:".mediascrolldown"        
+      listMask:"#medialistmask",
+      list:"#medialist",
+      scrollWrapper:"#mediascrollbarwrapper",
+      scrollBar:"#mediascrollbar",
+      scrollTrack:"#mediascrolltrack",
+      scrollHandle:"#mediascrollhandle",
+      scrollUp:"#mediascrollup",
+      scrollDown:"#mediascrolldown"        
    });     
    
    jQuery.fn.mediascroll = function( settings ) {
@@ -4359,7 +4461,7 @@
             this.setScrollSize( settings.vertical ? this.listMask.height() : this.listMask.width() );                                 
 
             // Now reset the list position.
-            this.setScrollPos( this.listPos );
+            this.setScrollPos( /*this.listPos*/0, true );
          };
          
          // Refreshes the scroll region.
@@ -4807,7 +4909,7 @@
  */
  
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      titleLinks:".mediatitlelinks"                 
+      titleLinks:"#mediatitlelinks"                 
    });     
    
    jQuery.fn.mediatitlebar = function( settings ) { 
