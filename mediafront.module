@@ -624,7 +624,7 @@ function mediafront_is_image( $mimetype, $extension ) {
  * Checks to see if a file is a media file.
  */
 function mediafront_is_media( $mimetype, $extension ) {
-   $media = in_array( $extension, array('mov', 'mp4', 'mp3', 'm4v', 'flv', 'f4v', 'ogg', 'oga', 'ogv', '3g2', 'wav', 'aif', 'm4a', 'aac', 'wma'));
+   $media = in_array( $extension, array('swf', 'mov', 'mp4', 'mp3', 'm4v', 'flv', 'f4v', 'ogg', 'oga', 'ogv', '3g2', 'wav', 'aif', 'm4a', 'aac', 'wma'));
    return $media;
 }
 
