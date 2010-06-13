@@ -197,7 +197,7 @@ function osmplayer_get_player_settings() {
  */
 function osmplayer_get_player_params() {
    $playerpath = drupal_get_path('module', 'osmplayer') . '/player';   
-   $hasServices = module_exists('services');
+   $hasServices = module_exists('services') && module_exists('xmlrpc_server');
    $player = new OSMPlayer();
    $params = $player->getPlayerParams();     
    $params['protocol'] = $hasServices ? "auto" : "json";
@@ -588,6 +588,27 @@ function osmplayer_get_skins() {
    return osmplayer_get_directories('player' . DIRECTORY_SEPARATOR . 'flash' . DIRECTORY_SEPARATOR . 'skins');
 }
 
+/**
+ * Helper function to add all the osmplayer javascript files.
+ */
+function osmplayer_add_js( $player ) {
+   // Cache the player path.
+   $osmpath = drupal_get_path('module', 'osmplayer');
+   $playerpath = $osmpath . '/player';	
+	
+   // Add the javascript files.
+   $js_files = $player->getJSFiles();
+   foreach( $js_files as $js_file ) {
+      drupal_add_js( $playerpath . '/' . $js_file);  
+   }
+
+   // Add the JavaScript for this player.
+   drupal_add_js( $player->getPlayerJS(), 'inline');	
+}
+
+/**
+ * Helper function to add all the osmplayer CSS files.
+ */
 function osmplayer_add_css( $player, $preset ) {
 	static $cssadded; 
 	if( !$cssadded[$preset] ) {
@@ -627,10 +648,6 @@ function template_preprocess_osmplayer(&$variables) {
    
    // Set the session id for the player.
    $player->setSessionId( $user->sid );      
-   
-   // Cache the player path.
-   $osmpath = drupal_get_path('module', 'osmplayer');
-   $playerpath = $osmpath . '/player';
 
    // Now add our playlist connections.
    if( isset($variables['params']['connect']) && $variables['params']['connect']['isplaylist'] ) {
@@ -646,14 +663,8 @@ function template_preprocess_osmplayer(&$variables) {
       }
    }
 
-   // Add the javascript files.
-   $js_files = $player->getJSFiles();
-   foreach( $js_files as $js_file ) {
-      drupal_add_js( $playerpath . '/' . $js_file);  
-   }
-
-   // Add the JavaScript for this player.
-   drupal_add_js( $player->getPlayerJS(), 'inline');
+   // Add the javascript for this player.
+   osmplayer_add_js( $player );
 
    // Add the CSS files for this player.
    osmplayer_add_css( $player, $params['preset'] );
@@ -667,7 +678,7 @@ function template_preprocess_osmplayer(&$variables) {
    $variables['params']['prefix'] = $player->getId() . '_';
 
    // Store the player path as a variable.
-   $variables['params']['playerurl'] = $base_url . '/' . $playerpath;
+   $variables['params']['playerurl'] = $base_url . '/' . drupal_get_path('module', 'osmplayer') . '/player';
    
    // Now set up our templates within a template.
    $variables['titlebar'] = theme( 'osmplayer_' . $template . '_titlebar', $variables['params'] );  
