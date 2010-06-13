@@ -18,6 +18,15 @@ function mediafront_audio_playlist_node( $node, $args ) {
       }        
    }
    
+   if( $node->audio_images ) {
+   	  $image = array_shift($node->audio_images);
+      $media_file = mediafront_get_media_file( $image );
+      $mFile = new stdClass();
+      $mFile->path = $media_file->path;
+      $mFile->bytesTotal = $image->filesize;
+      $additions["mediafiles"]["images"]["image"] = $mFile;   	
+   }
+   
    if( $node->audio ) {
       $media_file = mediafront_get_media_file($node->audio['file']);
       $mFile = new stdClass();
