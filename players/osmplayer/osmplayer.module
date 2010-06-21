@@ -128,7 +128,7 @@ function osmplayer_clear_css() {
       if($contents = opendir($css_dir)) {
          while(($node = readdir($contents)) !== false) {
             if($node!="." && $node!="..") {
-               $node = $css_dir.DIRECTORY_SEPARATOR.$node;
+               $node = $css_dir.'/'.$node;
                if( is_file( $node ) ) {
                   unlink( $node );
                }
@@ -144,11 +144,11 @@ function osmplayer_clear_css() {
  */
 function osmplayer_get_css_dir() {
    // Now make sure that the osmplayer CSS directory exists.
-   $css_dir = getcwd() . DIRECTORY_SEPARATOR . file_directory_path() . DIRECTORY_SEPARATOR . 'css';
+   $css_dir = getcwd() . '/' . file_directory_path() . '/' . 'css';
    if( !is_dir($css_dir) ) { 
       mkdir($css_dir, 0775);
    }     
-   $css_dir .= DIRECTORY_SEPARATOR . 'osmplayer';
+   $css_dir .= '/' . 'osmplayer';
    if( !is_dir($css_dir) ) { 
       mkdir($css_dir, 0775);
    } 
@@ -559,13 +559,13 @@ function osmplayer_player_settings_form( $preset ) {
 
 function osmplayer_get_directories( $player_path ) {
    $directories = array();
-   $base_directory = getcwd() . DIRECTORY_SEPARATOR;
-   $base_directory .= drupal_get_path('module', 'osmplayer') . DIRECTORY_SEPARATOR;
+   $base_directory = getcwd() . '/';
+   $base_directory .= drupal_get_path('module', 'osmplayer') . '/';
    $base_directory .= $player_path;
    
    if (is_dir($base_directory) && $handle = opendir($base_directory)) {
       while (FALSE !== ($directory = readdir($handle))) {
-         if ( (strpos($directory, '.') === FALSE) && is_dir( $base_directory . DIRECTORY_SEPARATOR . $directory ) ) {
+         if ( (strpos($directory, '.') === FALSE) && is_dir( $base_directory . '/' . $directory ) ) {
             $directories[$directory] = $directory;
          }
       }
@@ -577,15 +577,15 @@ function osmplayer_get_directories( $player_path ) {
 }
 
 function osmplayer_get_themes() {
-   return osmplayer_get_directories('player' . DIRECTORY_SEPARATOR . 'jquery-ui' . DIRECTORY_SEPARATOR . 'css');
+   return osmplayer_get_directories('player' . '/' . 'jquery-ui' . '/' . 'css');
 }
 
 function osmplayer_get_templates() {
-   return osmplayer_get_directories('player' . DIRECTORY_SEPARATOR . 'templates');
+   return osmplayer_get_directories('player' . '/' . 'templates');
 }
 
 function osmplayer_get_skins() {
-   return osmplayer_get_directories('player' . DIRECTORY_SEPARATOR . 'flash' . DIRECTORY_SEPARATOR . 'skins');
+   return osmplayer_get_directories('player' . '/' . 'flash' . '/' . 'skins');
 }
 
 /**
@@ -617,8 +617,8 @@ function osmplayer_add_css( $player, $preset ) {
 		// Set the CSS directory of our OSMPlayer component, and then add the CSS files to the page..
 	   $files_dir = file_directory_path();
 	   $css_path = $files_dir . '/css/osmplayer';
-	   $css_dir = $files_dir . DIRECTORY_SEPARATOR . 'css' . DIRECTORY_SEPARATOR . 'osmplayer';
-	   $player->setCSSDirectory( getcwd() . DIRECTORY_SEPARATOR . $css_dir );   
+	   $css_dir = $files_dir . '/' . 'css' . '/' . 'osmplayer';
+	   $player->setCSSDirectory( getcwd() . '/' . $css_dir );
 	   $css_files = $player->getCSSFiles();
 	   drupal_add_css( ($css_dir . '/' . $css_files[0]) );
 	   drupal_set_html_head('<!--[if IE]><link rel="stylesheet" type="text/css" href="' . ($css_path . '/' . $css_files[1]) . '" /><![endif]-->');
