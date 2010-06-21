@@ -95,4 +95,12 @@ function mediafront_update_6001() {
    return $update;
 }
 
+function mediafront_update_6002() {
+   $update = array();
+
+   // Clear the OSM CSS folder..
+   osmplayer_clear_css();
+
+   return $update;
+}
 ?>
