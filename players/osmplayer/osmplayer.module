@@ -248,7 +248,7 @@ function osmplayer_player_settings_form( $preset ) {
      '#title' => t('Player Height'),
      '#description' => t('Enter the height of the player.'),
      '#default_value' => $preset->settings['height']
-   );   
+   );
    $form['presentation']['showTitleBar'] = array(
      '#type' => 'checkbox',
      '#title' => t('Show Title Bar'),
@@ -266,7 +266,13 @@ function osmplayer_player_settings_form( $preset ) {
             <li><b>wmode=transparent</b> - <em>Allows for other elements to drop in front of the video (like a drop-down list), without the video showing over those elements.</em></li>
             <li><b>wmode=window</b> - <em>Allows for the video to have full-screen support.</em></li>
          </ul>')
-   );      
+   );
+   $form['presentation']['forceOverflow'] = array(
+     '#type' => 'checkbox',
+     '#title' => t('Force Overflow'),
+     '#description' => t('In order for the Open Standard Media Player to go into full browser mode, all parent HTML elements that contain the media player must not have any <strong>overflow</strong> CSS values set.  Checking this checkbox will explicitly set all the parent elements of the media player to have an <strong>overflow:visible</strong>.  <strong>Warning:  This setting may break your template, so use with caution.</strong>.'),
+     '#default_value' => $preset->settings['forceOverflow']
+   );
    
    $form['media_settings'] = array(
       '#type' => 'fieldset',
