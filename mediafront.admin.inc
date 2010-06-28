@@ -18,17 +18,22 @@ function mediafront_admin_page() {
  */
 function mediafront_presets_overview() {
   $presets = mediafront_preset_get_presets();
-  $header = array(t('Preset Name'), t('Description'), array('data' => t('Operations'), 'colspan' => '2'));
-  $rows = array(); 
-  foreach( $presets as $pid => $preset ) {
-      $row = array();
-      $row[] = check_plain($preset->name);
-      $row[] = array('data' => filter_xss_admin($preset->description), 'class' => 'description');
-      $row[] = array('data' => l(t('edit'), 'admin/build/mediafront/preset/manage/'. $preset->name));
-      $row[] = array('data' => l(t('delete'), 'admin/build/mediafront/preset/manage/'. $preset->name .'/delete'));
-      $rows[] = $row;  
+  if( count( $presets ) > 0 ) {
+    $header = array(t('Preset Name'), t('Description'), array('data' => t('Operations'), 'colspan' => '2'));
+    $rows = array();
+    foreach( $presets as $pid => $preset ) {
+        $row = array();
+        $row[] = check_plain($preset->name);
+        $row[] = array('data' => filter_xss_admin($preset->description), 'class' => 'description');
+        $row[] = array('data' => l(t('edit'), 'admin/build/mediafront/preset/manage/'. $preset->name));
+        $row[] = array('data' => l(t('delete'), 'admin/build/mediafront/preset/manage/'. $preset->name .'/delete'));
+        $rows[] = $row;
+    }
+    return theme('table', $header, $rows);
   }
-  return theme('table', $header, $rows);
+  else {
+    return 'No presets.  To add a new preset, click on the <strong>Add Preset</strong> button.';
+  }
 }
 
 function mediafront_preset_form(&$form_state, $preset) {
