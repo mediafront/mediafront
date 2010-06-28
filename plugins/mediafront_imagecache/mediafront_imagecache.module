@@ -111,7 +111,7 @@ function mediafront_imagecache_playlist_node( $node, $args ) {
    
    // Make sure that we have an image, and the field has been populated.
    if( $image && $node->{$image->field_name} && $node->{$image->field_name}[0] ) {
-      $filename = $node->{$image->field_name}[0]['filename'];
+      $filename = basename($node->{$image->field_name}[0]['filepath']);
       if( $filename ) {
          if( $image->node_preset ) {
             $additions["mediafiles"]["images"]["image"] = mediafront_imagecache_get_file( $image->node_preset, $filename, "preview" );
