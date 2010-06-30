@@ -459,7 +459,7 @@ function mediafront_parse_params($json) {
 	   // Trim any quoted strings and make sure it is plain text.
 	   $params = explode(',', $json);
 	   foreach( $params as $index => $param ) {
-	   	$params[$index] = check_plain(trim( $param, ' "' ));
+	      $params[$index] = trim( $param, ' "' );
 	   }
    }
    
@@ -498,7 +498,7 @@ function mediafront_get_playlist( $playlist, $limit = 10, $page = 0, $args = arr
   if (method_exists($view, 'set_use_pager')) {
     $view->set_use_pager(FALSE);
   }
-  
+
   $view->set_items_per_page($limit);
   $view->set_offset($page*$limit);
   $view->set_arguments($args);
