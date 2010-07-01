@@ -4,10 +4,21 @@ define('MEDIAFRONT_DEFAULT_WIDTH', 500);
 define('MEDIAFRONT_DEFAULT_HEIGHT', 350);
 
 /**
- * Implements hook_perm().
+ * Implements hook_permission().
  */
-function mediafront_perm() {
-  return array('administer mediafront', 'administer mediafront presets', 'use PHP for mediafront parameters');
+function mediafront_permission() {
+  $perms = array(
+    'administer mediafront' => array(
+      'title' => t('Administer MediaFront'),
+      'description' => t('Perform administration tasks for the MediaFront module.'),
+    ),
+    'administer mediafront presets' => array(
+      'title' => t('Administer MediaFront Presets'),
+      'description' => t('Add, Edit, and Delete mediafront presets.'),
+    )
+  );
+
+  return $perms;
 }
 
 /**
@@ -25,9 +36,9 @@ function mediafront_menu() {
     'type' => MENU_CALLBACK, 
     'page arguments' => array(1, 2),  
     'access arguments' => array('access content') 
-  );    	
+  );     
   /*  TO-DO:  Add some settings for this module.... if it is needed.
-  $items['admin/settings/mediafront'] = array(
+  $items['admin/config/mediafront'] = array(
     'title' => 'MediaFront Settings',
     'description' => 'Manage and configure MediaFront Settings.',
     'page callback' => 'mediafront_admin_page',
@@ -35,19 +46,19 @@ function mediafront_menu() {
     'file' => 'mediafront.admin.inc',
   );
   */
-  $items['admin/build/mediafront'] = array(
+  $items['admin/structure/mediafront'] = array(
     'title' => 'MediaFront Presets',
     'description' => 'Manage and configure the presets for MediaFront.',
     'page callback' => 'mediafront_presets_overview',
     'access arguments' => array('administer mediafront presets'),
     'file' => 'mediafront.admin.inc',
   );
-  $items['admin/build/mediafront/preset/list'] = array(
+  $items['admin/structure/mediafront/preset/list'] = array(
     'title' => 'List',
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => -10,
   ); 
-  $items['admin/build/mediafront/preset/add'] = array(
+  $items['admin/structure/mediafront/preset/add'] = array(
     'title' => 'Add preset',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('mediafront_preset_create_form'),
@@ -58,33 +69,33 @@ function mediafront_menu() {
   
   $presets = mediafront_preset_get_presets();
   foreach( $presets as $preset ) {
-	  $items['admin/build/mediafront/preset/manage/' . $preset->name] = array(
-	    'title' => 'Edit MediaFront Preset',
-	    'title callback' => 'mediafront_preset_page_title',
-	    'title arguments' => array(5),
-	    'page callback' => 'drupal_get_form',
-	    'page arguments' => array('mediafront_preset_form', $preset),
-	    'access arguments' => array('administer mediafront presets'),
-	    'file' => 'mediafront.admin.inc',
-	  );  
-	  $items['admin/build/mediafront/preset/manage/' . $preset->name . '/edit'] = array(
-	    'title' => 'Edit',
-	    'type' => MENU_DEFAULT_LOCAL_TASK,
-	  );  
-	  $items['admin/build/mediafront/preset/manage/' . $preset->name . '/delete'] = array(
-	    'title' => 'Delete',
-	    'page arguments' => array('mediafront_preset_delete_confirm', $preset),
-	    'access arguments' => array('administer mediafront presets'),
-	    'type' => MENU_CALLBACK,
-	    'file' => 'mediafront.admin.inc',
-	  );
+     $items['admin/structure/mediafront/preset/manage/' . $preset->name] = array(
+       'title' => 'Edit MediaFront Preset',
+       'title callback' => 'mediafront_preset_page_title',
+       'title arguments' => array(5),
+       'page callback' => 'drupal_get_form',
+       'page arguments' => array('mediafront_preset_form', $preset),
+       'access arguments' => array('administer mediafront presets'),
+       'file' => 'mediafront.admin.inc',
+     );  
+     $items['admin/structure/mediafront/preset/manage/' . $preset->name . '/edit'] = array(
+       'title' => 'Edit',
+       'type' => MENU_DEFAULT_LOCAL_TASK,
+     );  
+     $items['admin/structure/mediafront/preset/manage/' . $preset->name . '/delete'] = array(
+       'title' => 'Delete',
+       'page arguments' => array('mediafront_preset_delete_confirm', $preset),
+       'access arguments' => array('administer mediafront presets'),
+       'type' => MENU_CALLBACK,
+       'file' => 'mediafront.admin.inc',
+     );
   }
   
   return $items;
 }
 
 /**
- * Implementation of hook_theme().
+ * Implements hook_theme().
  */
 function mediafront_theme() {
   $theme = array();
@@ -95,6 +106,49 @@ function mediafront_theme() {
     );
   }
   return $theme;
+}
+
+/**
+ * Implements hook_field_info().
+ */
+function mediafront_field_info() {
+  return array(
+    'mediafront' => array(
+      'label' => t('Media Player'),
+      'description' => t('Add a media player to this content.'),
+      'default_widget' => 'mediaplayer'
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function mediafront_field_widget_info() {
+  return array(
+    'mediaplayer' => array(
+      'label' => t('Media Player'),
+      'field types' => array('mediafront'),
+      'behaviors' => array(
+        'multiple values' => FIELD_BEHAVIOR_DEFAULT,
+        'default value' => FIELD_BEHAVIOR_DEFAULT,
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function mediafront_field_formatter_info() {
+  $formatters = array();
+  foreach (mediafront_preset_get_presets() as $preset) {
+    $formatters[$preset->name . '_player'] = array(
+      'label' => t('@preset', array('@preset' => $preset->name)),
+      'field types' => array('mediafront'),
+    );
+  }
+  return $formatters;
 }
 
 /**
@@ -118,18 +172,7 @@ function theme_mediafront_formatter_player($element) {
 }
 
 /**
- * Implementation of hook_init().
- *
- * These includes do not need to be loaded for cached pages.
- */
-function mediafront_init() {
-  if (module_exists('content')) {
-    module_load_include('inc', 'mediafront', 'mediafront_field');
-  }
-}
-
-/**
- * Implementation of hook_views_api().
+ * Implements hook_views_api().
  *
  * This one is used as the base to reduce errors when updating.
  */
@@ -164,11 +207,11 @@ function mediafront_get_players() {
  * @param $player
  */
 function mediafront_get_default_params( $player ) {
-	$get_params = $player . '_get_player_params';
-	if( function_exists( $get_params ) ) {
-		return $get_params();
-	}
-	return array();
+   $get_params = $player . '_get_player_params';
+   if( function_exists( $get_params ) ) {
+      return $get_params();
+   }
+   return array();
 }
 
 /**
@@ -187,7 +230,7 @@ function mediafront_get_default_settings( $player ) {
  * Returns ALL the player settings for the given player provided settings to override.
  */
 function mediafront_get_settings( $player, $override ) {
-	$defaults = array_merge( mediafront_get_default_params($player), mediafront_get_default_settings($player) );
+   $defaults = array_merge( mediafront_get_default_params($player), mediafront_get_default_settings($player) );
    return array_merge( $defaults, $override );
 }
 
@@ -196,7 +239,7 @@ function mediafront_get_settings( $player, $override ) {
  * This function will also populate the $params object with all the settings.
  */
 function mediafront_get_params( $player, $params, $playeronly = true ) {
-	$player_params = array();
+   $player_params = array();
    $defaults = mediafront_get_default_params( $player );
    if( !$playeronly ) {
       $defaults = array_merge( $defaults, mediafront_get_default_settings($player) );
@@ -204,11 +247,13 @@ function mediafront_get_params( $player, $params, $playeronly = true ) {
    
    // Iterate through all of the default settings.
    foreach( $defaults as $setting => $value ) {
-      // Only set the settings if the setting was provided and is different than the default.
-      $param = mediafront_parse_param( $params[$setting], getType($value) );
-      if( isset($params[$setting]) && ($param != $value) ) {
-         // Set the necessary setting...
-         $player_params[$setting] = $param;
+      if( isset($params[$setting]) ) {
+         // Only set the settings if the setting was provided and is different than the default.
+         $param = mediafront_parse_param( $params[$setting], getType($value) );
+         if( $param != $value ) {
+            // Set the necessary setting...
+            $player_params[$setting] = $param;
+         }
       }
    }
    return $player_params;   
@@ -218,21 +263,21 @@ function mediafront_get_params( $player, $params, $playeronly = true ) {
  * Parses a parameter from a serialized object.
  */
 function mediafront_parse_param( $value, $type ) {
-	switch( $type ) {
+   switch( $type ) {
       case 'integer':
          return (integer)$value; 
          break;
       case 'float':
-      	return (float)$value;
-      	break;
+         return (float)$value;
+         break;
       case 'boolean':
-      	$value = (!$value || $value === "false" || $value === "0") ? false : $value;
+         $value = (!$value || $value === "false" || $value === "0") ? false : $value;
          return (boolean)$value;
          break;
       default:
          return $value;
-         break;		
-	}
+         break;      
+   }
 }
 
 /**
@@ -250,35 +295,38 @@ function mediafront_player_settings_form( $preset ) {
  * Saves a new preset.
  */
 function mediafront_preset_save( $params ) {
-	// If they provide the pid, then this needs to be an update.
-	$pid = $params->pid ? array('pid') : array();
-	
+   // If they provide the pid, then this needs to be an update.
+   $pid = (isset($params->pid) && $params->pid) ? array('pid') : array();
+   
    // Tell the player about this preset save.
    $player_save = $params->player . '_mediafront_preset_save';
    if( function_exists( $player_save ) ) {
       $player_save( $params );
-   }  	
-	
-	// Save or update a preset.
-	drupal_write_record( 'mediafront_preset', $params, $pid );
-	
-	// Rebuild the menu's
-   menu_rebuild();	
+   }     
+   
+   // Save or update a preset.
+   drupal_write_record( 'mediafront_preset', $params, $pid );
+   
+   // Rebuild the menu's
+   menu_rebuild();   
    
    // Rebuild Theme Registry
-   drupal_rebuild_theme_registry();   
+   drupal_theme_rebuild();   
 }
 
 /**
  * Gets a list of all presets.
  */
 function mediafront_preset_get_presets() {
-	$presets = array();
-	$result = db_query("SELECT * FROM {mediafront_preset} ORDER BY name ASC");
-   while( $preset = db_fetch_object($result) ) {
+   $presets = array();
+   $result = db_select('mediafront_preset', 'p')
+     ->fields('p')
+     ->orderBy('p.name', 'ASC')
+     ->execute();
+   foreach( $result as $preset ) {
       $preset->connect = unserialize( $preset->connect );
       $preset->settings = unserialize( $preset->settings );
-   	$presets[$preset->pid] = $preset;
+      $presets[$preset->pid] = $preset;
    }
    return $presets;
 }
@@ -287,25 +335,34 @@ function mediafront_preset_get_presets() {
  * Get's the preset.
  */
 function mediafront_get_preset( $preset_name ) {
-	$preset = db_fetch_object( db_query("SELECT * FROM {mediafront_preset} WHERE name='%s'", $preset_name));
-	$preset->settings = unserialize( $preset->settings );
-	$preset->connect = unserialize( $preset->connect );
-	return $preset;
+   $preset = db_select('mediafront_preset', 'p')
+     ->fields('p')
+     ->condition('p.name', $preset_name)
+     ->execute()
+     ->fetchObject();   
+   $preset->settings = unserialize( $preset->settings );
+   $preset->connect = unserialize( $preset->connect );
+   return $preset;
 }
 
 /**
  * Deletes a preset
  */
 function mediafront_preset_delete( $preset_name ) {
-	// Delete the preset.
-	db_query("DELETE FROM {mediafront_preset} WHERE name='%s'", $preset_name);
+   // Delete the preset.
+   db_delete('mediafront_preset')->condition('name', $preset_name)->execute();
 }
 
 /**
  * Checks to see if another preset is already taken.
  */
 function mediafront_preset_name_exists( $preset_name ) {
-	return (bool)db_result( db_query("SELECT COUNT(*) FROM {mediafront_preset} WHERE name='%s'", $preset_name) );
+   return (bool)db_select('mediafront_preset', 'p')
+     ->fields('p', array('name'))
+     ->condition('p.name', db_like($preset_name), 'LIKE')
+     ->range(0, 1)
+     ->execute()
+     ->fetchField();
 }
 
 /**
@@ -313,7 +370,7 @@ function mediafront_preset_name_exists( $preset_name ) {
  * 
  * Borrowed from the user.module.   :)
  */
-function mediafront_validate_preset_name($name) {	
+function mediafront_validate_preset_name($name) {  
   if (!$name) {
     return t('You must enter a preset.');
   }
@@ -347,13 +404,14 @@ function mediafront_template_preprocess(&$variables) {
 }
 
 /**
- * Implementation of hook_service()
+ * Implements hook_service()
  */
 function mediafront_service() {
   return array(    
     array(
       '#method'   => 'mediafront.getPlaylist',
       '#callback' => 'mediafront_get_playlist',
+      '#access arguments' => 'access content',    
       '#key'      => FALSE,      
       '#args'     => array(
         array(
@@ -382,6 +440,7 @@ function mediafront_service() {
     array(
       '#method'   => 'mediafront.getNode',
       '#callback' => 'mediafront_get_node',
+      '#access arguments' => 'access content',    
       '#key'      => FALSE,      
       '#args'     => array(
         array(
@@ -401,21 +460,41 @@ function mediafront_service() {
 }
 
 /**
+ * Parse the JSON params.
+ */
+function mediafront_parse_params($json) { 
+   // First trim any whitespace, and also the array brackets from the params.
+   $json = trim($json, ' []');  
+   $params = null;
+   
+   if( $json ) {
+	   // Trim any quoted strings and make sure it is plain text.
+	   $params = explode(',', $json);
+	   foreach( $params as $index => $param ) {
+	      $params[$index] = trim( $param, ' "' );
+	   }
+   }
+   
+   // Now return the array of parameters.   
+   return $params;
+}
+
+/**
  * Gets a playlist in JSON format.
  */
 function mediafront_get_playlist_json( $playlist = null, $limit = null, $page = null, $args = null ) {
-	$params = json_decode($_POST['params']);
-	$playlist = $playlist ? $playlist : $params[1];
-	$limit = $limit ? $limit : $params[2];
-	$page = $page ? $page : $params[3];
-	$args = $args ? $args : $params[4];
-	print json_encode( mediafront_get_playlist( $playlist, $limit, $page, $args ) );
+   $params = mediafront_parse_params($_POST['params']);
+   $playlist = $playlist ? check_plain($playlist) : $params[1];
+   $limit = $limit ? check_plain($limit) : $params[2];
+   $page = $page ? check_plain($page) : $params[3];
+   $args = $args ? $args : mediafront_parse_params($params[4]);
+   print drupal_json_encode( mediafront_get_playlist( $playlist, $limit, $page, $args ) );
 }
 
 /**
  * Gets a playlist
  */
-function mediafront_get_playlist( $playlist, $limit = 0, $page = 0, $args = array() ) { 
+function mediafront_get_playlist( $playlist, $limit = 10, $page = 0, $args = array() ) { 
   // Get the views object.
   $view = views_get_view($playlist);
   if (is_null($view)) {
@@ -428,7 +507,10 @@ function mediafront_get_playlist( $playlist, $limit = 0, $page = 0, $args = arra
   }
   
   // Setup our view for query.
-  $view->set_use_pager(FALSE);
+  if (method_exists($view, 'set_use_pager')) {
+    $view->set_use_pager(FALSE);
+  }
+
   $view->set_items_per_page($limit);
   $view->set_offset($page*$limit);
   $view->set_arguments($args);
@@ -447,8 +529,8 @@ function mediafront_get_playlist_from_view( $view ) {
   $playlist = array();
   $playlist['nodes'] = array();
   $playlist['name'] = $view->name;
-  $playlist['total_rows'] = $view->total_rows;  	
-	
+  $playlist['total_rows'] = $view->total_rows ? $view->total_rows : ($view->query->pager ? $view->query->pager->get_total_items() : 0);
+  
   // Iterate through our result and get our player nodes.
   foreach( $view->result as $node ) {
      $playlist['nodes'][] = mediafront_get_node($node->nid, $args);
@@ -462,18 +544,42 @@ function mediafront_get_playlist_from_view( $view ) {
  * Gets a node in JSON format
  */
 function mediafront_get_node_json( $node = null, $args = null ) {
-	$params = json_decode($_POST['params']);
-   $node = $node ? $node : $params[1];
-	$args = $args ? $args : $params[2];   
-   print json_encode( mediafront_get_node( $node, $args ) ); 
+   $params = mediafront_parse_params($_POST['params']);
+   $node = $node ? check_plain($node) : check_plain(trim($params[1]));
+   $args = $args ? check_plain($args) : check_plain(trim($params[2]));   
+   print drupal_json_encode( mediafront_get_node( $node, $args ) ); 
 }
 
 /**
  * Gets a node in the player format.
  */
 function mediafront_get_node( $nid, $args = null ) {
-	return mediafront_invoke_node( node_load( $nid ), $args );
+   return mediafront_invoke_node( node_load( $nid ), $args );
 }
+
+/**
+ * An implementation of "array_replace_recursive" that works for all PHP versions.
+ * 
+ * See http://php.mirror.camelnetwork.com/manual/kr/function.array-replace-recursive.php for more info.
+ */
+function mediafront_array_replace_recursive( $toArray, $fromArray ) {
+   // Loop through array key/value pairs
+   foreach ($fromArray as $key => $value) {
+      // Value is an array or an object.
+      if( is_array($value) || is_object($value) ) {
+         // Traverse the array; replace or add result to original array
+         $toArray[$key] = mediafront_array_replace_recursive($toArray[$key], $fromArray[$key]);
+      }
+      // Value is not an array
+      else {         
+         // Replace or add current value to original array
+         $toArray->{$key} = $value;
+      }
+   } 
+   
+   // Return the joined array
+   return $toArray;
+} 
 
 /**
  * Merge the node additions.
@@ -482,7 +588,7 @@ function mediafront_playlist_node_merge( $original, $additions ) {
    $merged = $original;
    foreach( $additions as $field => $value ) {
       if( isset($original[$field]) ) {
-         $merged[$field] = array_merge_recursive( $original[$field], $value );
+         $merged[$field] = mediafront_array_replace_recursive( $original[$field], $value );
       }
       else {
          $merged[$field] = $value;
@@ -514,29 +620,29 @@ function mediafront_invoke_node( $node, $args ) {
  * Gets the extension of a file provided the path of that file.
  */
 function mediafront_get_extension( $file ) {
-	return drupal_strtolower(drupal_substr($file, strrpos($file, '.') + 1));
+   return drupal_strtolower(drupal_substr($file, strrpos($file, '.') + 1));
 }
 
 /**
  * Checks to see if a file is an image file.
  */
 function mediafront_is_image( $mimetype, $extension ) {
-	$image = in_array( $extension, array('jpg', 'jpeg', 'png', 'gif'));
-	$image |= in_array( $mimetype, array('image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'jpg', 'jpeg', 'png', 'gif'));
-	return $image;
+   $image = in_array( $extension, array('jpg', 'jpeg', 'png', 'gif'));
+   $image |= in_array( $mimetype, array('image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'jpg', 'jpeg', 'png', 'gif'));
+   return $image;
 }
 
 /**
  * Checks to see if a file is a media file.
  */
 function mediafront_is_media( $mimetype, $extension ) {
-   $media = in_array( $extension, array('mov', 'mp4', 'mp3', 'm4v', 'flv', 'f4v', 'ogg', 'oga', 'ogv', '3g2', 'wav', 'aif', 'm4a', 'aac', 'wma'));
+   $media = in_array( $extension, array('swf', 'mov', 'mp4', 'mp3', 'm4v', 'flv', 'f4v', 'ogg', 'oga', 'ogv', '3g2', 'wav', 'aif', 'm4a', 'aac', 'wma'));
    return $media;
 }
 
 function mediafront_array_to_object($array = array()) {
    $object = new stdClass();
-	foreach ($array as $akey => $aval) {
+   foreach ($array as $akey => $aval) {
       $object->{$akey} = $aval;
    }
    return $object;
@@ -549,27 +655,27 @@ function mediafront_array_to_object($array = array()) {
  * @return object - The media player file object, if it is valid.
  */
 function mediafront_get_media_file( $file ) {
-	$media_file = new stdClass();
+   $media_file = new stdClass();
    $extension = mediafront_get_extension( $file->filepath );
    $media_file->extension = $extension;
    if( mediafront_is_image( $file->filemime, $extension ) ) {
-   	$media_file->class = "images";
-   	$media_file->type = "image";
-   	$media_file->path = file_create_url($file->filepath);
+      $media_file->class = "images";
+      $media_file->type = "image";
+      $media_file->path = file_create_url($file->filepath);
    }
    else if( mediafront_is_media( $file->filemime, $extension ) ) {
       $media_file->class = "media";
       $media_file->type = "media";
       $media_file->path = file_create_url($file->filepath);
-   }	
+   }  
    else {
-      $media_file->path = file_create_url($file->filepath);   	
+      $media_file->path = file_create_url($file->filepath);    
    }
    return $media_file;
 }
 
 /**
- * Implementation of hook_playlist_node()
+ * Implements hook_playlist_node()
  */
 function mediafront_playlist_node( $node ) {
    $additions = array();
@@ -580,22 +686,22 @@ function mediafront_playlist_node( $node ) {
    //drupal_set_message("<pre>" . print_r( $node, true ) . "</pre>" );
    
    // Iterate through the files.
-   if( $node->files ) {
-	   foreach( $node->files as $fid => $file ) {
-	      if( $media_file = mediafront_get_media_file($file) ) {
-	         $additions["mediafiles"][$media_file->class][$media_file->type] = $media_file;
-	      }  
-	   } 
+   if( $node->files && is_array($node->files) ) {
+      foreach( $node->files as $fid => $file ) {
+         if( $media_file = mediafront_get_media_file($file) ) {
+            $additions["mediafiles"][$media_file->class][$media_file->type] = $media_file;
+         }  
+      } 
    }
   
    // If they provide the field_dashplayer_media field.
    if( isset($node->field_dashplayer_media) && $node->field_dashplayer_media[0]['value'] ) {
-   	$additions["mediafiles"]["media"]["media"] = $node->field_dashplayer_media[0]['value'];
+      $additions["mediafiles"]["media"]["media"] = $node->field_dashplayer_media[0]['value'];
    }
    
    // If they provide the field_dashplayer_image field.
    if( isset($node->field_dashplayer_image) && $node->field_dashplayer_image[0]['value'] ) {
-   	$additions["mediafiles"]["images"]["image"] = $node->field_dashplayer_image[0]['value'];
+      $additions["mediafiles"]["images"]["image"] = $node->field_dashplayer_image[0]['value'];
    }
 
    // If they provide the field_mediafront_media field.
@@ -608,18 +714,27 @@ function mediafront_playlist_node( $node ) {
       $additions["mediafiles"]["images"]["image"] = $node->field_mediafront_image[0]['value'];
    } 
    
-   // Now look for any file fields.
+   // Now look for any CCK fields.
    foreach( $node as $fieldname => $field ) {
-   	// This is a filefield.
-   	if( isset($node->{$fieldname}[0]) && is_array($node->{$fieldname}[0]) && isset($node->{$fieldname}[0]['filepath']) ) {
-   		if( $media_file = mediafront_get_media_file( mediafront_array_to_object($node->{$fieldname}[0]) ) ) {
-   	   	$media_file->duration = $node->{$fieldname}[0]['data']['duration'];
-   	   	$media_file->bytesTotal = $node->{$fieldname}[0]['filesize'];
-   	   	$media_file->width = $node->{$fieldname}[0]['data']['width'];
-   	   	$media_file->height = $node->{$fieldname}[0]['data']['height'];
-   	   	$additions["mediafiles"][$media_file->class][$media_file->type] = $media_file;
-   	   }  		
-   	}
+      // This is a CCK filefield.
+      if( is_array($node->{$fieldname}) && isset($node->{$fieldname}[0]) ) {
+         // This is a text field.
+         if( isset($node->{$fieldname}[0]['value']) && is_string($node->{$fieldname}[0]['value']) ) {
+            $additions[$fieldname] = $node->{$fieldname}[0]['value'];
+         }
+         
+         // This is a file field.
+         if( is_array($node->{$fieldname}[0]) && isset($node->{$fieldname}[0]['filepath']) ) {
+            if( $media_file = mediafront_get_media_file( mediafront_array_to_object($node->{$fieldname}[0]) ) ) {
+               $media_file->duration = $node->{$fieldname}[0]['data']['duration'];
+               $media_file->bytesTotal = $node->{$fieldname}[0]['filesize'];
+               $media_file->width = $node->{$fieldname}[0]['data']['width'];
+               $media_file->height = $node->{$fieldname}[0]['data']['height'];
+               $additions["mediafiles"][$media_file->class][$media_file->type] = $media_file;
+            }
+         }
+
+      }
    }
    
    // Return our additions...     
@@ -656,21 +771,21 @@ function mediafront_get_player() {
    // If they pass in a string, then this is a preset.
    // get the preset values.
    if( gettype($params) == 'string' ) {
-   	$preset = mediafront_get_preset( $params );
-   	$params = isset($args[1]) ? $preset->settings ? array_merge( $preset->settings, $args[1] ) : $args[1] : $preset->settings;
-   	$params['preset'] = $preset->name;
-   	$params['player'] = $preset->player;
-   	$params['connect'] = $params['connect'] ? $params['connect'] : $preset->connect;
+      $preset = mediafront_get_preset( $params );
+      $params = isset($args[1]) ? $preset->settings ? array_merge( $preset->settings, $args[1] ) : $args[1] : $preset->settings;
+      $params['preset'] = $preset->name;
+      $params['player'] = $preset->player;
+      $params['connect'] = $params['connect'] ? $params['connect'] : $preset->connect;
       $params['id'] = $params['id'] ? $params['id'] : 'mediafront_' . $preset->name;
    }   
-   
+
    if( $params ) {
-	   $player = ($params && $params['player']) ? $params['player'] : 'osmplayer';
-	   $getPlayer = $player . '_get_player';
-	   return function_exists($getPlayer) ? $getPlayer($params) : t('Player not available');
-	}
-	else {
-	   return t('Player not available');
-	}
+      $player = ($params && $params['player']) ? $params['player'] : 'osmplayer';
+      $getPlayer = $player . '_get_player';
+      return function_exists($getPlayer) ? $getPlayer($params) : t('Player not available');
+   }
+   else {
+      return t('Player not available');
+   }
 }
 ?>

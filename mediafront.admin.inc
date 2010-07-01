@@ -5,7 +5,7 @@
 function mediafront_admin_page() {
   $item = menu_get_item();
   if ($content = system_admin_menu_block($item)) {
-    $output = theme('admin_block_content', $content);
+    $output = theme('admin_block_content', array('content' => $content));
   }
   else {
     $output = t('You do not have any administrative items.');
@@ -18,20 +18,25 @@ function mediafront_admin_page() {
  */
 function mediafront_presets_overview() {
   $presets = mediafront_preset_get_presets();
-  $header = array(t('Preset Name'), t('Description'), array('data' => t('Operations'), 'colspan' => '2'));
-  $rows = array(); 
-  foreach( $presets as $pid => $preset ) {
-      $row = array();
-      $row[] = check_plain($preset->name);
-      $row[] = array('data' => filter_xss_admin($preset->description), 'class' => 'description');
-      $row[] = array('data' => l(t('edit'), 'admin/build/mediafront/preset/manage/'. $preset->name));
-      $row[] = array('data' => l(t('delete'), 'admin/build/mediafront/preset/manage/'. $preset->name .'/delete'));
-      $rows[] = $row;  
+  if( count( $presets ) > 0 ) {
+    $header = array(t('Preset Name'), t('Description'), array('data' => t('Operations'), 'colspan' => '2'));
+    $rows = array();
+    foreach( $presets as $pid => $preset ) {
+        $row = array();
+        $row[] = check_plain($preset->name);
+        $row[] = array('data' => filter_xss_admin($preset->description), 'class' => 'description');
+        $row[] = array('data' => l(t('edit'), 'admin/structure/mediafront/preset/manage/'. $preset->name));
+        $row[] = array('data' => l(t('delete'), 'admin/structure/mediafront/preset/manage/'. $preset->name .'/delete'));
+        $rows[] = $row;
+    }
+    return theme('table', array('header' => $header, 'rows' => $rows));
   }
-  return theme('table', $header, $rows);
+  else {
+    return 'No presets.  To add a new preset, click on the <strong>Add Preset</strong> button.';
+  }
 }
 
-function mediafront_preset_form(&$form_state, $preset) {
+function mediafront_preset_form($form, &$form_state, $preset) {
    $form['preview'] = array(
       '#type' => 'fieldset',
       '#title' => t('Player Preview'),
@@ -44,8 +49,8 @@ function mediafront_preset_form(&$form_state, $preset) {
    $params = $preset->settings ? array_merge( $preset->settings, $params ) : $params;  
 
    $form['preview']['player'] = array(
-      '#type' => 'markup',
-      '#value' => mediafront_get_player($params) . '<br/><div class="mediadebug"></div>'
+      '#type' => 'item',
+      '#markup' => mediafront_get_player($params)
    );
 
    // Get all of the settings for this player.
@@ -160,6 +165,7 @@ function mediafront_preset_validate($form, &$form_state) {
  * Submit handler for the preset form.
  */
 function mediafront_preset_submit($form, &$form_state) {
+  $preset = new stdClass();
   $preset->pid = $form_state['values']['pid'];
   $preset->name = $form_state['values']['name'];
   $preset->description = $form_state['values']['description'];
@@ -174,7 +180,7 @@ function mediafront_preset_submit($form, &$form_state) {
 
   // Save this preset.
   mediafront_preset_save( $preset );
-  $form_state['redirect'] = 'admin/build/mediafront/preset/manage/' . $preset->name;
+  $form_state['redirect'] = 'admin/structure/mediafront/preset/manage/' . $preset->name;
 }
 
 /**
@@ -182,17 +188,17 @@ function mediafront_preset_submit($form, &$form_state) {
  */
 function mediafront_preset_delete_submit($form, &$form_state) {
   $preset->name = $form_state['values']['name'];
-  $form_state['redirect'] = 'admin/build/mediafront/preset/manage/' . $preset->name . '/delete';
+  $form_state['redirect'] = 'admin/structure/mediafront/preset/manage/' . $preset->name . '/delete';
 }
 
 /**
  * Menu callback; delete a single preset.
  */
-function mediafront_preset_delete_confirm(&$form_state, $preset) {
+function mediafront_preset_delete_confirm($form, &$form_state, $preset) {
   $form['name'] = array('#type' => 'value', '#value' => $preset->name);
   $message = t('Are you sure you want to delete the preset %name?', array('%name' => $preset->name));
-  $caption .= '<p>' . t('This action cannot be undone.') . '</p>';
-  return confirm_form($form, $message, 'admin/build/mediafront/preset', $caption, t('Delete'));
+  $caption = '<p>' . t('This action cannot be undone.') . '</p>';
+  return confirm_form($form, $message, 'admin/structure/mediafront/preset', $caption, t('Delete'));
 }
 
 /**
@@ -203,7 +209,7 @@ function mediafront_preset_delete_confirm_submit($form, &$form_state) {
     mediafront_preset_delete($form_state['values']['name']);
   }
 
-  $form_state['redirect'] = 'admin/build/mediafront/preset';
+  $form_state['redirect'] = 'admin/structure/mediafront/preset';
 }
 
 /**
@@ -273,9 +279,9 @@ function mediafront_create_preset_validate($form, &$form_state) {
  * Submit handler for the preset form.
  */
 function mediafront_create_preset_submit($form, &$form_state) {
-  $preset = $form_state['values'];
+  $preset = (object)$form_state['values'];
   mediafront_preset_save($preset);
-  $form_state['redirect'] = 'admin/build/mediafront/preset/manage/' . $preset['name'];
+  $form_state['redirect'] = 'admin/structure/mediafront/preset/manage/' . $preset->name;
 }
 
 ?>

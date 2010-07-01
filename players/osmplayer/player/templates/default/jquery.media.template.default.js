@@ -28,7 +28,8 @@
    
    // Set up our defaults for this component.
    jQuery.media.defaults = jQuery.extend( jQuery.media.defaults, {
-      prefix:""
+      prefix:"",
+      controllerOnly:false
    });   
    
    jQuery.media.templates = jQuery.extend( {}, {
@@ -202,16 +203,16 @@
                }               
                
                // If there is no voter, then we need to decrease the right control sections size.
-               var voterWidth = mediaplayer.node ? mediaplayer.node.display.find("." + settings.prefix + "medianodevoter").width() : null;
+               var voterWidth = mediaplayer.node ? mediaplayer.node.display.find("#" + settings.prefix + "medianodevoter").width() : null;
                if( this.controlBar && !voterWidth ) {
-                  var controlRight = this.controlBar.display.find("." + settings.prefix + "mediacontrolright");
+                  var controlRight = this.controlBar.display.find("#" + settings.prefix + "mediacontrolright");
                   var controlRightWidth = controlRight.width();
                   var newWidth = 0;
                   controlRight.children().each( function() {
                      newWidth += $(this).outerWidth(true);   
                   });
                   controlRight.css("width", newWidth); 
-                  this.controlBar.display.find("." + settings.prefix + "mediacontrolcenter").css("marginRight", newWidth);
+                  this.controlBar.display.find("#" + settings.prefix + "mediacontrolcenter").css("marginRight", newWidth);
                   this.controlBar.onResize( (controlRightWidth - newWidth), 0 );                  
                }                
                
@@ -226,7 +227,8 @@
                }
                
                // See if we only have a control bar.
-               if( this.controlBar && !mediaplayer.playlist && !this.mediaDisplay ) {
+               if( this.controlBar && settings.controllerOnly ) {
+                  this.mediaDisplay.display.css({position:"absolute", zIndex:1000, marginLeft:-100000});
                   mediaplayer.dialog.css({height:(this.controlHeight + playerPosition.top)});
                   this.controlBar.display.css({marginTop:0});
                   this.controlBar.display.removeClass(settings.prefix + 'ui-corner-bottom');
@@ -240,6 +242,7 @@
                   
                   // Set these so that it doesn't mess up when they minimize...
                   mediaplayer.playlist.pager.display.hide();
+                  mediaplayer.playlist.busy.hide();
                   mediaplayer.playlist.display.css("width", "0px");
                }
                
@@ -329,7 +332,8 @@
                var newCSS = settings.vertical ? {width:newWidth} : {height:newHeight};
                
                if( on ) {
-                  mediaplayer.playlist.pager.display.hide();  
+                  mediaplayer.playlist.pager.display.hide();
+                  mediaplayer.playlist.busy.hide();
                }
                else {
                   this.showPlaylist( true );
@@ -341,7 +345,10 @@
                   }
                   else {
                      mediaplayer.playlist.refresh();
-                     mediaplayer.playlist.pager.display.show();   
+                     mediaplayer.playlist.pager.display.show();
+                     if( mediaplayer.playlist.busyVisible ) {
+                        mediaplayer.playlist.busy.show();
+                     }
                   }
                });           
             };
@@ -576,6 +583,11 @@
                      this.player.showPlayerController(true);
                   }                  
                   
+                  // Hide the playlist busy cursor.
+                  if( mediaplayer.playlist ) {
+                     mediaplayer.playlist.busy.hide();
+                  }
+                  
                   // Set the items as absolute...
                   this.setCSS({
                      titleLinks:{"position":"absolute"},
@@ -650,6 +662,11 @@
                   // Hide the players controls, and show the HTML controls.
                   if( this.player ) {
                      this.player.showPlayerController(false);
+                  }                                   
+                  
+                  // Show the playlist busy cursor if it needs to be shown.
+                  if( mediaplayer.playlist && mediaplayer.playlist.busyVisible ) {
+                     mediaplayer.playlist.busy.show();
                   }                  
                   
                   // Now set the css to the previous state.

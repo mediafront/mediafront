@@ -53,37 +53,4 @@ function mediafront_schema() {
   return $schema;
 }
 
-/**
- * Implementation of hook_enable().
- */
-function mediafront_enable() {
-  if (module_exists('content')) {
-    module_load_include('inc', 'mediafront', 'mediafront_field');
-    content_notify('enable', 'mediafront');
-  }
-}
-
-/**
- * Implementation of hook_disable().
- */
-function mediafront_disable() {
-  if (module_exists('content')) {
-    content_notify('disable', 'mediafront');
-  }
-}
-
-function mediafront_install() {
-  drupal_install_schema('mediafront');
-  if (module_exists('content')) {  
-    content_notify('install', 'mediafront');
-  }  
-}
-
-function mediafront_uninstall() {
-  drupal_uninstall_schema('mediafront');
-  if (module_exists('content')) {
-    content_notify('uninstall', 'mediafront');
-  }    
-}
-
 ?>

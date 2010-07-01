@@ -42,11 +42,11 @@
    }); 
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      busy:".mediabusy",
-      preview:".mediapreview",
-      play:".mediaplay",
-      media:".mediadisplay",
-      control:".mediacontrol"                 
+      busy:"#mediabusy",
+      preview:"#mediapreview",
+      play:"#mediaplay",
+      media:"#mediadisplay",
+      control:"#mediacontrol"                 
    });    
    
    jQuery.fn.minplayer = function( settings ) {
@@ -81,7 +81,7 @@
          });
          this.playImg = this.play.find("img");
          this.playWidth = this.playImg.width();
-         this.playHeight = this.playImg.height();         
+         this.playHeight = this.playImg.height();
          
          // Store the preview image.
          this.preview = player.find( settings.ids.preview ).mediaimage();
@@ -100,6 +100,7 @@
          this.previewVisible = false;
          this.controllerVisible = true;
          this.hasMedia = false;
+         this.playing = false;         
          
          // Cache the width and height.
          this.width = this.display.width();
@@ -189,6 +190,7 @@
          
          // Handle when the preview image loads.
          this.onPreviewLoaded = function() {
+            this.previewVisible = true;
             // If we don't have any media, then we will assume that they 
             // just want an image viewer.  Trigger a complete event after the timeout
             // interval.
@@ -205,15 +207,18 @@
          this.onMediaUpdate = function( data ) {
             switch( data.type ) {
                case "paused":
+                  this.playing = false;
                   this.showPlay(true);
                   this.showBusy(false);
                   break;
                case "playing":
+                  this.playing = true;
                   this.showPlay(false);
                   this.showBusy(false);
                   this.showPreview((this.media.mediaFile.type == "audio"));
                   break;
                case "initialize":
+                  this.playing = false;
                   this.showPlay(true);
                   this.showBusy(true);
                   this.showPreview(true);
@@ -239,9 +244,6 @@
             if( settings.template && settings.template.onMediaUpdate ) {
                settings.template.onMediaUpdate( data );
             }
-            
-            // Now pass on this event for all that care.
-            this.display.trigger( "mediaupdate", data );  
          };
          
          // Allow mulitple controllers to control this media.
@@ -373,6 +375,7 @@
          // Reset to previous state...
          this.reset = function() {
             this.hasMedia = false;
+            this.playing = false;
             if( this.controller ) {
                this.controller.reset();   
             }

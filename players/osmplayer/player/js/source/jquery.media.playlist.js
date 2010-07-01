@@ -34,10 +34,10 @@
    }); 
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      pager:".mediapager",
-      scroll:".mediascroll",
-      busy:".mediabusy",
-      links:".medialinks"       
+      pager:"#mediapager",
+      scroll:"#mediascroll",
+      busy:"#mediabusy",
+      links:"#medialinks"       
    });   
    
    jQuery.fn.mediaplaylist = function( server, settings ) {
@@ -78,7 +78,7 @@
 
          // Store the dimensions.
          this.width = this.scrollRegion.width;
-         this.height = this.scrollRegion.height;  
+         this.height = this.scrollRegion.height;
          
          if( settings.vertical ) {
             this.display.width( this.width );
@@ -88,6 +88,7 @@
          
          // Store the busy cursor.
          this.busy = playlist.find( settings.ids.busy );
+         this.busyVisible = false;
          this.busyImg = this.busy.find("img");
          this.busyWidth = this.busyImg.width();
          this.busyHeight = this.busyImg.height();         
@@ -99,9 +100,11 @@
          this.loading = function( _loading ) {
             this.pager.enabled = !_loading;
             if( _loading ) {
+               this.busyVisible = true;
                this.busy.show();
             }
             else {
+               this.busyVisible = false;
                this.busy.hide();   
             }
          };       
@@ -202,6 +205,10 @@
          // Set this playlist.
          this.setPlaylist = function( _playlist ) {
             if( _playlist && _playlist.nodes ) {
+               // Now check the visibility of the parents, and add the offenders to the array.
+               var invisibleParents = [];
+               jQuery.media.utils.checkVisibility( this.display, invisibleParents );
+
                // Set the total number of items for the pager.
                this.pager.setTotalItems( _playlist.total_rows );  
    
@@ -223,6 +230,9 @@
    
                // Load the next node.
                this.pager.loadNext( this.setActive );
+
+               // Now reset the invisibilty.
+               jQuery.media.utils.resetVisibility( invisibleParents );
             }
             
             // We are finished loading.
@@ -231,13 +241,15 @@
 
          // When a vote has been cast, we also need to update the playlist.
          this.onVoteSet = function( vote ) {
-            var i = this.teasers.length;
-            while(i--) {
-               var teaser = this.teasers[i];
-               if( teaser.node.nodeInfo.nid == vote.content_id ) {
-                  teaser.node.voter.updateVote( vote );     
-               }               
-            }               
+            if( vote ) {
+               var i = this.teasers.length;
+               while(i--) {
+                  var teaser = this.teasers[i];
+                  if( teaser.node.nodeInfo.nid == vote.content_id ) {
+                     teaser.node.voter.updateVote( vote );
+                  }
+               }
+            }
          };
          
          // Add a single teaser to the list.
@@ -308,11 +320,13 @@
             // Store the active teaser for next time.                                   
             this.selectedTeaser = teaser;             
 
-            // Now activate the new teaser.
-            this.selectedTeaser.setSelected( true );           
-                     
-            // Set this item as visible in the scroll region.
-            this.scrollRegion.setVisible( teaser.index ); 
+            if( this.selectedTeaser ) {
+               // Now activate the new teaser.
+               this.selectedTeaser.setSelected( true );           
+                        
+               // Set this item as visible in the scroll region.
+               this.scrollRegion.setVisible( teaser.index ); 
+            }
          };
 
          // Activate the teaser.
@@ -328,14 +342,16 @@
             // Store the active teaser for next time.                                   
             this.activeTeaser = teaser;             
 
-            // Now activate the new teaser.
-            this.activeTeaser.setActive( true );      
-
-            // Set the active and current index to this one.
-            this.pager.activeIndex = this.pager.currentIndex = teaser.index;
-            
-            // Trigger an even that the teaser has been activated.
-            jQuery.event.trigger( "playlistload", teaser.node.nodeInfo ); 
+            if( this.activeTeaser ) {
+               // Now activate the new teaser.
+               this.activeTeaser.setActive( true );      
+   
+               // Set the active and current index to this one.
+               this.pager.activeIndex = this.pager.currentIndex = teaser.index;
+               
+               // Trigger an even that the teaser has been activated.
+               jQuery.event.trigger( "playlistload", teaser.node.nodeInfo ); 
+            }
          };
       })( server, this, settings );
    };

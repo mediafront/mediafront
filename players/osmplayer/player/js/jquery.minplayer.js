@@ -28,17 +28,17 @@
    
    // Set up our defaults for this component.
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      currentTime:".mediacurrenttime",
-      totalTime:".mediatotaltime",
-      playPause:".mediaplaypause",
-      seekUpdate:".mediaseekupdate",
-      seekProgress:".mediaseekprogress",
-      seekBar:".mediaseekbar",
-      seekHandle:".mediaseekhandle",
-      volumeUpdate:".mediavolumeupdate",
-      volumeBar:".mediavolumebar",
-      volumeHandle:".mediavolumehandle",
-      mute:".mediamute"   
+      currentTime:"#mediacurrenttime",
+      totalTime:"#mediatotaltime",
+      playPause:"#mediaplaypause",
+      seekUpdate:"#mediaseekupdate",
+      seekProgress:"#mediaseekprogress",
+      seekBar:"#mediaseekbar",
+      seekHandle:"#mediaseekhandle",
+      volumeUpdate:"#mediavolumeupdate",
+      volumeBar:"#mediavolumebar",
+      volumeHandle:"#mediavolumehandle",
+      mute:"#mediamute"   
    });    
    
    jQuery.fn.mediacontrol = function( settings ) { 
@@ -257,6 +257,7 @@
                this.display.width(), 
                this.display.height(),
                {},
+               options.wmode,
                function( obj ) {
                   _this.player = obj;  
                   _this.loadPlayer(); 
@@ -457,7 +458,9 @@
       autostart:false,
       streamer:"",
       embedWidth:450,
-      embedHeight:337
+      embedHeight:337,
+      wmode:"transparent",
+      forceOverflow:false
    }); 
 
    jQuery.fn.mediadisplay = function( settings ) {  
@@ -477,7 +480,15 @@
          this.mediaFile = null; 
          this.width = 0;
          this.height = 0;
-         
+
+         // If they provide the forceOverflow variable, then that means they
+         // wish to force the media player to override all parents overflow settings.
+         if( settings.forceOverflow ) {
+            // Make sure that all parents have overflow visible so that
+            // browser full screen will always work.
+            this.display.parents().css("overflow", "visible");
+         }
+
          this.checkPlayType = function( elem, playType ) {
             if( (typeof elem.canPlayType) == 'function' ) { 
                return ("no" != elem.canPlayType(playType)) && ("" != elem.canPlayType(playType));
@@ -494,7 +505,8 @@
             // Check for video types...
             var elem = document.createElement("video");
             types.ogg  = this.checkPlayType( elem, "video/ogg");  
-            types.h264  = this.checkPlayType( elem, "video/mp4"); 
+            types.h264  = this.checkPlayType( elem, "video/mp4");
+            types.webm = this.checkPlayType( elem, "video/x-webm");
                
             // Now check for audio types...
             elem = document.createElement("audio");
@@ -537,10 +549,31 @@
             this.display.append( this.template );
          };
          
+         // Adds a media file to the play queue.
          this.addToQueue = function( file ) {
+            // Check to see if this file is an array... then we
+            // have several files to pick the best one to play.
+            if( (typeof file) == 'array' ) {
+               file = this.getPlayableMedia( file ); 
+            }
+            
             if( file ) {
                this.playQueue.push( file );
             }
+         };
+         
+         // Returns the media that has the lowest weight value, which means
+         // this player prefers that media over the others.
+         this.getPlayableMedia = function( files ) {
+            var mFile = null;
+            var i = files.length;
+            while(i--) {
+               var tempFile = this.getMediaFile( files[i] );
+               if( !mFile || (tempFile.weight < mFile.weight) ) {
+                  mFile = tempFile;
+               }
+            }
+            return mFile;
          };
          
          this.loadFiles = function( files ) {
@@ -583,11 +616,13 @@
                      });
                   }
                   
-                  // Create our media player.
-                  this.player.createMedia( file ); 
-                  
-                  // Reflow the player if it does not show up.
-                  this.startReflow();
+                  if( this.player ) {
+                     // Create our media player.                     
+                     this.player.createMedia( file ); 
+                     
+                     // Reflow the player if it does not show up.
+                     this.startReflow();
+                  }
                }   
                else if( this.player ) {
                   // Load our file into the current player.
@@ -602,6 +637,7 @@
             }
          };    
 
+         // Returns a media file object.
          this.getMediaFile = function( file ) {
             var mFile = {};
             file = (typeof file === "string") ? {path:file} : file;
@@ -611,7 +647,8 @@
             mFile.stream = settings.streamer ? settings.streamer : file.stream;
             mFile.path = file.path ? jQuery.trim(file.path) : ( settings.baseURL + jQuery.trim(file.filepath) );
             mFile.extension = file.extension ? file.extension : this.getFileExtension(mFile.path);
-            mFile.player = file.player ? file.player : this.getPlayer(mFile.extension);
+            mFile.weight = file.weight ? file.weight : this.getWeight( mFile.extension );
+            mFile.player = file.player ? file.player : this.getPlayer(mFile.extension, mFile.path);
             mFile.type = file.type ? file.type : this.getType(mFile.extension);
             return mFile;       
          };
@@ -622,7 +659,7 @@
          };
          
          // Get the player for this media.
-         this.getPlayer = function( extension ) {
+         this.getPlayer = function( extension, path ) {
             switch( extension )
             {
                case "ogg":case "ogv":
@@ -631,14 +668,30 @@
                case "mp4":case "m4v":
                   return this.playTypes.h264 ? "html5" : "flash";               
                
+               case "webm":
+                  return this.playTypes.webm ? "html5" : "flash";
+               
                case "oga":
                   return this.playTypes.audioOgg ? "html5" : "flash";
                   
                case "mp3":
                   return this.playTypes.mp3 ? "html5" : "flash";
                   
-               case "flv":case "f4v":case "mov":case "3g2":case "m4a":case "aac":case "wav":case "aif":case "wma":            
-                  return "flash";  
+               case "swf":case "flv":case "f4v":case "mov":case "3g2":case "m4a":case "aac":case "wav":case "aif":case "wma":            
+                  return "flash"; 
+                   
+               default:
+                  if( extension.substring(0,3).toLowerCase() == "com" ) {
+                     // Is this a vimeo path...
+                     if( path.search(/^http(s)?\:\/\/(www\.)?vimeo\.com/i) == 0 ) {
+                        return "vimeo";
+                     }
+                     
+                     // This is a youtube path...
+                     else if( path.search(/^http(s)?\:\/\/(www\.)?youtube\.com/i) == 0 ) {
+                        return "youtube";
+                     }
+                  }
             }           
             return "";
          };
@@ -646,10 +699,32 @@
          // Get the type of media this is...
          this.getType = function( extension ) {
             switch( extension ) {  
-               case "ogg":case "ogv":case "mp4":case "m4v":case "flv":case "f4v":case "mov":case "3g2":
+               case"swf":case "webm":case "ogg":case "ogv":case "mp4":case "m4v":case "flv":case "f4v":case "mov":case "3g2":
                   return "video";
                case "oga":case "mp3":case "m4a":case "aac":case "wav":case "aif":case "wma":
                   return "audio";
+            }
+         };
+
+         // Get the preference "weight" of this media type.  
+         // The lower the number, the higher the preference.
+         this.getWeight = function( extension ) {
+            switch( extension ) {  
+               case 'mp4':case 'm4v':case 'm4a':case'webm':
+                  return 5;
+               case 'ogg':case 'ogv':
+                  return this.playTypes.ogg ? 5 : 10;
+               case 'oga':
+                  return this.playTypes.audioOgg ? 5 : 10;               
+               case 'mp3':
+                  return 6;
+               case 'mov':case'swf':case 'flv':case 'f4v':case '3g2':
+                  return 7;
+               case 'wav':case 'aif':case 'aac':
+                  return 8;
+               case 'wma':
+                  return 9;
+                  
             }
          };
 
@@ -715,16 +790,19 @@
             }
          };
 
+         this.reflowPlayer = function() {
+            var _marginLeft = parseInt( this.display.css("marginLeft"), 10 );
+            this.display.css({marginLeft:(_marginLeft+1)});
+            setTimeout( function() {
+                _this.display.css({marginLeft:_marginLeft});
+            }, 1 );
+         };
+
          this.startReflow = function() {
             clearTimeout( this.reflowInterval );
             this.reflowInterval = setTimeout( function() {
-               // If the player does not register after two seconds, try to wiggle it... just a little bit!
-               // No seriously... this is needed for Firefox in Windows for some odd reason.
-               var marginLeft = parseInt( _this.display.css("marginLeft"), 10 );
-               _this.display.css({marginLeft:(marginLeft+1)});
-               setTimeout( function() {
-                  _this.display.css({marginLeft:marginLeft});
-               }, 1 );
+               // If the player does not register after two seconds, try a reflow.
+               _this.reflowPlayer();
             }, 2000 );      
          };         
          
@@ -895,6 +973,7 @@
                this.display.width(), 
                this.display.height(),
                flashvars,
+               settings.wmode,               
                function( obj ) {
                   _this.player = obj; 
                   _this.loadPlayer();  
@@ -990,8 +1069,9 @@
                settings.flashplayer,
                "mediafront_player", 
                settings.embedWidth, 
-               settings.embedHeight, 
-               flashVars );
+               settings.embedHeight,
+               flashVars,
+               settings.wmode );
          };         
          
          // Not implemented yet...
@@ -1180,11 +1260,11 @@
    }); 
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      busy:".mediabusy",
-      preview:".mediapreview",
-      play:".mediaplay",
-      media:".mediadisplay",
-      control:".mediacontrol"                 
+      busy:"#mediabusy",
+      preview:"#mediapreview",
+      play:"#mediaplay",
+      media:"#mediadisplay",
+      control:"#mediacontrol"                 
    });    
    
    jQuery.fn.minplayer = function( settings ) {
@@ -1219,7 +1299,7 @@
          });
          this.playImg = this.play.find("img");
          this.playWidth = this.playImg.width();
-         this.playHeight = this.playImg.height();         
+         this.playHeight = this.playImg.height();
          
          // Store the preview image.
          this.preview = player.find( settings.ids.preview ).mediaimage();
@@ -1238,6 +1318,7 @@
          this.previewVisible = false;
          this.controllerVisible = true;
          this.hasMedia = false;
+         this.playing = false;         
          
          // Cache the width and height.
          this.width = this.display.width();
@@ -1327,6 +1408,7 @@
          
          // Handle when the preview image loads.
          this.onPreviewLoaded = function() {
+            this.previewVisible = true;
             // If we don't have any media, then we will assume that they 
             // just want an image viewer.  Trigger a complete event after the timeout
             // interval.
@@ -1343,15 +1425,18 @@
          this.onMediaUpdate = function( data ) {
             switch( data.type ) {
                case "paused":
+                  this.playing = false;
                   this.showPlay(true);
                   this.showBusy(false);
                   break;
                case "playing":
+                  this.playing = true;
                   this.showPlay(false);
                   this.showBusy(false);
                   this.showPreview((this.media.mediaFile.type == "audio"));
                   break;
                case "initialize":
+                  this.playing = false;
                   this.showPlay(true);
                   this.showBusy(true);
                   this.showPreview(true);
@@ -1377,9 +1462,6 @@
             if( settings.template && settings.template.onMediaUpdate ) {
                settings.template.onMediaUpdate( data );
             }
-            
-            // Now pass on this event for all that care.
-            this.display.trigger( "mediaupdate", data );  
          };
          
          // Allow mulitple controllers to control this media.
@@ -1511,6 +1593,7 @@
          // Reset to previous state...
          this.reset = function() {
             this.hasMedia = false;
+            this.playing = false;
             if( this.controller ) {
                this.controller.reset();   
             }
@@ -1641,7 +1724,7 @@
             this.ready = false;
             var playerId = (options.id + "_media");
             var flashvars = {
-               clip_id:videoFile.path,
+               clip_id:this.getId(videoFile.path),
                width:this.display.width(),
                height:this.display.height(),
                js_api:'1',
@@ -1657,12 +1740,18 @@
                this.display.width(), 
                this.display.height(),
                flashvars,
+               options.wmode,
                function( obj ) {
                   _this.player = obj; 
                   _this.loadPlayer();  
                }
             );
          };      
+         
+         this.getId = function( path ) {
+            var regex = /^http[s]?\:\/\/(www\.)?vimeo\.com\/([0-9]+)/i;
+            return (path.search(regex) == 0) ? path.replace(regex, "$2") : path;
+         };
          
          this.loadMedia = function( videoFile ) {
             this.bytesLoaded = 0;
@@ -1817,12 +1906,18 @@
                this.display.width(), 
                this.display.height(),
                {},
+               options.wmode,
                function( obj ) {
                   _this.player = obj; 
                   _this.loadPlayer();  
                }
             );
          };      
+         
+         this.getId = function( path ) {
+            var regex = /^http[s]?\:\/\/(www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9]+)/i;
+            return (path.search(regex) == 0) ? path.replace(regex, "$2") : path;
+         };         
          
          this.loadMedia = function( videoFile ) {
             if( this.player ) {
@@ -1833,7 +1928,7 @@
                onUpdate( {type:"playerready"} );                 
                
                // Load our video.
-               this.player.loadVideoById( this.videoFile.path, 0 );
+               this.player.loadVideoById( this.getId( this.videoFile.path ), 0 );
             }
          };
          
@@ -1868,7 +1963,7 @@
                onUpdate( {type:"playerready"} );                
                
                // Load our video.
-               this.player.loadVideoById( this.videoFile.path, 0 );  
+               this.player.loadVideoById( this.getId( this.videoFile.path ), 0 );  
             }         
          };
          

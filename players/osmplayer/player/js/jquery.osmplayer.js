@@ -76,17 +76,17 @@
    
    // Set up our defaults for this component.
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      currentTime:".mediacurrenttime",
-      totalTime:".mediatotaltime",
-      playPause:".mediaplaypause",
-      seekUpdate:".mediaseekupdate",
-      seekProgress:".mediaseekprogress",
-      seekBar:".mediaseekbar",
-      seekHandle:".mediaseekhandle",
-      volumeUpdate:".mediavolumeupdate",
-      volumeBar:".mediavolumebar",
-      volumeHandle:".mediavolumehandle",
-      mute:".mediamute"   
+      currentTime:"#mediacurrenttime",
+      totalTime:"#mediatotaltime",
+      playPause:"#mediaplaypause",
+      seekUpdate:"#mediaseekupdate",
+      seekProgress:"#mediaseekprogress",
+      seekBar:"#mediaseekbar",
+      seekHandle:"#mediaseekhandle",
+      volumeUpdate:"#mediavolumeupdate",
+      volumeBar:"#mediavolumebar",
+      volumeHandle:"#mediavolumehandle",
+      mute:"#mediamute"   
    });    
    
    jQuery.fn.mediacontrol = function( settings ) { 
@@ -305,6 +305,7 @@
                this.display.width(), 
                this.display.height(),
                {},
+               options.wmode,
                function( obj ) {
                   _this.player = obj;  
                   _this.loadPlayer(); 
@@ -497,82 +498,6 @@
  *  THE SOFTWARE.
  */
 
-   jQuery.media = jQuery.extend( {}, {
-      checkPoints : {},
-      checkPoint : function( name ) {
-         var thisTime = new Date().getTime();
-         var lastTime = jQuery.media.checkPoints[name] ? jQuery.media.checkPoints[name] : 0;
-         jQuery.media.checkPoints[name] = thisTime - lastTime;
-      },
-      finalPoint : function() {
-         jQuery.media.debug( jQuery.media.checkPoints );
-         jQuery.media.checkPoints = {};            
-      },
-      debug : function( text ) {
-         var _this = this;
-
-         this.dump = function(arr, level) {
-            var dumped_text = "";
-            var level_padding = "";
-                        
-            if(!level) {
-               level = 0;
-            }
-            
-            for(var j=0;j<=level;j++) {
-               level_padding += "   ";
-            }
-            if(typeof(arr) == 'object') {
-               for(var key in arr) {
-                  if( arr.hasOwnProperty(key) ) {
-                     var value = arr[key];
-                     if(typeof(value) == 'object') {
-                        dumped_text += level_padding + "'" + key + "' ...\n";
-                        dumped_text += _this.dump(value,level+1);
-                     } else {
-                        dumped_text += level_padding + "'" + key + "' => \"" + value + "\"\n";
-                     }                      
-                  }
-               }
-            } else {
-               dumped_text = "- "+ arr +" ("+typeof(arr)+")";
-            }
-            return dumped_text;
-         };   
-
-         if( arguments[1] ) {
-            jQuery(".mediadebug").empty();
-         }
-         jQuery(".mediadebug").append( "<pre>" + this.dump( text ) + "</pre><br/>" );
-      }
-   }, jQuery.media );  
-
-/**
- *  Copyright (c) 2010 Alethia Inc,
- *  http://www.alethia-inc.com
- *  Developed by Travis Tidwell | travist at alethia-inc.com 
- *
- *  License:  GPL version 3.
- *
- *  Permission is hereby granted, free of charge, to any person obtaining a copy
- *  of this software and associated documentation files (the "Software"), to deal
- *  in the Software without restriction, including without limitation the rights
- *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- *  copies of the Software, and to permit persons to whom the Software is
- *  furnished to do so, subject to the following conditions:
- *  
- *  The above copyright notice and this permission notice shall be included in
- *  all copies or substantial portions of the Software.
-
- *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- *  THE SOFTWARE.
- */
-
         
    
    // Set up our defaults for this component.
@@ -581,7 +506,9 @@
       autostart:false,
       streamer:"",
       embedWidth:450,
-      embedHeight:337
+      embedHeight:337,
+      wmode:"transparent",
+      forceOverflow:false
    }); 
 
    jQuery.fn.mediadisplay = function( settings ) {  
@@ -601,7 +528,15 @@
          this.mediaFile = null; 
          this.width = 0;
          this.height = 0;
-         
+
+         // If they provide the forceOverflow variable, then that means they
+         // wish to force the media player to override all parents overflow settings.
+         if( settings.forceOverflow ) {
+            // Make sure that all parents have overflow visible so that
+            // browser full screen will always work.
+            this.display.parents().css("overflow", "visible");
+         }
+
          this.checkPlayType = function( elem, playType ) {
             if( (typeof elem.canPlayType) == 'function' ) { 
                return ("no" != elem.canPlayType(playType)) && ("" != elem.canPlayType(playType));
@@ -618,7 +553,8 @@
             // Check for video types...
             var elem = document.createElement("video");
             types.ogg  = this.checkPlayType( elem, "video/ogg");  
-            types.h264  = this.checkPlayType( elem, "video/mp4"); 
+            types.h264  = this.checkPlayType( elem, "video/mp4");
+            types.webm = this.checkPlayType( elem, "video/x-webm");
                
             // Now check for audio types...
             elem = document.createElement("audio");
@@ -661,10 +597,31 @@
             this.display.append( this.template );
          };
          
+         // Adds a media file to the play queue.
          this.addToQueue = function( file ) {
+            // Check to see if this file is an array... then we
+            // have several files to pick the best one to play.
+            if( (typeof file) == 'array' ) {
+               file = this.getPlayableMedia( file ); 
+            }
+            
             if( file ) {
                this.playQueue.push( file );
             }
+         };
+         
+         // Returns the media that has the lowest weight value, which means
+         // this player prefers that media over the others.
+         this.getPlayableMedia = function( files ) {
+            var mFile = null;
+            var i = files.length;
+            while(i--) {
+               var tempFile = this.getMediaFile( files[i] );
+               if( !mFile || (tempFile.weight < mFile.weight) ) {
+                  mFile = tempFile;
+               }
+            }
+            return mFile;
          };
          
          this.loadFiles = function( files ) {
@@ -707,11 +664,13 @@
                      });
                   }
                   
-                  // Create our media player.
-                  this.player.createMedia( file ); 
-                  
-                  // Reflow the player if it does not show up.
-                  this.startReflow();
+                  if( this.player ) {
+                     // Create our media player.                     
+                     this.player.createMedia( file ); 
+                     
+                     // Reflow the player if it does not show up.
+                     this.startReflow();
+                  }
                }   
                else if( this.player ) {
                   // Load our file into the current player.
@@ -726,6 +685,7 @@
             }
          };    
 
+         // Returns a media file object.
          this.getMediaFile = function( file ) {
             var mFile = {};
             file = (typeof file === "string") ? {path:file} : file;
@@ -735,7 +695,8 @@
             mFile.stream = settings.streamer ? settings.streamer : file.stream;
             mFile.path = file.path ? jQuery.trim(file.path) : ( settings.baseURL + jQuery.trim(file.filepath) );
             mFile.extension = file.extension ? file.extension : this.getFileExtension(mFile.path);
-            mFile.player = file.player ? file.player : this.getPlayer(mFile.extension);
+            mFile.weight = file.weight ? file.weight : this.getWeight( mFile.extension );
+            mFile.player = file.player ? file.player : this.getPlayer(mFile.extension, mFile.path);
             mFile.type = file.type ? file.type : this.getType(mFile.extension);
             return mFile;       
          };
@@ -746,7 +707,7 @@
          };
          
          // Get the player for this media.
-         this.getPlayer = function( extension ) {
+         this.getPlayer = function( extension, path ) {
             switch( extension )
             {
                case "ogg":case "ogv":
@@ -755,14 +716,30 @@
                case "mp4":case "m4v":
                   return this.playTypes.h264 ? "html5" : "flash";               
                
+               case "webm":
+                  return this.playTypes.webm ? "html5" : "flash";
+               
                case "oga":
                   return this.playTypes.audioOgg ? "html5" : "flash";
                   
                case "mp3":
                   return this.playTypes.mp3 ? "html5" : "flash";
                   
-               case "flv":case "f4v":case "mov":case "3g2":case "m4a":case "aac":case "wav":case "aif":case "wma":            
-                  return "flash";  
+               case "swf":case "flv":case "f4v":case "mov":case "3g2":case "m4a":case "aac":case "wav":case "aif":case "wma":            
+                  return "flash"; 
+                   
+               default:
+                  if( extension.substring(0,3).toLowerCase() == "com" ) {
+                     // Is this a vimeo path...
+                     if( path.search(/^http(s)?\:\/\/(www\.)?vimeo\.com/i) == 0 ) {
+                        return "vimeo";
+                     }
+                     
+                     // This is a youtube path...
+                     else if( path.search(/^http(s)?\:\/\/(www\.)?youtube\.com/i) == 0 ) {
+                        return "youtube";
+                     }
+                  }
             }           
             return "";
          };
@@ -770,10 +747,32 @@
          // Get the type of media this is...
          this.getType = function( extension ) {
             switch( extension ) {  
-               case "ogg":case "ogv":case "mp4":case "m4v":case "flv":case "f4v":case "mov":case "3g2":
+               case"swf":case "webm":case "ogg":case "ogv":case "mp4":case "m4v":case "flv":case "f4v":case "mov":case "3g2":
                   return "video";
                case "oga":case "mp3":case "m4a":case "aac":case "wav":case "aif":case "wma":
                   return "audio";
+            }
+         };
+
+         // Get the preference "weight" of this media type.  
+         // The lower the number, the higher the preference.
+         this.getWeight = function( extension ) {
+            switch( extension ) {  
+               case 'mp4':case 'm4v':case 'm4a':case'webm':
+                  return 5;
+               case 'ogg':case 'ogv':
+                  return this.playTypes.ogg ? 5 : 10;
+               case 'oga':
+                  return this.playTypes.audioOgg ? 5 : 10;               
+               case 'mp3':
+                  return 6;
+               case 'mov':case'swf':case 'flv':case 'f4v':case '3g2':
+                  return 7;
+               case 'wav':case 'aif':case 'aac':
+                  return 8;
+               case 'wma':
+                  return 9;
+                  
             }
          };
 
@@ -839,16 +838,19 @@
             }
          };
 
+         this.reflowPlayer = function() {
+            var _marginLeft = parseInt( this.display.css("marginLeft"), 10 );
+            this.display.css({marginLeft:(_marginLeft+1)});
+            setTimeout( function() {
+                _this.display.css({marginLeft:_marginLeft});
+            }, 1 );
+         };
+
          this.startReflow = function() {
             clearTimeout( this.reflowInterval );
             this.reflowInterval = setTimeout( function() {
-               // If the player does not register after two seconds, try to wiggle it... just a little bit!
-               // No seriously... this is needed for Firefox in Windows for some odd reason.
-               var marginLeft = parseInt( _this.display.css("marginLeft"), 10 );
-               _this.display.css({marginLeft:(marginLeft+1)});
-               setTimeout( function() {
-                  _this.display.css({marginLeft:marginLeft});
-               }, 1 );
+               // If the player does not register after two seconds, try a reflow.
+               _this.reflowPlayer();
             }, 2000 );      
          };         
          
@@ -1182,6 +1184,7 @@
                this.display.width(), 
                this.display.height(),
                flashvars,
+               settings.wmode,               
                function( obj ) {
                   _this.player = obj; 
                   _this.loadPlayer();  
@@ -1277,8 +1280,9 @@
                settings.flashplayer,
                "mediafront_player", 
                settings.embedWidth, 
-               settings.embedHeight, 
-               flashVars );
+               settings.embedHeight,
+               flashVars,
+               settings.wmode );
          };         
          
          // Not implemented yet...
@@ -1452,9 +1456,9 @@
    /**
     * Load and scale an image while maintining original aspect ratio.
     */
-   jQuery.fn.mediaimage = function( link ) {
+   jQuery.fn.mediaimage = function( link, fitToImage ) {
       if( this.length === 0 ) { return null; }
-      return new (function( container, link ) {
+      return new (function( container, link, fitToImage ) {
          this.display = container;
          var _this = this;
          
@@ -1474,15 +1478,15 @@
          
          // Now add the image object.
          var code = link ? '<a target="_blank" href="' + link + '"><img src=""></img></a>' : '<img src=""></img>';
-         this.image = container.empty().append( code ).find("img");    
+         this.image = container.append( code ).find("img");    
          
          // Set the container to not show any overflow...       
          container.css("overflow", "hidden");
          
          // Resize the image.
          this.resize = function( newWidth, newHeight ) {
-            this.width = newWidth ? newWidth : this.width ? this.width : this.display.width();
-            this.height = newHeight ? newHeight : this.height ? this.height : this.display.height();
+            this.width = fitToImage ? this.imgLoader.width : (newWidth ? newWidth : this.width ? this.width : this.display.width());
+            this.height = fitToImage ? this.imgLoader.height : (newHeight ? newHeight : this.height ? this.height : this.display.height());
             if( this.width && this.height && loaded ) {  
                // Resize the wrapper.
                this.display.css({width:this.width, height:this.height});
@@ -1505,6 +1509,7 @@
                this.image.hide();               
                this.image.attr( "src", "" );
             }
+            container.empty();
          };
          
          // Refreshes the image.
@@ -1517,7 +1522,7 @@
             this.image.hide();
             this.imgLoader.src = src;
          };
-      })( this, link );     
+      })( this, link, fitToImage );     
    };
 
 /**
@@ -1746,7 +1751,7 @@
    }); 
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      linkScroll:".medialinkscroll"               
+      linkScroll:"#medialinkscroll"               
    });    
    
    jQuery.fn.medialinks = function( settings ) {  
@@ -1833,7 +1838,7 @@
    
    // Set up our defaults for this component.
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      close:".mediamenuclose",
+      close:"#mediamenuclose",
       embed:"#mediaembed",
       elink:"#mediaelink",
       email:"#mediaemail"           
@@ -1961,11 +1966,11 @@
    }); 
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      busy:".mediabusy",
-      preview:".mediapreview",
-      play:".mediaplay",
-      media:".mediadisplay",
-      control:".mediacontrol"                 
+      busy:"#mediabusy",
+      preview:"#mediapreview",
+      play:"#mediaplay",
+      media:"#mediadisplay",
+      control:"#mediacontrol"                 
    });    
    
    jQuery.fn.minplayer = function( settings ) {
@@ -2000,7 +2005,7 @@
          });
          this.playImg = this.play.find("img");
          this.playWidth = this.playImg.width();
-         this.playHeight = this.playImg.height();         
+         this.playHeight = this.playImg.height();
          
          // Store the preview image.
          this.preview = player.find( settings.ids.preview ).mediaimage();
@@ -2019,6 +2024,7 @@
          this.previewVisible = false;
          this.controllerVisible = true;
          this.hasMedia = false;
+         this.playing = false;         
          
          // Cache the width and height.
          this.width = this.display.width();
@@ -2108,6 +2114,7 @@
          
          // Handle when the preview image loads.
          this.onPreviewLoaded = function() {
+            this.previewVisible = true;
             // If we don't have any media, then we will assume that they 
             // just want an image viewer.  Trigger a complete event after the timeout
             // interval.
@@ -2124,15 +2131,18 @@
          this.onMediaUpdate = function( data ) {
             switch( data.type ) {
                case "paused":
+                  this.playing = false;
                   this.showPlay(true);
                   this.showBusy(false);
                   break;
                case "playing":
+                  this.playing = true;
                   this.showPlay(false);
                   this.showBusy(false);
                   this.showPreview((this.media.mediaFile.type == "audio"));
                   break;
                case "initialize":
+                  this.playing = false;
                   this.showPlay(true);
                   this.showBusy(true);
                   this.showPreview(true);
@@ -2158,9 +2168,6 @@
             if( settings.template && settings.template.onMediaUpdate ) {
                settings.template.onMediaUpdate( data );
             }
-            
-            // Now pass on this event for all that care.
-            this.display.trigger( "mediaupdate", data );  
          };
          
          // Allow mulitple controllers to control this media.
@@ -2292,6 +2299,7 @@
          // Reset to previous state...
          this.reset = function() {
             this.hasMedia = false;
+            this.playing = false;
             if( this.controller ) {
                this.controller.reset();   
             }
@@ -2389,9 +2397,9 @@
    }); 
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      voter:".mediavoter",
-      uservoter:".mediauservoter",
-      mediaRegion:".mediaregion",
+      voter:"#mediavoter",
+      uservoter:"#mediauservoter",
+      mediaRegion:"#mediaregion",
       field:".mediafield"                 
    });   
    
@@ -2646,12 +2654,12 @@
    });
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      prev:".mediaprev",
-      next:".medianext",
-      loadPrev:".medialoadprev",
-      loadNext:".medialoadnext",
-      prevPage:".mediaprevpage",
-      nextPage:".medianextpage"         
+      prev:"#mediaprev",
+      next:"#medianext",
+      loadPrev:"#medialoadprev",
+      loadNext:"#medialoadnext",
+      prevPage:"#mediaprevpage",
+      nextPage:"#medianextpage"         
    });   
    
    jQuery.fn.mediapager = function( settings ){
@@ -2955,10 +2963,13 @@
                this.onLoaded = onLoaded;
                jQuery.ajax({
                   type: "GET",
-                  url: file,
-                  dataType: "xml",
+                  url:file,
+                  dataType:"xml",
                   success: function(xml) {
                      _this.parseXML( xml );
+                  },
+                  error: function( XMLHttpRequest, textStatus, errorThrown ) {
+                     console.log( "Error: " + textStatus );
                   }
                });               
             }; 
@@ -3124,12 +3135,12 @@
    });    
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      loading:".mediaplayerloading",
-      player:".mediaplayer",
-      menu:".mediamenu",
-      titleBar:".mediatitlebar",
-      node:".medianode",
-      playlist:".mediaplaylist"   
+      loading:"#mediaplayerloading",
+      player:"#mediaplayer",
+      menu:"#mediamenu",
+      titleBar:"#mediatitlebar",
+      node:"#medianode",
+      playlist:"#mediaplaylist"   
    });   
    
    // Initialize our players, playlists, and controllers.   
@@ -3194,7 +3205,16 @@
          // Save the jQuery display.                                        
          this.display = this.dialog.find( settings.ids.player );
          var _this = this;          
-         
+
+         // Fix a really strange issue where if any of the parent elements are invisible
+         // when this player's template is initializing, it would crash due to the issue
+         // with calling the position() function on an invisible object.  This seems to fix
+         // that issue.
+         var invisibleParents = [];
+
+         // Now check the visibility of the parents, and add the offenders to the array.
+         jQuery.media.utils.checkVisibility( this.display, invisibleParents );
+
          // Add this player to the players object.
          jQuery.media.players[settings.id] = this;                  
          
@@ -3203,6 +3223,18 @@
          
          // Get all of the setting overrides used in this template.
          settings = jQuery.extend( settings, settings.template.getSettings() );       
+         
+         // Add some keyboard event handlers.
+         $(window).keypress( function( event ) {
+            switch( event.keyCode ) {
+               case 0:   /* SpaceBar */
+                  _this.onSpaceBar();
+                  break;
+               case 27:  /* ESC Key */
+                  _this.onEscKey();
+                  break;
+            }
+         });
          
          // First get the communication protocol.
          if( jQuery.media[settings.protocol] ) {
@@ -3243,6 +3275,31 @@
               this.menuOn = show;
               settings.template.onMenu( this.menuOn, true );   
             }         
+         };
+         
+         // Called when the user presses the ESC key.
+         this.onEscKey = function() {
+            // If they are in full screen mode, then escape when they press the ESC key.
+            if( this.fullScreen ) {
+               this.fullScreen = false;
+               if( this.node && this.node.player ) {
+                  this.node.player.fullScreen( this.fullScreen );
+               }              
+            }            
+         };
+         
+         // When they press the space bar, we will toggle the player play/pause state.
+         this.onSpaceBar = function() {
+            if( this.fullScreen ) {            
+               if( this.node && this.node.player && this.node.player.media && this.node.player.media.player ) {
+                  if( this.node.player.playing ) {
+                     this.node.player.media.player.pauseMedia();  
+                  }
+                  else {
+                     this.node.player.media.player.playMedia(); 
+                  }
+               } 
+            }
          };
          
          // Setup the title bar.
@@ -3291,8 +3348,8 @@
                _this.onNodeLoad( data );
             });
             
-            if( this.node.player ) {
-               this.node.player.display.bind( "mediaupdate", function( event, data ) {
+            if( this.node.player && this.node.player.media ) {
+               this.node.player.media.display.bind( "mediaupdate", function( event, data ) {
                   _this.onMediaUpdate( data );
                });
             }            
@@ -3307,7 +3364,7 @@
          }
          
          // Called when the media updates.
-         this.onMediaUpdate = function( data ) { 
+         this.onMediaUpdate = function( data ) {
             // When the media completes, have the active playlist load the next item.
             if( settings.autoNext && this.activePlaylist && (data.type == "complete") ) {
                this.activePlaylist.pager.loadNext( true );              
@@ -3431,11 +3488,19 @@
             }
          }; 
 
-         this.load = function() {            
+         this.initializeTemplate = function() {
             // Initialize our template.
             if( settings.template.initialize ) {
                settings.template.initialize( settings );
-            }        
+            }
+
+            // Now reset the visibility of the parents.
+            jQuery.media.utils.resetVisibility( invisibleParents );
+         };
+
+         this.load = function() {            
+            // Initialize our template.
+            this.initializeTemplate();
             
             // Resize the player.
             this.onResize( 0, 0 );
@@ -3491,10 +3556,10 @@
    }); 
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      pager:".mediapager",
-      scroll:".mediascroll",
-      busy:".mediabusy",
-      links:".medialinks"       
+      pager:"#mediapager",
+      scroll:"#mediascroll",
+      busy:"#mediabusy",
+      links:"#medialinks"       
    });   
    
    jQuery.fn.mediaplaylist = function( server, settings ) {
@@ -3535,7 +3600,7 @@
 
          // Store the dimensions.
          this.width = this.scrollRegion.width;
-         this.height = this.scrollRegion.height;  
+         this.height = this.scrollRegion.height;
          
          if( settings.vertical ) {
             this.display.width( this.width );
@@ -3545,6 +3610,7 @@
          
          // Store the busy cursor.
          this.busy = playlist.find( settings.ids.busy );
+         this.busyVisible = false;
          this.busyImg = this.busy.find("img");
          this.busyWidth = this.busyImg.width();
          this.busyHeight = this.busyImg.height();         
@@ -3556,9 +3622,11 @@
          this.loading = function( _loading ) {
             this.pager.enabled = !_loading;
             if( _loading ) {
+               this.busyVisible = true;
                this.busy.show();
             }
             else {
+               this.busyVisible = false;
                this.busy.hide();   
             }
          };       
@@ -3659,6 +3727,10 @@
          // Set this playlist.
          this.setPlaylist = function( _playlist ) {
             if( _playlist && _playlist.nodes ) {
+               // Now check the visibility of the parents, and add the offenders to the array.
+               var invisibleParents = [];
+               jQuery.media.utils.checkVisibility( this.display, invisibleParents );
+
                // Set the total number of items for the pager.
                this.pager.setTotalItems( _playlist.total_rows );  
    
@@ -3680,6 +3752,9 @@
    
                // Load the next node.
                this.pager.loadNext( this.setActive );
+
+               // Now reset the invisibilty.
+               jQuery.media.utils.resetVisibility( invisibleParents );
             }
             
             // We are finished loading.
@@ -3688,13 +3763,15 @@
 
          // When a vote has been cast, we also need to update the playlist.
          this.onVoteSet = function( vote ) {
-            var i = this.teasers.length;
-            while(i--) {
-               var teaser = this.teasers[i];
-               if( teaser.node.nodeInfo.nid == vote.content_id ) {
-                  teaser.node.voter.updateVote( vote );     
-               }               
-            }               
+            if( vote ) {
+               var i = this.teasers.length;
+               while(i--) {
+                  var teaser = this.teasers[i];
+                  if( teaser.node.nodeInfo.nid == vote.content_id ) {
+                     teaser.node.voter.updateVote( vote );
+                  }
+               }
+            }
          };
          
          // Add a single teaser to the list.
@@ -3765,11 +3842,13 @@
             // Store the active teaser for next time.                                   
             this.selectedTeaser = teaser;             
 
-            // Now activate the new teaser.
-            this.selectedTeaser.setSelected( true );           
-                     
-            // Set this item as visible in the scroll region.
-            this.scrollRegion.setVisible( teaser.index ); 
+            if( this.selectedTeaser ) {
+               // Now activate the new teaser.
+               this.selectedTeaser.setSelected( true );           
+                        
+               // Set this item as visible in the scroll region.
+               this.scrollRegion.setVisible( teaser.index ); 
+            }
          };
 
          // Activate the teaser.
@@ -3785,14 +3864,16 @@
             // Store the active teaser for next time.                                   
             this.activeTeaser = teaser;             
 
-            // Now activate the new teaser.
-            this.activeTeaser.setActive( true );      
-
-            // Set the active and current index to this one.
-            this.pager.activeIndex = this.pager.currentIndex = teaser.index;
-            
-            // Trigger an even that the teaser has been activated.
-            jQuery.event.trigger( "playlistload", teaser.node.nodeInfo ); 
+            if( this.activeTeaser ) {
+               // Now activate the new teaser.
+               this.activeTeaser.setActive( true );      
+   
+               // Set the active and current index to this one.
+               this.pager.activeIndex = this.pager.currentIndex = teaser.index;
+               
+               // Trigger an even that the teaser has been activated.
+               jQuery.event.trigger( "playlistload", teaser.node.nodeInfo ); 
+            }
          };
       })( server, this, settings );
    };
@@ -3827,7 +3908,7 @@
    
    // Set up our defaults for this component.
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      linkText:".medialinktext"
+      linkText:"#medialinktext"
    });    
    
    jQuery.fn.playlistlink = function( settings, linkInfo ) {  
@@ -3853,6 +3934,161 @@
       })( this, settings, linkInfo );
    };
 
+/**
+ *  Copyright (c) 2010 Alethia Inc,
+ *  http://www.alethia-inc.com
+ *  Developed by Travis Tidwell | travist at alethia-inc.com 
+ *
+ *  License:  GPL version 3.
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the "Software"), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *  
+ *  The above copyright notice and this permission notice shall be included in
+ *  all copies or substantial portions of the Software.
+
+ *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+   jQuery.media.defaults = jQuery.extend( jQuery.media.defaults, {
+      rotatorTimeout:5000,
+      rotatorTransition:"fade",
+      rotatorEasing:"swing",
+      rotatorSpeed:"slow",
+      rotatorHover:false       
+   });  
+
+   jQuery.fn.mediarotator = function( settings ) {
+      if( this.length === 0 ) { return null; }
+      return new (function( rotator, settings ) {
+         settings = jQuery.media.utils.getSettings(settings);   
+         var _this = this;     
+         this.images = []; 
+         this.imageIndex = 0;
+         this.imageInterval = null;
+         this.width = 0;
+         this.height = 0;
+         
+         this.onImageLoaded = function() {
+            this.width = this.images[0].imgLoader.width;
+            this.height = this.images[0].imgLoader.height;
+            rotator.css({width:this.width + "px", height:this.height + "px"});
+            var sliderWidth = (settings.rotatorTransition == "hscroll") ? (2*this.width) : this.width;
+            var sliderHeight = (settings.rotatorTransition == "vscroll") ? (2*this.height) : this.height;
+            this.display.css({width:sliderWidth, height:sliderHeight});      
+         };
+         
+         this.addImage = function() {
+            var image = $("<div></div>").mediaimage(null, true);
+            this.display.append( image.display );
+            
+            if( (settings.rotatorTransition == "hscroll") || (settings.rotatorTransition == "vscroll") ) {
+               image.display.css({"float":"left"});
+            }
+            else {
+               image.display.css({position:"absolute",zIndex:(200 - this.images.length), top:0, left:0});
+            }
+            return image;         
+         };
+         
+         this.loadImages = function( _images ) {
+            this.images = [];
+            this.imageIndex = 0;
+            
+            jQuery.each( _images, function( index ) {
+               var image = _this.addImage();
+               if( index === 0 ) {
+                  image.display.bind("imageLoaded", function() {
+                     _this.onImageLoaded();
+                  }).show();
+               }   
+               image.loadImage( this );
+               _this.images.push( image );
+            });
+            
+            if( settings.rotatorHover ) {
+               this.display.bind( "mouseenter", function() {
+                  _this.startRotator();
+               }).bind( "mouseleave", function() {
+                  clearInterval( _this.imageInterval );
+               });
+            }
+            else {
+               this.startRotator();
+            }     
+         };
+      
+         this.startRotator = function() {
+            clearInterval( this.imageInterval );
+            this.imageInterval = setInterval( function() {
+               _this.showNextImage();
+            }, settings.rotatorTimeout );     
+         };
+         
+         this.showNextImage = function() {
+            this.hideImage( this.images[this.imageIndex].display );
+            this.imageIndex = (this.imageIndex + 1) % this.images.length;         
+            this.showImage( this.images[this.imageIndex].display );
+         };     
+      
+         this.showImage = function( image ) {
+            if( settings.rotatorTransition === 'fade' ) {
+               image.fadeIn(settings.rotatorSpeed);
+            }
+            else {
+               image.css({marginLeft:0, marginTop:0}).show();
+            }    
+         };
+         
+         this.hideImage = function( image ) {
+            switch( settings.rotatorTransition ) {
+               case "fade":
+                  image.fadeOut(settings.rotatorSpeed);
+                  break;
+               case "hscroll":
+                  image.animate({marginLeft:-this.width}, settings.rotatorSpeed, settings.rotatorEasing, function() {
+                     image.css({marginLeft:0}).remove();
+                     _this.display.append( image );
+                  });
+                  break;             
+               case "vscroll":
+                  image.animate({marginTop:-this.height}, settings.rotatorSpeed, settings.rotatorEasing, function() {
+                     image.css({marginTop:0}).remove();
+                     _this.display.append( image );
+                  });
+                  break;                                            
+               default:
+                  image.hide();
+                  break;
+            }         
+         };
+   
+         // Find all the images in the rotator container.
+         var _images = [];
+         rotator.find("img").each( function() {
+            _images.push( $(this).attr("src") );
+         });
+         
+         // Empty the container and setup the inner rotator.
+         rotator.empty().css("overflow", "hidden").append( $('<div class="imagerotatorinner"></div>') );
+         this.display = rotator.find(".imagerotatorinner");      
+
+         // If they provided images, then we will want to load them.
+         if( _images.length ) {
+            this.loadImages( _images );
+         }
+    })( this, settings );
+  };
 /**
  *  Copyright (c) 2010 Alethia Inc,
  *  http://www.alethia-inc.com
@@ -4089,14 +4325,14 @@
    });   
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      listMask:".medialistmask",
-      list:".medialist",
-      scrollWrapper:".mediascrollbarwrapper",
-      scrollBar:".mediascrollbar",
-      scrollTrack:".mediascrolltrack",
-      scrollHandle:".mediascrollhandle",
-      scrollUp:".mediascrollup",
-      scrollDown:".mediascrolldown"        
+      listMask:"#medialistmask",
+      list:"#medialist",
+      scrollWrapper:"#mediascrollbarwrapper",
+      scrollBar:"#mediascrollbar",
+      scrollTrack:"#mediascrolltrack",
+      scrollHandle:"#mediascrollhandle",
+      scrollUp:"#mediascrollup",
+      scrollDown:"#mediascrolldown"        
    });     
    
    jQuery.fn.mediascroll = function( settings ) {
@@ -4267,7 +4503,7 @@
             this.setScrollSize( settings.vertical ? this.listMask.height() : this.listMask.width() );                                 
 
             // Now reset the list position.
-            this.setScrollPos( this.listPos );
+            this.setScrollPos( /*this.listPos*/0, true );
          };
          
          // Refreshes the scroll region.
@@ -4715,7 +4951,7 @@
  */
  
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      titleLinks:".mediatitlelinks"                 
+      titleLinks:"#mediatitlelinks"                 
    });     
    
    jQuery.fn.mediatitlebar = function( settings ) { 
@@ -4811,9 +5047,34 @@
             }
 
             return scaledRect;         
-         },             
+         },
+
+         // Checks all parents visibility, and resets them and adds those items to a passed in
+         // array which can be used to reset their visibiltiy at a later point by calling
+         // resetVisibility
+         checkVisibility : function( display, invisibleParents ) {
+            var isVisible = true;
+            display.parents().each( function() {
+                var jObject = jQuery(this);
+                if( !jObject.is(':visible') ) {
+                    isVisible = false;
+                    var attrClass = jObject.attr("class");
+                    invisibleParents.push( {obj:jObject, attr:attrClass} );
+                    jObject.removeClass(attrClass);
+                }
+            });
+         },
+
+         // Reset's the visibility of the passed in parent elements.
+         resetVisibility : function( invisibleParents ) {
+            // Now iterate through all of the invisible objects and rehide them.
+            var i = invisibleParents.length;
+            while(i--){
+                invisibleParents[i].obj.addClass(invisibleParents[i].attr);
+            }
+         },
          
-         getFlash : function( player, id, width, height, flashvars ) {
+         getFlash : function( player, id, width, height, flashvars, wmode ) {
             // Get the protocol.
             var protocol = window.location.protocol; 
             if (protocol.charAt(protocol.length - 1) == ':') { 
@@ -4839,11 +5100,11 @@
             flash += '<param name="allowScriptAccess" value="always"></param>'; 
             flash += '<param name="allowfullscreen" value="true" />';
             flash += '<param name="movie" value="' + player + '"></param>';
-            flash += '<param name="wmode" value="transparent"></param>';
+            flash += '<param name="wmode" value="' + wmode + '"></param>';
             flash += '<param name="quality" value="high"></param>';
             flash += '<param name="FlashVars" value="' + flashVarsString + '"></param>';
             flash += '<embed src="' + player + '" quality="high" width="' + width + '" height="' + height + '" ';
-            flash += 'id="' + id + '" name="' + id + '" swLiveConnect="true" allowScriptAccess="always" wmode="transparent"';
+            flash += 'id="' + id + '" name="' + id + '" swLiveConnect="true" allowScriptAccess="always" wmode="' + wmode + '"';
             flash += 'allowfullscreen="true" type="application/x-shockwave-flash" FlashVars="' + flashVarsString + '" ';
             flash += 'pluginspage="' + protocol + '://www.macromedia.com/go/getflashplayer" />';
             flash += '</object>';
@@ -4863,7 +5124,7 @@
          },
          
          // Insert flash routine.  If they have swfobject, then this function will dynamically use that instead.
-         insertFlash : function( obj, player, id, width, height, flashvars, onAdded ) {
+         insertFlash : function( obj, player, id, width, height, flashvars, wmode, onAdded ) {
             jQuery.media.utils.removeFlash( obj, id );
             obj.children().remove();             
             obj.append('<div id="' + id + '"><p><a href="http://www.adobe.com/go/getflashplayer"><img src="http://www.adobe.com/images/shared/download_buttons/get_flash_player.gif" alt="Get Adobe Flash player" /></a></p></div>');
@@ -4871,7 +5132,7 @@
                var params = {
                   allowScriptAccess:"always",
                   allowfullscreen:"true",
-                  wmode:"transparent",
+                  wmode:wmode,
                   quality:"high"
                };                              
                swfobject.embedSWF( 
@@ -4890,7 +5151,7 @@
                );
             }
             else {            
-               var flash = jQuery.media.utils.getFlash( player, id, width, height, flashvars );
+               var flash = jQuery.media.utils.getFlash( player, id, width, height, flashvars, wmode );
                var container = obj.find('#' + id).eq(0);
                if( jQuery.browser.msie ) {
                   container[0].outerHTML = flash;
@@ -5021,7 +5282,7 @@
             this.ready = false;
             var playerId = (options.id + "_media");
             var flashvars = {
-               clip_id:videoFile.path,
+               clip_id:this.getId(videoFile.path),
                width:this.display.width(),
                height:this.display.height(),
                js_api:'1',
@@ -5037,12 +5298,18 @@
                this.display.width(), 
                this.display.height(),
                flashvars,
+               options.wmode,
                function( obj ) {
                   _this.player = obj; 
                   _this.loadPlayer();  
                }
             );
          };      
+         
+         this.getId = function( path ) {
+            var regex = /^http[s]?\:\/\/(www\.)?vimeo\.com\/([0-9]+)/i;
+            return (path.search(regex) == 0) ? path.replace(regex, "$2") : path;
+         };
          
          this.loadMedia = function( videoFile ) {
             this.bytesLoaded = 0;
@@ -5317,12 +5584,18 @@
                this.display.width(), 
                this.display.height(),
                {},
+               options.wmode,
                function( obj ) {
                   _this.player = obj; 
                   _this.loadPlayer();  
                }
             );
          };      
+         
+         this.getId = function( path ) {
+            var regex = /^http[s]?\:\/\/(www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9]+)/i;
+            return (path.search(regex) == 0) ? path.replace(regex, "$2") : path;
+         };         
          
          this.loadMedia = function( videoFile ) {
             if( this.player ) {
@@ -5333,7 +5606,7 @@
                onUpdate( {type:"playerready"} );                 
                
                // Load our video.
-               this.player.loadVideoById( this.videoFile.path, 0 );
+               this.player.loadVideoById( this.getId( this.videoFile.path ), 0 );
             }
          };
          
@@ -5368,7 +5641,7 @@
                onUpdate( {type:"playerready"} );                
                
                // Load our video.
-               this.player.loadVideoById( this.videoFile.path, 0 );  
+               this.player.loadVideoById( this.getId( this.videoFile.path ), 0 );  
             }         
          };
          
