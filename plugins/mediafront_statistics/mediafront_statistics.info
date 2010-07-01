@@ -1,8 +1,0 @@
-; $Id$
-name = MediaFront Statistics
-description = Provides media statistics to the MediaFront module such as play counter.
-package = "MediaFront : Plugins"
-dependencies[] = mediafront
-dependencies[] = statistics
-version = VERSION
-core = 6.x

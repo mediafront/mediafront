@@ -1,8 +1,0 @@
-; $Id$
-name = MediaFront ImageCache
-description = Provides support for the ImageCache module
-package = "MediaFront : Plugins"
-dependencies[] = mediafront
-dependencies[] = imagecache
-version = VERSION
-core = 6.x
