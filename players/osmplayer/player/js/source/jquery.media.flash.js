@@ -50,6 +50,7 @@
          var _this = this;
          this.player = null;
          this.videoFile = null;
+         this.preview = '';
          this.ready = false;
          
          // Translate the messages.
@@ -63,8 +64,9 @@
             "mediaMeta":"meta"        
          };
          
-         this.createMedia = function( videoFile ) {
+         this.createMedia = function( videoFile, preview ) {
             this.videoFile = videoFile;
+            this.preview = preview;
             this.ready = false;
             var playerId = (settings.id + "_media");            
             var rand = Math.floor(Math.random() * 1000000); 
@@ -176,6 +178,7 @@
                config:"config",
                id:"mediafront_player",
                file:this.videoFile.path,
+               image:this.preview,
                skin:settings.skin
             };
             if( this.videoFile.stream ) {
