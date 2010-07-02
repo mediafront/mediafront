@@ -648,12 +648,12 @@ function mediafront_get_media_file( $file ) {
    $media_file->extension = $extension;
    if( mediafront_is_image( $file->filemime, $extension ) ) {
       $media_file->class = "images";
-      $media_file->type = "image";
+      $media_file->mediaType = "image";
       $media_file->path = file_create_url($file->filepath);
    }
    else if( mediafront_is_media( $file->filemime, $extension ) ) {
       $media_file->class = "media";
-      $media_file->type = "media";
+      $media_file->mediaType = "media";
       $media_file->path = file_create_url($file->filepath);
    }  
    else {
@@ -677,7 +677,7 @@ function mediafront_playlist_node( $node ) {
    if( $node->files && is_array($node->files) ) {
       foreach( $node->files as $fid => $file ) {
          if( $media_file = mediafront_get_media_file($file) ) {
-            $additions["mediafiles"][$media_file->class][$media_file->type] = $media_file;
+            $additions["mediafiles"][$media_file->class][$media_file->mediaType] = $media_file;
          }  
       } 
    }
@@ -718,7 +718,7 @@ function mediafront_playlist_node( $node ) {
                $media_file->bytesTotal = $node->{$fieldname}[0]['filesize'];
                $media_file->width = $node->{$fieldname}[0]['data']['width'];
                $media_file->height = $node->{$fieldname}[0]['data']['height'];
-               $additions["mediafiles"][$media_file->class][$media_file->type] = $media_file;
+               $additions["mediafiles"][$media_file->class][$media_file->mediaType] = $media_file;
             }
          }
 
