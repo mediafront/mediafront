@@ -6,29 +6,21 @@ function mediafront_emfield_playlist_node( $node, $args ) {
    $additions = array();   
    foreach( $node as $fieldname => $field ) {
       if( strpos( $fieldname, 'field_' ) === 0 ) {
-         $provider = $field[0]["provider"];
-         switch( $provider ) {
-            case 'youtube':
-               if( $field[0]["data"] && $field[0]["data"]["thumbnail"] ) {
-                  $newfile["path"] = $field[0]["data"]["thumbnail"]["url"];
-                  $additions["mediafiles"]["images"]["image"] = $newfile;
-               }
-               $media_file = new stdClass();
-              $media_file->path = $field[0]["value"];
-              $media_file->player = $provider;
-              $additions["mediafiles"]["media"]["media"] = $media_file;
-              break;
-            case 'vimeo':
-            case 'dailymotion':
-               $media_file = new stdClass();
-               if( $field[0]["data"] && $field[0]["data"]["emthumb"] ) {
-                  $media_file->filepath = $field[0]["data"]["emthumb"]["filepath"];
-                  $additions["mediafiles"]["images"]["image"] = mediafront_get_media_file( $media_file );
-               }
-               $media_file->path = $field[0]["value"];
-               $media_file->player = $provider;
-               $additions["mediafiles"]["media"]["media"] = $media_file;                  
-               break;
+         if( $field[0]["data"] && $field[0]["data"]["thumbnail"] ) {
+            mediafront_add_media( $additions, $field[0]["data"]["thumbnail"] );
+         }
+
+         if( $field[0]["data"] && $field[0]["data"]["emthumb"] ) {
+            mediafront_add_media( $additions, $field[0]["data"]["emthumb"] );
+         }
+         
+         if( $field[0]["provider"] ) {
+            $file = new stdClass();
+            $file->player = $field[0]["provider"];
+            $file->path = $field[0]["value"];
+            $file->class = 'media';
+            $file->mediaType = 'media';
+            mediafront_add_media( $additions, $file );
          }
       }        
    }

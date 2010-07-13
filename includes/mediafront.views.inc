@@ -59,7 +59,22 @@ function mediafront_views_plugins() {
         'use ajax' => TRUE,
         'accept attachments' => TRUE,
       ),      
-    ), 
+    ),
+    'style' => array(
+      'mediaplayer' => array(
+        'title' => t('Media Player'),
+        'help' => t('Shows this view as a Media Player.'),
+        'handler' => 'mediafront_plugin_style_player',
+        'theme' => 'mediafront_player_view',
+        'path' => "$path/includes",
+        'uses fields' => FALSE,
+        'uses row plugin' => FALSE,
+        'uses options' => TRUE,
+        'uses grouping' => FALSE,
+        'type' => 'mediafront',
+        'even empty' => TRUE,
+      ),
+    ),     
   );
   return $plugins;
 }

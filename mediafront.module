@@ -88,6 +88,13 @@ function mediafront_menu() {
  */
 function mediafront_theme() {
   $theme = array();
+  
+  // Create a basic theme function for showing the media player.
+  $theme['mediafront_player_view'] = array(
+     'arguments' => array('view' => NULL, 'preset' => NULL)
+  );
+  
+  // Iterate through all of our presets, and create a formatter for each one.
   foreach(mediafront_preset_get_presets() as $preset) {
     $theme['mediafront_formatter_'. $preset->name .'_player'] = array(
       'arguments' => array('element' => NULL),
@@ -95,6 +102,17 @@ function mediafront_theme() {
     );
   }
   return $theme;
+}
+
+/**
+ * Implement the theme for the media player for the Views module.
+ */
+function theme_mediafront_player_view( $view, $preset ) {
+   $params['playlistObj'] = mediafront_get_playlist_from_view( $view );
+   $params['playlist'] = $view->name;
+   $params['args'] = $view->args;
+   $params['pageLimit'] = method_exists($view, 'get_items_per_page') ? $view->get_items_per_page() : $view->pager['items_per_page'];     
+   return mediafront_get_player($preset, $params);   
 }
 
 /**
@@ -644,22 +662,61 @@ function mediafront_array_to_object($array = array()) {
  */
 function mediafront_get_media_file( $file ) {
    $media_file = new stdClass();
-   $extension = mediafront_get_extension( $file->filepath );
-   $media_file->extension = $extension;
-   if( mediafront_is_image( $file->filemime, $extension ) ) {
+   
+   $media_file->path = isset($file->url) ? $file->url : (isset($file->path) ? $file->path : file_create_url($file->filepath));   
+   $media_file->extension = mediafront_get_extension( $media_file->path ); 
+   
+   if( isset($file->class) && isset($file->mediaType) ) {
+      $media_file->class = $file->class;
+      $media_file->mediaType = $file->mediaType;      
+   }
+   else if( mediafront_is_image( $file->filemime, $media_file->extension ) ) {
       $media_file->class = "images";
       $media_file->mediaType = "image";
-      $media_file->path = file_create_url($file->filepath);
    }
-   else if( mediafront_is_media( $file->filemime, $extension ) ) {
+   else if( mediafront_is_media( $file->filemime, $media_file->extension ) ) {
       $media_file->class = "media";
       $media_file->mediaType = "media";
-      $media_file->path = file_create_url($file->filepath);
-   }  
-   else {
-      $media_file->path = file_create_url($file->filepath);    
    }
+   else {
+      $media_file->class = "";
+      $media_file->mediaType = "";       
+   }
+
+   $media_file->player = isset($file->player) ? $file->player : '';   
+   $media_file->bytesTotal = isset($file->filesize) ? $file->filesize : 0;
+   $media_file->duration = isset($file->duration) ? $file->duration : 0;
+   $media_file->width = isset($file->width) ? $file->width : 0;
+   $media_file->height = isset($file->height) ? $file->height : 0;
+   
    return $media_file;
+}
+
+/**
+ * Function that will add media to the $additions array
+ */
+function mediafront_add_media( &$additions, $file ) {
+   
+   // Only continue if the file exists.
+   if( $file ) {   
+     // Convert the file to an object.
+     $file = is_array($file) ? mediafront_array_to_object($file) : $file;
+      
+     // If the file exists.
+     if( $media_file = mediafront_get_media_file($file) ) {
+        if( $media_file->class && $media_file->mediaType ) {
+           if( isset( $additions["mediafiles"][$media_file->class][$media_file->mediaType] ) ) {
+             $media = $additions["mediafiles"][$media_file->class][$media_file->mediaType];
+             $files = is_array($media) ? $media : array($media);
+             array_push( $files, $media_file ); 
+             $additions["mediafiles"][$media_file->class][$media_file->mediaType] = $files;
+           }
+           else {
+             $additions["mediafiles"][$media_file->class][$media_file->mediaType] = $media_file; 
+           }
+        }
+     }   
+   }
 }
 
 /**
@@ -676,9 +733,7 @@ function mediafront_playlist_node( $node ) {
    // Iterate through the files.
    if( $node->files && is_array($node->files) ) {
       foreach( $node->files as $fid => $file ) {
-         if( $media_file = mediafront_get_media_file($file) ) {
-            $additions["mediafiles"][$media_file->class][$media_file->mediaType] = $media_file;
-         }  
+         mediafront_add_media( $additions, $file );
       } 
    }
   
@@ -705,20 +760,24 @@ function mediafront_playlist_node( $node ) {
    // Now look for any CCK fields.
    foreach( $node as $fieldname => $field ) {
       // This is a CCK filefield.
-      if( is_array($node->{$fieldname}) && isset($node->{$fieldname}[0]) ) {
+      if( is_array($field) && isset($field[0]) ) {
          // This is a text field.
-         if( isset($node->{$fieldname}[0]['value']) && is_string($node->{$fieldname}[0]['value']) ) {
-            $additions[$fieldname] = $node->{$fieldname}[0]['value'];
+         if( isset($field[0]['value']) && is_string($field[0]['value']) ) {
+            $additions[$fieldname] = $field[0]['value'];
          }
          
          // This is a file field.
-         if( is_array($node->{$fieldname}[0]) && isset($node->{$fieldname}[0]['filepath']) ) {
-            if( $media_file = mediafront_get_media_file( mediafront_array_to_object($node->{$fieldname}[0]) ) ) {
-               $media_file->duration = $node->{$fieldname}[0]['data']['duration'];
-               $media_file->bytesTotal = $node->{$fieldname}[0]['filesize'];
-               $media_file->width = $node->{$fieldname}[0]['data']['width'];
-               $media_file->height = $node->{$fieldname}[0]['data']['height'];
-               $additions["mediafiles"][$media_file->class][$media_file->mediaType] = $media_file;
+         if( is_array($field[0]) && isset($field[0]['filepath']) ) {
+
+            // Iterate through the file field instances.
+            foreach( $field as $index => $instance ) {
+              // Merge the file data with the file info.
+              $fileData = $instance['data'];
+              unset( $instance['data'] );
+              $file = array_merge( $instance, $fileData );
+
+              // Add this media to our struct.
+              mediafront_add_media( $additions, $file );
             }
          }
 
