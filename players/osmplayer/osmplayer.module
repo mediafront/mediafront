@@ -575,7 +575,14 @@ function osmplayer_player_settings_form( $preset ) {
      '#description' => t('Select if you would like to see the debug statements from the Media Player.'),
      '#default_value' => $preset->settings['debug']
    );    
-   
+
+   $form['misc']['playerPath'] = array(
+     '#type' => 'textfield',
+     '#title' => t('OSM Player Directory'),
+     '#description' => t('Enter the directory for the Open Standard Media Player relative to Drupal root.  This should only be necessary if you use symlinks for your modules or sites folders, and the text above does not reflect the correct location provided by those symlinks.  For example, if the OSMPlayer.php file within the Open Standard Media Player is located at http://www.mysite.com/sites/all/modules/mediafront/players/osmplayer/player/OSMPlayer.php, you will provide <strong>sites/all/modules/mediafront/players/osmplayer/player</strong> for this text field.  <strong>WARNING:  Change this setting at your own risk!  Getting this wrong can cause PHP errors that will be unrecoverable without deleting the preset entirely!</strong>'),
+     '#default_value' => $preset->settings['playerPath']
+   ); 
+
    // If they have services module, then we need to get all the available API Keys.
    $hasServices = module_exists('services');
    $apiKeys = array();
@@ -710,7 +717,7 @@ function template_preprocess_osmplayer(&$variables) {
    $variables['params']['prefix'] = $player->getPrefix();
 
    // Store the player path as a variable.
-   $variables['params']['playerurl'] = $base_url . '/' . osmplayer_get_path();
+   $variables['params']['playerURL'] = $base_url . '/' . osmplayer_get_path();
    
    // Make sure we call the template_preprocess.
    template_preprocess( $variables, 'osmplayer_' . $variables['params']['template'] );
