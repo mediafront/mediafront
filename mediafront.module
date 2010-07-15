@@ -99,12 +99,12 @@ function mediafront_menu() {
  */
 function mediafront_theme() {
   $theme = array();
-  
+
   // Create a basic theme function for showing the media player.
   $theme['mediafront_player_view'] = array(
      'arguments' => array('view' => NULL, 'preset' => NULL)
   );
-  
+
   // Iterate through all of our presets, and create a formatter for each one.
   foreach(mediafront_preset_get_presets() as $preset) {
     $theme['mediafront_formatter_'. $preset->name .'_player'] = array(
@@ -112,6 +112,7 @@ function mediafront_theme() {
       'function' => 'theme_mediafront_formatter_player',
     );
   }
+  
   return $theme;
 }
 
@@ -165,8 +166,8 @@ function theme_mediafront_player_view( $view, $preset ) {
    $params['playlistObj'] = mediafront_get_playlist_from_view( $view );
    $params['playlist'] = $view->name;
    $params['args'] = $view->args;
-   $params['pageLimit'] = method_exists($view, 'get_items_per_page') ? $view->get_items_per_page() : $view->pager['items_per_page'];     
-   return mediafront_get_player($preset, $params);   
+   $params['pageLimit'] = method_exists($view, 'get_items_per_page') ? $view->get_items_per_page() : $view->pager['items_per_page'];
+   return mediafront_get_player($preset, $params);
 }
 
 /**
@@ -197,7 +198,7 @@ function theme_mediafront_formatter_player($element) {
 function mediafront_views_api() {
   return array(
     'api' => 2,
-    'path' => drupal_get_path('module', 'mediafront') .'/includes',
+    'path' => drupal_get_path('module', 'mediafront') .'/views',
   );
 }
 
