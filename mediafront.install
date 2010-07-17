@@ -343,6 +343,17 @@ function mediafront_update_6004() {
   // Clear the OSM CSS folder..
   osmplayer_clear_css();
 
+  // Now delete the old files we don't need.
+  $dir = getcwd() . '/' . drupal_get_path('module', 'mediafront');
+    
+  // Now delete the old includes directory so you can't re-enable it.
+  mediafront_delete_dir( $dir . '/includes' );
+
+  // Delete the old views files.
+  file_delete( $dir . '/views/mediafront_handler_field_preset.inc' );
+  file_delete( $dir . '/views/mediafront_plugin_display_block.inc' );
+  file_delete( $dir . '/views/mediafront_plugin_display_page.inc' );
+
   return $update;
 }
 ?>
