@@ -39,10 +39,13 @@ function osmplayer_get_player_object( $settings = null ) {
     if( !isset($osmplayers[$preset]) ) {
       if( $settings ) {
         // Create the OSMPlayer object with these settings.
+        $playerPath = osmplayer_get_path();
         $settings['id'] = 'mediafront_' . $preset;
         $settings['prefix'] = $settings['id'] . '_';
         $settings['baseURL'] = $base_url;
         $settings['gateway'] = $base_url . '/services/xmlrpc';
+        $settings['flashPlayer'] = $base_url . '/' . $playerPath . '/' . $settings['flashPlayer'];
+        $settings['logo'] = $base_url . '/' . $playerPath . '/' . $settings['logo'];
 
         // Create the OSMPlayer object with these settings.
         $osmplayers[$preset] = new OSMPlayer( $settings );
@@ -223,9 +226,24 @@ function osmplayer_mediafront_preset_save( $params ) {
 
    // Get the media player.
    $player = osmplayer_get_player_object( $settings );
-   
-   // Now reset the CSS files.
-   $player->template->resetCSS();
+
+   if( $player ) {
+     // Now reset the CSS files.
+     $player->template->resetCSS();
+   }
+}
+
+/**
+ * Get all the necessary paths needed by the media player
+ */
+function osmplayer_get_player_paths() {
+   global $base_url;
+   static $paths;
+   if( !$paths ) {
+      $paths['playerPath'] = osmplayer_get_path();
+      $paths['playerURL'] = $base_url . '/' . $paths['playerPath'];       
+   }
+   return $paths;   
 }
 
 /**
@@ -234,7 +252,7 @@ function osmplayer_mediafront_preset_save( $params ) {
  * These are the settings that the module implements...
  */
 function osmplayer_get_player_settings() {
-   return OSMPlayer::getPlayerSettings();
+   return OSMPlayer::getPlayerSettings( osmplayer_get_player_paths() );
 }
 
 /**
@@ -243,12 +261,8 @@ function osmplayer_get_player_settings() {
  *  These are the parameters that the player requires...
  */
 function osmplayer_get_player_params() {
-   global $base_url;
-   $playerpath = osmplayer_get_path();
-   $hasServices = module_exists('services') && module_exists('xmlrpc_server');
-   $params = OSMPlayer::getPlayerParams();
-   $params['flashplayer'] = $base_url . '/' . $playerpath . '/' . $params['flashplayer'];
-   $params['logo'] = $base_url . '/' . $playerpath . '/' . $params['logo'];
+   $hasServices = module_exists('services') && module_exists('xmlrpc_server');  
+   $params = OSMPlayer::getPlayerParams( osmplayer_get_player_paths() );
    $params['protocol'] = $hasServices ? "auto" : "json";
    return $params;
 }
@@ -297,6 +311,18 @@ function osmplayer_player_settings_form( $preset ) {
      '#description' => t('Enter the height of the player.'),
      '#default_value' => $preset->settings['height']
    );
+   $form['presentation']['embedWidth'] = array(
+     '#type' => 'textfield',
+     '#title' => t('Player Embedded Width'),
+     '#description' => t('Enter the width of the player when it is embedded into another site.'),
+     '#default_value' => $preset->settings['embedWidth']
+   );    
+   $form['presentation']['embedHeight'] = array(
+     '#type' => 'textfield',
+     '#title' => t('Player Embedded Height'),
+     '#description' => t('Enter the height of the player when it is embedded into another site.'),
+     '#default_value' => $preset->settings['embedHeight']
+   );   
    $form['presentation']['showTitleBar'] = array(
      '#type' => 'checkbox',
      '#title' => t('Show Title Bar'),
@@ -576,13 +602,6 @@ function osmplayer_player_settings_form( $preset ) {
      '#default_value' => $preset->settings['debug']
    );    
 
-   $form['misc']['playerPath'] = array(
-     '#type' => 'textfield',
-     '#title' => t('OSM Player Directory'),
-     '#description' => t('Enter the directory for the Open Standard Media Player relative to Drupal root.  This should only be necessary if you use symlinks for your modules or sites folders, and the text above does not reflect the correct location provided by those symlinks.  For example, if the OSMPlayer.php file within the Open Standard Media Player is located at http://www.mysite.com/sites/all/modules/mediafront/players/osmplayer/player/OSMPlayer.php, you will provide <strong>sites/all/modules/mediafront/players/osmplayer/player</strong> for this text field.  <strong>WARNING:  Change this setting at your own risk!  Getting this wrong can cause PHP errors that will be unrecoverable without deleting the preset entirely!</strong>'),
-     '#default_value' => $preset->settings['playerPath']
-   ); 
-
    // If they have services module, then we need to get all the available API Keys.
    $hasServices = module_exists('services');
    $apiKeys = array();
@@ -654,12 +673,12 @@ function osmplayer_get_skins() {
  */
 function osmplayer_add_js( $player ) {
    // Cache the player path.
-   $playerpath = osmplayer_get_path();
+   $paths = osmplayer_get_player_paths();
 	
    // Add the javascript files.
    $js_files = $player->getJSFiles();
    foreach( $js_files as $js_file ) {
-      drupal_add_js( $playerpath . '/' . $js_file);  
+      drupal_add_js( $paths['playerPath'] . '/' . $js_file);
    }
 
    // Add the JavaScript for this player.
@@ -700,33 +719,33 @@ function template_preprocess_osmplayer(&$variables) {
 
    // Get the media player.
    $player = osmplayer_get_player_object( $variables['params'] );
-   $variables['params']['id'] = $player->getId();      
 
-   // Add the javascript for this player.
-   osmplayer_add_js( $player );
+   if( $player ) {
+     $variables['params']['id'] = $player->getId();
 
-   // Add the CSS files for this player.
-   osmplayer_add_css( $player, $variables['params']['preset'] );
-  
-   // Make sure they always have a template, theme, and version...
-   $template = $variables['params']['template'] = $player->getTemplate();
-   $variables['params']['theme'] = $player->getTheme();
-   $variables['params']['version'] = $player->template->getVersion();
+     // Add the javascript for this player.
+     osmplayer_add_js( $player );
 
-   // Get the player prefix.
-   $variables['params']['prefix'] = $player->getPrefix();
+     // Add the CSS files for this player.
+     osmplayer_add_css( $player, $variables['params']['preset'] );
 
-   // Store the player path as a variable.
-   $variables['params']['playerURL'] = $base_url . '/' . osmplayer_get_path();
-   
-   // Make sure we call the template_preprocess.
-   template_preprocess( $variables, 'osmplayer_' . $variables['params']['template'] );
-   
-   // Now set up our templates within a template.
-   $variables['titlebar'] = theme( 'osmplayer_' . $template . '_titlebar', array('params' => $variables['params']) );  
-   $variables['menu'] = theme( 'osmplayer_' . $template . '_menu', array('params' => $variables['params']) );     
-   $variables['node'] = theme( 'osmplayer_' . $template . '_node', array('params' => $variables['params']) );
-   $variables['playlist'] = theme( 'osmplayer_' . $template . '_playlist', array('params' => $variables['params']) );
+     // Make sure they always have a template, theme, and version...
+     $template = $variables['params']['template'] = $player->getTemplate();
+     $variables['params']['theme'] = $player->getTheme();
+     $variables['params']['version'] = $player->template->getVersion();
+
+     // Get the player prefix.
+     $variables['params']['prefix'] = $player->getPrefix();
+
+     // Make sure we call the template_preprocess.
+     template_preprocess( $variables, 'osmplayer_' . $variables['params']['template'] );
+     
+     // Now set up our templates within a template.
+     $variables['titlebar'] = theme( 'osmplayer_' . $template . '_titlebar', array('params' => $variables['params']) );  
+     $variables['menu'] = theme( 'osmplayer_' . $template . '_menu', array('params' => $variables['params']) );     
+     $variables['node'] = theme( 'osmplayer_' . $template . '_node', array('params' => $variables['params']) );
+     $variables['playlist'] = theme( 'osmplayer_' . $template . '_playlist', array('params' => $variables['params']) );
+   }
 }
 
 /**

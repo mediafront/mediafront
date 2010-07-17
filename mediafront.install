@@ -50,7 +50,40 @@ function mediafront_schema() {
     'primary key' => array('pid'),
   );
 
+  $schema['mediafront_filefield'] = array(
+    'description' => 'Table used to tell the MediaFront module how each FileField should be handled.',
+    'fields' => array(
+      'fid' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE),
+      'node_type' => array('type' => 'text', 'not null' => FALSE),
+      'field_name' => array('type' => 'text', 'not null' => FALSE),
+      'media_type'  => array('type' => 'text', 'not null' => FALSE),
+      'node_preset'  => array('type' => 'text', 'not null' => FALSE),
+      'thumb_preset' => array('type' => 'text', 'not null' => FALSE)
+    ),
+    'primary key' => array('fid')
+  );
+
   return $schema;
+}
+
+function mediafront_update_7001() {
+  $update = array();
+
+  // Create the mediafront_filefield table.
+  db_create_table('mediafront_filefield', array(
+    'description' => 'Table used to tell the MediaFront module how each FileField should be handled.',
+    'fields' => array(
+      'fid' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE),
+      'node_type' => array('type' => 'text', 'not null' => FALSE),
+      'field_name' => array('type' => 'text', 'not null' => FALSE),
+      'media_type'  => array('type' => 'text', 'not null' => FALSE),
+      'node_preset'  => array('type' => 'text', 'not null' => FALSE),
+      'thumb_preset' => array('type' => 'text', 'not null' => FALSE)
+    ),
+    'primary key' => array('fid')
+  ));
+
+  return $update;
 }
 
 ?>

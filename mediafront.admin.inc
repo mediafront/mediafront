@@ -280,6 +280,7 @@ function mediafront_create_preset_validate($form, &$form_state) {
  */
 function mediafront_create_preset_submit($form, &$form_state) {
   $preset = (object)$form_state['values'];
+  $preset->name = strtolower( $preset->name );
   mediafront_preset_save($preset);
   $form_state['redirect'] = 'admin/structure/mediafront/preset/manage/' . $preset->name;
 }
