@@ -1,5 +1,5 @@
 <?php
-function mediafront_form_alter(&$form, $form_state, $form_id)
+function mediafront_imagecache_form_alter(&$form, $form_state, $form_id)
 {   
    // See if we are an image field.
    if( ($form_id == "content_field_edit_form") && ($form["#field"]["type"] == "filefield") && ($form["#field"]["widget"]["type"] == "imagefield_widget") ) {

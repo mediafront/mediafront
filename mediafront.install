@@ -18,36 +18,49 @@ function mediafront_schema() {
         'length' => 64,
         'not null' => TRUE,
         'default' => '',
-      ),    
+      ),
       'description' => array(
         'description' => 'A brief description of this preset.',
         'type' => 'text',
-        'size' => 'medium',      
+        'size' => 'medium',
         'translatable' => TRUE,
       ),
       'player' => array(
         'type' => 'varchar',
         'length' => 64,
         'not null' => TRUE,
-        'default' => '',      
+        'default' => '',
       ),
       'connect' => array(
         'type' => 'text',
         'size' => 'medium',
-        'serialize' => TRUE,        
+        'serialize' => TRUE,
         'description' => 'Serialized player connection settings.',
-      ),      
+      ),
       'settings' => array(
         'type' => 'text',
         'size' => 'medium',
-        'serialize' => TRUE,        
+        'serialize' => TRUE,
         'description' => 'Serialized player settings that do not warrant a dedicated column.',
-      ),      
+      ),
     ),
     'unique keys' => array(
       'name' => array('name'),
-    ),    
+    ),
     'primary key' => array('pid'),
+  );
+
+  $schema['mediafront_filefield'] = array(
+    'description' => 'Table used to tell the MediaFront module how each FileField should be handled.',
+    'fields' => array(
+      'fid' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE),
+      'node_type' => array('type' => 'text', 'not null' => FALSE),
+      'field_name' => array('type' => 'text', 'not null' => FALSE),
+      'media_type'  => array('type' => 'text', 'not null' => FALSE),
+      'node_preset'  => array('type' => 'text', 'not null' => FALSE),
+      'thumb_preset' => array('type' => 'text', 'not null' => FALSE)
+    ),
+    'primary key' => array('fid')
   );
 
   return $schema;
@@ -74,33 +87,262 @@ function mediafront_disable() {
 
 function mediafront_install() {
   drupal_install_schema('mediafront');
-  if (module_exists('content')) {  
+  if (module_exists('content')) {
     content_notify('install', 'mediafront');
-  }  
+  }
 }
 
 function mediafront_uninstall() {
   drupal_uninstall_schema('mediafront');
   if (module_exists('content')) {
     content_notify('uninstall', 'mediafront');
-  }    
+  }
 }
 
 function mediafront_update_6001() {
-   $update = array();
-   
-   // Clear the OSM CSS folder..
-   osmplayer_clear_css();   
-   
-   return $update;
+  $update = array();
+
+  // Clear the OSM CSS folder..
+  osmplayer_clear_css();
+
+  return $update;
 }
 
 function mediafront_update_6002() {
-   $update = array();
+  $update = array();
 
-   // Clear the OSM CSS folder..
-   osmplayer_clear_css();
+  // Clear the OSM CSS folder..
+  osmplayer_clear_css();
 
-   return $update;
+  return $update;
+}
+
+function mediafront_delete_dir($dir) {
+  // open the directory
+  $handle = opendir($dir);
+  if ($handle) {
+    while (false !== ($fname = readdir($handle))) {
+      if (is_dir( "{$dir}/{$fname}" )) {
+        if (($fname != '.') && ($fname != '..')) {
+          mediafront_delete_dir("$dir/$fname");
+        }
+      } else {
+        unlink("{$dir}/{$fname}");
+      }
+    }
+    closedir($handle);
+  }
+  rmdir($dir);
+}
+
+/**
+ * Add the mediafront_filefield table, and remove the mediafront_imagecache module.
+ */
+function mediafront_update_6003() {
+  $update = array();
+
+  // Create the mediafront_filefield table.
+  db_create_table($update, 'mediafront_filefield', array(
+    'description' => 'Table used to tell the MediaFront module how each FileField should be handled.',
+    'fields' => array(
+      'fid' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE),
+      'node_type' => array('type' => 'text', 'not null' => FALSE),
+      'field_name' => array('type' => 'text', 'not null' => FALSE),
+      'media_type'  => array('type' => 'text', 'not null' => FALSE),
+      'node_preset'  => array('type' => 'text', 'not null' => FALSE),
+      'thumb_preset' => array('type' => 'text', 'not null' => FALSE)
+    ),
+    'primary key' => array('fid')
+  ));
+
+  // We now need to iterate through all of the current settings of
+  // the obsolete MediaFront ImageCache module and transfer those settings to this module.
+  $presets = db_query( "SELECT * FROM {mediafront_imagecache}" );
+  while( $preset = db_fetch_object( $presets ) ) {
+    $sql = "INSERT INTO {mediafront_filefield} (node_type, field_name, node_preset, thumb_preset) ";
+    $sql .= "VALUES ( '{$preset->node_type}', '{$preset->field_name}', '{$preset->node_preset}', '{$preset->thumb_preset}' )";
+    $update[] = update_sql($sql);
+  }
+
+  // Now disable and uninstall the mediafront_imagecache module.
+  module_disable(array('mediafront_imagecache'));
+  drupal_uninstall_module('mediafront_imagecache');
+
+  // Now delete the mediafront_imagecache module files so you can't re-enable it.
+  mediafront_delete_dir( getcwd() . '/' . drupal_get_path('module', 'mediafront_imagecache') );
+
+  return $update;
+}
+
+/**
+ * I know this is a crazy update, but there is a reason.
+ *
+ * We are now using the views styles to add the presets to each view instead
+ * of the UBER-HACK of adding "Media Player Page" and "Media Player Block".  Now all you do is just
+ * add a new "Page" with a style of "Media Player".  This is a MUCH more elegant solution
+ * and makes the code crazy simpler.  So, instead of just killing every install
+ * out there for this upgrade when I blow away the old method, this script will now
+ * convert the old method to the new method.
+ */
+function mediafront_update_6004() {
+  $update = array();
+
+  $displays = array();
+
+  // Get all of our views display's
+  $result = db_query("SELECT * FROM {views_display}");
+
+  // Create our displays array with all of our views displays.
+  while( $display = db_fetch_object( $result) ) {
+    $display->options = unserialize( $display->display_options );
+    $displays[$display->vid][$display->id] = $display;
+  }
+
+  // Now iterate through all of our displays.
+  foreach( $displays as $vid => $group ) {
+
+    // Iterate through all of our display groups.
+    foreach( $group as $id => $display ) {
+
+      // If this display is a mediaplayerpage or a mediaplayer ( block ).
+      if( ($display->display_plugin == 'mediaplayerpage') ||
+        ($display->display_plugin == 'mediaplayer') ) {
+
+        // Determine the preset of this display.
+        $preset = '';
+        if( $display->options['fields'] ) {
+
+          // First search inside of the fields of this display...
+          foreach( $display->options['fields'] as $name => $field ) {
+            if( isset( $field['mediafront_preset']) ) {
+              $preset = $field['mediafront_preset'];
+              break;
+            }
+          }
+        }
+
+        // If no preset is found, then search inside of the default display.
+        if( !$preset ) {
+          foreach( $group['default']->options['fields'] as $name => $field ) {
+            if( isset( $field['mediafront_preset']) ) {
+              $preset = $field['mediafront_preset'];
+              break;
+            }
+          }
+        }
+
+        // Only continue if we found a preset.
+        if( $preset ) {
+
+          // Set the new options...
+          $new_options = $display->options;
+
+          // Unset the fields since the new display's don't use them.
+          unset( $new_options['fields'] );
+          if( $new_options['defaults'] ) {
+            unset( $new_options['defaults']['fields'] );
+          }
+
+          if( $display->options['defaults'] ) {
+            $new_options['defaults'] = array_merge( $display->options['defaults'], array(
+              'style_plugin' => false,
+              'style_options' => false,
+              'row_plugin' => false,
+              'row_options' => false
+            ));
+          }
+          else {
+            $new_options['defaults'] = array(
+              'style_plugin' => false,
+              'style_options' => false,
+              'row_plugin' => false,
+              'row_options' => false
+            );
+          }
+
+          // Add the other display elements that are necessary.
+          $new_options['row_options'] = array();
+          $new_options['row_plugin'] = 'fields';
+          $new_options['style_plugin'] = 'mediaplayer';
+          $new_options['style_options'] = array( 'mediafront_preset' => $preset );
+
+          if( $display->options['path'] ) {
+            $new_options['path'] = $display->options['path'];
+          }
+
+          if( $display->options['menu'] ) {
+            $new_options['menu'] = $display->options['menu'];
+          }
+
+          if( $display->options['block_description'] ) {
+            $new_options['block_description'] = $display->options['block_description'];
+          }
+
+          if( $display->options['block_caching'] ) {
+            $new_options['block_caching'] = $display->options['block_caching'];
+          }
+
+          // Now get the view for this display, and determine the id and title.
+          $view = views_get_view( db_result(db_query("SELECT name FROM {views_view} WHERE vid=%d", $display->vid)) );
+          $type = ($display->display_plugin == 'mediaplayerpage') ? 'page' : 'block';
+          $plugin = views_fetch_plugin_data('display', $type);
+          $id = $type . '_1';
+          $viewTitle = ($display->display_plugin == 'mediaplayerpage') ? 'Page' : 'Block';
+          $title = $viewTitle;
+          $count = 1;
+          while (!empty($view->display[$id])) {
+            $id = $type . '_' . ++$count;
+            $title = $viewTitle . ' ' . $count;
+          }
+
+          // Now create the new block or page using the new system.
+          $sql = "INSERT INTO {views_display} (vid, id, display_title, display_plugin, position, display_options) ";
+          $sql .= "VALUES ({$display->vid}, '{$id}', '{$title}', '{$type}', 10, '%s')";
+          db_query($sql, serialize($new_options));
+          $update[] = array('success' => TRUE, 'query' => check_plain($sql));
+        }
+      }
+    }
+  }
+
+  // Now iterate through all of our displays... again.
+  foreach( $displays as $vid => $group ) {
+
+    // Iterate through all of our display groups... again.
+    foreach( $group as $id => $display ) {
+
+      // Store the new options.
+      $new_options = $display->options;
+
+      // Now check for the mediafront_preset field.
+      if( $display->options['fields'] ) {
+
+        // Iterate through all the fields.
+        foreach( $display->options['fields'] as $name => $field ) {
+
+          // If this is a media front preset.
+          if( $field['table'] == 'mediafront_preset' ) {
+
+            // Unset this now bogus field.
+            unset( $new_options['fields'][$name] );
+
+            // Now update this field with the new options.
+            $sql = "UPDATE {views_display} SET display_options='%s' WHERE vid={$display->vid} AND id='{$display->id}'";
+            db_query($sql, serialize($new_options) );
+            $update[] = array('success' => TRUE, 'query' => check_plain($sql));
+          }
+        }
+      }
+    }
+  }
+
+  // Now delete the old displays.
+  $update[] = update_sql("DELETE FROM {views_display} WHERE display_plugin='mediaplayerpage'");
+  $update[] = update_sql("DELETE FROM {views_display} WHERE display_plugin='mediaplayer'");
+
+  // Clear the OSM CSS folder..
+  osmplayer_clear_css();
+
+  return $update;
 }
 ?>
