@@ -117,24 +117,6 @@ function mediafront_update_6002() {
   return $update;
 }
 
-function mediafront_delete_dir($dir) {
-  // open the directory
-  $handle = opendir($dir);
-  if ($handle) {
-    while (false !== ($fname = readdir($handle))) {
-      if (is_dir( "{$dir}/{$fname}" )) {
-        if (($fname != '.') && ($fname != '..')) {
-          mediafront_delete_dir("$dir/$fname");
-        }
-      } else {
-        unlink("{$dir}/{$fname}");
-      }
-    }
-    closedir($handle);
-  }
-  rmdir($dir);
-}
-
 /**
  * Add the mediafront_filefield table, and remove the mediafront_imagecache module.
  */
@@ -168,8 +150,11 @@ function mediafront_update_6003() {
   module_disable(array('mediafront_imagecache'));
   drupal_uninstall_module('mediafront_imagecache');
 
-  // Now delete the mediafront_imagecache module files so you can't re-enable it.
-  mediafront_delete_dir( getcwd() . '/' . drupal_get_path('module', 'mediafront_imagecache') );
+  // Now delete the old files we don't need.
+  $dir = getcwd() . '/' . drupal_get_path('module', 'mediafront_imagecache');
+  file_delete( $dir . '/mediafront_imagecache.module' );
+  file_delete( $dir . '/mediafront_imagecache.info' );
+  file_delete( $dir . '/mediafront_imagecache.install' );
 
   return $update;
 }
@@ -345,9 +330,6 @@ function mediafront_update_6004() {
 
   // Now delete the old files we don't need.
   $dir = getcwd() . '/' . drupal_get_path('module', 'mediafront');
-    
-  // Now delete the old includes directory so you can't re-enable it.
-  mediafront_delete_dir( $dir . '/includes' );
 
   // Delete the old views files.
   file_delete( $dir . '/views/mediafront_handler_field_preset.inc' );
