@@ -449,7 +449,6 @@ function mediafront_preset_name_exists( $preset_name ) {
  */
 function mediafront_filefield_save( $node_type, $field_name, $media_type, $node_preset, $thumb_preset ) {
   $field = mediafront_filefield_get( $node_type, $field_name );
-  $fid = $field ? $field->fid : array();
   $fields = array(
     'node_type' => $node_type,
     'field_name' => $field_name,
@@ -457,6 +456,10 @@ function mediafront_filefield_save( $node_type, $field_name, $media_type, $node_
     'node_preset' => $node_preset,
     'thumb_preset' => $thumb_preset
   );
+  $fid = (isset($field->fid) && $field->fid) ? 'fid' : array();
+  if( $fid ) {
+    $fields['fid'] = $field->fid;
+  }
   return drupal_write_record('mediafront_filefield', $fields, $fid );
 }
 
