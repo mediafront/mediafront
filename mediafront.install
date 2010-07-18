@@ -146,12 +146,13 @@ function mediafront_update_6003() {
     $update[] = update_sql($sql);
   }
 
+  $dir = getcwd() . '/' . drupal_get_path('module', 'mediafront_imagecache');
+
   // Now disable and uninstall the mediafront_imagecache module.
   module_disable(array('mediafront_imagecache'));
   drupal_uninstall_module('mediafront_imagecache');
 
   // Now delete the old files we don't need.
-  $dir = getcwd() . '/' . drupal_get_path('module', 'mediafront_imagecache');
   file_delete( $dir . '/mediafront_imagecache.module' );
   file_delete( $dir . '/mediafront_imagecache.info' );
   file_delete( $dir . '/mediafront_imagecache.install' );
