@@ -514,7 +514,7 @@ function mediafront_get_playlist_from_view( $view, $args = null ) {
   $playlist = array();
   $playlist['nodes'] = array();
   $playlist['name'] = $view->name;
-  $playlist['total_rows'] = $view->total_rows ? $view->total_rows : ($view->query->pager ? $view->query->pager->get_total_rows() : 0);
+  $playlist['total_rows'] = $view->total_rows ? $view->total_rows : ($view->query->pager ? $view->query->pager->get_total_items() : 0);
 
   // Iterate through our result and get our player nodes.
   foreach( $view->result as $node ) {
@@ -699,6 +699,22 @@ function mediafront_add_media( &$additions, $file ) {
 }
 
 /**
+ * Returns the field if it exists.
+ */
+function _mediafront_get_field( $node, $field_name, $index = -1 ) {
+  if( isset($node->{$field_name}) &&
+      isset($node->{$field_name}['und']) &&
+      is_array($node->{$field_name}['und']) && 
+      isset($node->{$field_name}['und'][0]) &&
+      is_array($node->{$field_name}['und'][0]) ) {
+    return ($index >= 0) ? $node->{$field_name}['und'][$index] : $node->{$field_name}['und'];
+  }
+  else {
+    return null;
+  }
+}
+
+/**
  * Implements hook_playlist_node()
  */
 function mediafront_playlist_node( $node ) {
@@ -708,40 +724,32 @@ function mediafront_playlist_node( $node ) {
   $additions['description'] = $node->body;
 
   // If they provide the field_mediafront_media field.
-  if( isset($node->field_mediafront_media) &&
-      isset($node->field_mediafront_media['und'][0]) &&
-      isset($node->field_mediafront_media['und'][0]) &&
-      isset($node->field_mediafront_media['und'][0]['value']) &&
-      $node->field_mediafront_media['und'][0]['value'] ) {
-    $additions["mediafiles"]["media"]["media"] = $node->field_mediafront_media['und'][0]['value'];
+  if( $field = _mediafront_get_field( $node, 'field_mediafront_media', 0 ) ) {
+    if( $field ) {
+      $additions["mediafiles"]["media"]["media"] = $field['value']; 
+    }
   }
 
   // If they provide the field_mediafront_image field.
-  if( isset($node->field_mediafront_image) &&
-      isset($node->field_mediafront_media['und'][0]) &&
-      isset($node->field_mediafront_image['und'][0]) &&
-      isset($node->field_mediafront_image['und'][0]['value']) &&
-      $node->field_mediafront_image['und'][0]['value'] ) {
-    $additions["mediafiles"]["images"]["image"] = $node->field_mediafront_image['und'][0]['value'];
+  if( $field = _mediafront_get_field( $node, 'field_mediafront_image', 0 ) ) {
+    if( $field ) {
+      $additions["mediafiles"]["images"]["image"] = $field['value']; 
+    }
   }
 
   // Now look for any CCK fields.
   foreach( $node as $fieldname => $field ) {
 
     // This is a CCK filefield.
-    if( is_array($field) &&
-        isset($field['und']) &&
-        is_array($field['und']) &&
-        isset($field['und'][0]) &&
-        is_array($field['und'][0]) ) {
+    if( $field = _mediafront_get_field( $node, $fieldname ) ) {
 
       // This is a text field.
-      if( isset($field['und'][0]['value']) && is_string($field['und'][0]['value']) ) {
-        $additions[$fieldname] = $field['und'][0]['value'];
+      if( isset($field[0]['value']) && is_string($field[0]['value']) ) {
+        $additions[$fieldname] = $field[0]['value'];
       }
 
       // This is a file field.
-      if( isset($field['und'][0]['filename']) ) {
+      if( isset($field[0]['filename']) ) {
 
         // Get the media type for this field.
         $media_field = mediafront_filefield_get( 'node', $node->type, $fieldname );
@@ -750,7 +758,7 @@ function mediafront_playlist_node( $node ) {
         if( !$media_field || ($media_field->media_type != 'none') ) {
 
           // Iterate through the file field instances.
-          foreach( $field['und'] as $index => $instance ) {
+          foreach( $field as $index => $instance ) {
 
             // If this instance has a data struct...
             if( isset($instance['data']) && $instance['data'] ) {
@@ -774,7 +782,7 @@ function mediafront_playlist_node( $node ) {
           if( $media_field ) {
 
             // Get the filename.
-            $filename = $field['und'][0]['filename'];
+            $filename = $field[0]['filename'];
 
             // If this is a preview image.
             if( $media_field->node_preset ) {
