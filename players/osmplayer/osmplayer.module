@@ -44,7 +44,7 @@ function osmplayer_get_player_object( $settings = null ) {
         $settings['prefix'] = $settings['id'] . '_';
         $settings['baseURL'] = $base_url;
         $settings['gateway'] = $base_url . '/services/xmlrpc';
-
+        
         if( isset($settings['flashPlayer']) ) {
           $settings['flashPlayer'] = $base_url . '/' . $playerPath . '/' . $settings['flashPlayer'];
         }
