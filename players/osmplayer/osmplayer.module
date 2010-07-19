@@ -56,7 +56,9 @@ function osmplayer_get_player_object( $settings = null ) {
         $osmplayers[$preset] = new OSMPlayer( $settings );
 
         // Set the session id for the player.
-        $osmplayers[$preset]->setSessionId( $user->sid );
+        if( isset( $user->sid ) ) {
+          $osmplayers[$preset]->setSessionId( $user->sid );
+        }
 
         // Set the CSS directory of our OSMPlayer component.
         $osmplayers[$preset]->template->setCSSDir( osmplayer_get_css_dir() );
