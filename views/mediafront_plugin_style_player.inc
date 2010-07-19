@@ -45,14 +45,6 @@ class mediafront_plugin_style_player extends views_plugin_style {
   }
   
   /**
-   * Make sure the view includes the total number of rows.
-   */
-  function pre_execute() {
-    parent::pre_execute();
-    $this->view->get_total_rows = TRUE;
-  }  
-  
-  /**
    * Renders the media player.
    */
   function render() {
@@ -64,6 +56,6 @@ class mediafront_plugin_style_player extends views_plugin_style {
     }
 
     // Now render the media player for this view.
-    return theme($this->theme_functions(), $this->view, $this->options['mediafront_preset']);
+    return theme($this->theme_functions(), array( 'view' => $this->view, 'preset' => $this->options['mediafront_preset'] ));
   }  
 }

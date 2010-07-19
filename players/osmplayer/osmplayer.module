@@ -10,7 +10,7 @@ function osmplayer_get_player( $params ) {
 
    // If they provide the playlist object, encode it as JSON.
    if( isset($params['playlistObj']) && $params['playlistObj'] ) {
-     $params['playlist'] = mediafront_json_encode( $params['playlistObj'] );
+     $params['playlist'] = drupal_json_encode( $params['playlistObj'] );
    }
    
    // If they provide the node object, encode it as JSON.   

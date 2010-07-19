@@ -3,6 +3,10 @@ define('MEDIAFRONT_PRESET_MAX_LENGTH', 64);
 define('MEDIAFRONT_DEFAULT_WIDTH', 500);
 define('MEDIAFRONT_DEFAULT_HEIGHT', 350);
 
+// Require the filefield support file.
+require_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'mediafront') . '/includes/mediafront.field.inc';
+require_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'mediafront') . '/includes/mediafront.filefield.inc';
+
 /**
  * Implements hook_permission().
  */
@@ -102,170 +106,29 @@ function mediafront_theme() {
 
   // Create a basic theme function for showing the media player.
   $theme['mediafront_player_view'] = array(
+    'render element' => 'element',
     'arguments' => array('view' => NULL, 'preset' => NULL)
   );
 
-  // Iterate through all of our presets, and create a formatter for each one.
-  foreach(mediafront_preset_get_presets() as $preset) {
-    $theme['mediafront_formatter_'. $preset->name .'_player'] = array(
-      'arguments' => array('element' => NULL),
-      'function' => 'theme_mediafront_formatter_player',
-    );
-  }
+  $theme['mediafront_player_formatter'] = array(
+    'render element' => 'element',
+    'arguments' => array('items' => NULL)
+  );
+
+  $theme['mediafront_player'] = array(
+    'render element' => 'element',
+    'arguments' => array('entity' => NULL, 'preset' => NULL)
+  );
 
   return $theme;
 }
 
 /**
- * Implements hook_field_info().
- */
-function mediafront_field_info() {
-  return array(
-    'mediafront' => array(
-      'label' => t('Media Player'),
-      'description' => t('Add a media player to this content.'),
-      'default_widget' => 'mediaplayer'
-    ),
-  );
-}
-
-/**
- * Implements hook_field_widget_info().
- */
-function mediafront_field_widget_info() {
-  return array(
-    'mediaplayer' => array(
-      'label' => t('Media Player'),
-      'field types' => array('mediafront'),
-      'behaviors' => array(
-        'multiple values' => FIELD_BEHAVIOR_DEFAULT,
-        'default value' => FIELD_BEHAVIOR_DEFAULT,
-      ),
-    ),
-  );
-}
-
-/**
- * Implements hook_field_formatter_info().
- */
-function mediafront_field_formatter_info() {
-  $formatters = array();
-  foreach (mediafront_preset_get_presets() as $preset) {
-    $formatters[$preset->name . '_player'] = array(
-      'label' => t('@preset', array('@preset' => $preset->name)),
-      'field types' => array('mediafront'),
-    );
-  }
-  return $formatters;
-}
-
-/**
- * Implementation of hook_form_alter().
- */
-function mediafront_form_alter(&$form, $form_state, $form_id) {
-  // See if this is a FileField.
-  if( $form_id == "field_ui_field_edit_form" ) {
-
-    if( ($form["#field"]["type"] == "image") || ($form["#field"]["type"] == "file") ) {
-
-      // See if this is an Image field.
-      $image = ($form["#field"]["type"] == "image");
-
-      // Create the file field field set.
-      $form['mediafront_filefield'] = array(
-        "#type" => "fieldset",
-        "#weight" => -1,
-        "#title" => $image ? t('MediaFront: Image Settings') : t('MediaFront: Media Settings'),
-      );
-
-      // Get the file field.
-      $field = mediafront_filefield_get( $form['instance']['bundle']['#value'], $form['#field']['field_name'] );
-
-      // Preset a different form if we are an image...
-      if( $image ) {
-        // Get all of the image styles.
-        $styles = image_styles();
-        $options = array();
-        foreach( $styles as $name => $style ) {
-          $options[$name] = $style['name'];
-        }
-
-        $form['mediafront_filefield']['node_preset'] = array(
-          '#type' => 'select',
-          '#title' => t('Media Preview Image'),
-          '#description' => t('Select the Image style that you would like to use for the MediaFront node display.'),
-          '#options' => $options,
-          '#default_value' => ($field ? $field->node_preset : 0),
-        );
-
-        $form['mediafront_filefield']['thumb_preset'] = array(
-          '#type' => 'select',
-          '#title' => t('Media Thumbnail Image'),
-          '#description' => t('Select the Image style that you would like to use for the MediaFront thumbnail display.'),
-          '#options' => $options,
-          '#default_value' => ($field ? $field->thumb_preset : 0),
-        );
-      }
-      else {
-        // Preset the media field form.
-        $description = t('Select how you would like to use this file field for MediaFront.');
-        $description .= '<br/>';
-        $description .= '<ul>';
-        $description .= '<li><strong>' . t('None') . '</strong>: ' . t('Do not include this file field in the MediaFront Media Player') . '</li>';
-        $description .= '<li><strong>' . t('Introduction') . '</strong>: ' . t('This selection will make this file field be used as an introduction, before the commercial') . '</li>';
-        $description .= '<li><strong>' . t('Commercial') . '</strong>: ' . t('To use this file field as the commercial for this media type') . '</li>';
-        $description .= '<li><strong>' . t('Pre-Reel') . '</strong>: ' . t('The pre-reel is shown right before the main media content, but after the commercial.') . '</li>';
-        $description .= '<li><strong>' . t('Media Content') . '</strong>: ' . t('The media content is the main media piece to be played to the user.') . '</li>';
-        $description .= '<li><strong>' . t('Post-Reel') . '</strong>: ' . t('The post-reel is shown right after the main media content.') . '</li>';
-        $description .= '</ul>';
-
-        $form['mediafront_filefield']['media_type'] = array(
-          '#type' => 'select',
-          '#title' => t('Media Type'),
-          '#description' => $description,
-          '#options' => array(
-            'none' => t('None'),
-            'intro' => t('Introduction'),
-            'commercial' => t('Commercial'),
-            'prereel' => t('Pre-Reel'),
-            'media' => t('Media Content'),
-            'postreel' => t('Post-Reel')
-          ),
-          '#default_value' => ($field ? $field->media_type : 'media'),
-        );
-      }
-
-      $form['#submit'][] = 'mediafront_filefield_submit';
-    }
-  }
-}
-
-/*
- * Implementation of hook_field_delete_instance().
- */
-function mediafront_field_delete_instance($instance) {
-  mediafront_filefield_delete( $instance['bundle'], $instance['field_name'] );
-}
-
-
-/**
- * Called when the user submits the FileField form.
- */
-function mediafront_filefield_submit( $form, &$form_state ) {
-  // Save this filefield
-  mediafront_filefield_save(
-    $form_state['values']['instance']['bundle'],
-    $form_state['values']['instance']['field_name'],
-    isset($form_state['values']['media_type']) ? $form_state['values']['media_type'] : '',
-    isset($form_state['values']['node_preset']) ? $form_state['values']['node_preset'] : '',
-    isset($form_state['values']['thumb_preset']) ? $form_state['values']['thumb_preset'] : ''
-  );
-}
-
-/**
  * Implement the theme for the media player for the Views module.
  */
-function theme_mediafront_player_view( $view, $preset ) {
+function theme_mediafront_player_view( $variables ) {
+  $view = $variables['view'];
+  $preset = $variables['preset'];
   $params['playlistObj'] = mediafront_get_playlist_from_view( $view );
   $params['playlist'] = $view->name;
   $params['args'] = $view->args;
@@ -274,23 +137,15 @@ function theme_mediafront_player_view( $view, $preset ) {
 }
 
 /**
- * Implement the theme for the node player.
+ * Implement the theme for the media player.
  */
-function theme_mediafront_formatter_player($element) {
-  // Extract the preset name from the formatter name.
-  $preset = substr($element['#formatter'], 0, strrpos($element['#formatter'], '_'));
-
-  // Get the node for this player in JSON format.
-  $params['nodeObj'] = mediafront_invoke_node( $element['#node'], array() );
-
-  // Also set the nodeId for those who cannot just use the object.
-  $params['node'] = $element['#node']->nid;
-
-  // Nodes will never need the playlist.
+function theme_mediafront_player( $variables ) {
+  $entity = $variables['entity'];
+  $preset = $variables['preset'];
+  $params['nodeObj'] = mediafront_invoke_node( $entity, array() );
+  $params['node'] = $entity->nid;
   $params['disablePlaylist'] = true;
-
-  // Return the player.
-  return mediafront_get_player( $preset, $params );
+  return mediafront_get_player($preset, $params);
 }
 
 /**
@@ -300,7 +155,7 @@ function theme_mediafront_formatter_player($element) {
  */
 function mediafront_views_api() {
   return array(
-    'api' => 2,
+    'api' => 3,
     'path' => drupal_get_path('module', 'mediafront') .'/views',
   );
 }
@@ -487,47 +342,6 @@ function mediafront_preset_name_exists( $preset_name ) {
     ->fetchField();
 }
 
-/** 
- * Adds or updates a mediafront filefield entry
- */
-function mediafront_filefield_save( $node_type, $field_name, $media_type, $node_preset, $thumb_preset ) {
-  $field = mediafront_filefield_get( $node_type, $field_name );
-  $fields = array(
-    'node_type' => $node_type,
-    'field_name' => $field_name,
-    'media_type' => $media_type,
-    'node_preset' => $node_preset,
-    'thumb_preset' => $thumb_preset
-  );
-  $fid = (isset($field->fid) && $field->fid) ? 'fid' : array();
-  if( $fid ) {
-    $fields['fid'] = $field->fid;
-  }
-  return drupal_write_record('mediafront_filefield', $fields, $fid );
-}
-
-/** 
- * Deletes a mediafront filefield entry
- */
-function mediafront_filefield_delete( $node_type, $field_name ) {
-  db_delete('mediafront_filefield')
-    ->condition('node_type', $node_type)
-    ->condition('field_name', $field_name)
-    ->execute();
-}
-
-/**
- * Returns a mediafront filefield entry.
- */
-function mediafront_filefield_get( $node_type, $field_name ) {
-  return db_select('mediafront_filefield', 'f')
-    ->fields('f')
-    ->condition('f.node_type', $node_type)
-    ->condition('f.field_name', $field_name)
-    ->execute()
-    ->fetchObject();
-}
-
 /**
  * Verify the syntax of the given prefix name.
  *
@@ -678,21 +492,29 @@ function mediafront_get_playlist( $playlist, $limit = 10, $page = 0, $args = arr
   $view->set_offset($page*$limit);
   $view->set_arguments($args);
   $view->get_total_rows = TRUE;
+
+  // Build the view first.
+  $view->build();
+
+  // Now make sure we select ALL the fields.
+  $view->build_info['query']->fields($view->base_table);
+
+  // Now execute the view.
   $view->execute();
 
   // Return our playlist...
-  return mediafront_get_playlist_from_view( $view );
+  return mediafront_get_playlist_from_view( $view, $args );
 }
 
 /**
  * Returns a playlist provided a view.
  */
-function mediafront_get_playlist_from_view( $view ) {
+function mediafront_get_playlist_from_view( $view, $args = null ) {
   // Create our playlist array.
   $playlist = array();
   $playlist['nodes'] = array();
   $playlist['name'] = $view->name;
-  $playlist['total_rows'] = $view->total_rows ? $view->total_rows : ($view->query->pager ? $view->query->pager->get_total_items() : 0);
+  $playlist['total_rows'] = $view->total_rows ? $view->total_rows : ($view->query->pager ? $view->query->pager->get_total_rows() : 0);
 
   // Iterate through our result and get our player nodes.
   foreach( $view->result as $node ) {
@@ -820,7 +642,7 @@ function mediafront_array_to_object($array = array()) {
 function mediafront_get_media_file( $file ) {
   $media_file = new stdClass();
 
-  $media_file->path = isset($file->url) ? $file->url : (isset($file->path) ? $file->path : file_create_url($file->filepath));
+  $media_file->path = isset($file->url) ? $file->url : (isset($file->path) ? $file->path : file_create_url($file->uri));
   $media_file->extension = mediafront_get_extension( $media_file->path );
 
   if( isset($file->class) && isset($file->mediaType) ) {
@@ -877,13 +699,6 @@ function mediafront_add_media( &$additions, $file ) {
 }
 
 /**
- * Returns an image field path provided the ImageCache preset name and file name.
- */
-function mediafront_get_image( $preset_name, $filename ) {
-  return file_create_url(file_directory_path() .'/imagecache/' . $preset_name . '/' . $filename);
-}
-
-/**
  * Implements hook_playlist_node()
  */
 function mediafront_playlist_node( $node ) {
@@ -892,60 +707,53 @@ function mediafront_playlist_node( $node ) {
   $additions['title'] = $node->title;
   $additions['description'] = $node->body;
 
-  //drupal_set_message("<pre>" . print_r( $node, true ) . "</pre>" );
-
-  // Iterate through the files.
-  if( $node->files && is_array($node->files) ) {
-    foreach( $node->files as $fid => $file ) {
-      mediafront_add_media( $additions, $file );
-    }
-  }
-
-  // If they provide the field_dashplayer_media field.
-  if( isset($node->field_dashplayer_media) && $node->field_dashplayer_media[0]['value'] ) {
-    $additions["mediafiles"]["media"]["media"] = $node->field_dashplayer_media[0]['value'];
-  }
-
-  // If they provide the field_dashplayer_image field.
-  if( isset($node->field_dashplayer_image) && $node->field_dashplayer_image[0]['value'] ) {
-    $additions["mediafiles"]["images"]["image"] = $node->field_dashplayer_image[0]['value'];
-  }
-
   // If they provide the field_mediafront_media field.
-  if( isset($node->field_mediafront_media) && $node->field_mediafront_media[0]['value'] ) {
-    $additions["mediafiles"]["media"]["media"] = $node->field_mediafront_media[0]['value'];
+  if( isset($node->field_mediafront_media) &&
+      isset($node->field_mediafront_media['und'][0]) &&
+      isset($node->field_mediafront_media['und'][0]) &&
+      isset($node->field_mediafront_media['und'][0]['value']) &&
+      $node->field_mediafront_media['und'][0]['value'] ) {
+    $additions["mediafiles"]["media"]["media"] = $node->field_mediafront_media['und'][0]['value'];
   }
 
   // If they provide the field_mediafront_image field.
-  if( isset($node->field_mediafront_image) && $node->field_mediafront_image[0]['value'] ) {
-    $additions["mediafiles"]["images"]["image"] = $node->field_mediafront_image[0]['value'];
+  if( isset($node->field_mediafront_image) &&
+      isset($node->field_mediafront_media['und'][0]) &&
+      isset($node->field_mediafront_image['und'][0]) &&
+      isset($node->field_mediafront_image['und'][0]['value']) &&
+      $node->field_mediafront_image['und'][0]['value'] ) {
+    $additions["mediafiles"]["images"]["image"] = $node->field_mediafront_image['und'][0]['value'];
   }
 
   // Now look for any CCK fields.
   foreach( $node as $fieldname => $field ) {
 
     // This is a CCK filefield.
-    if( is_array($field) && isset($field[0]) && is_array($field[0]) ) {
+    if( is_array($field) &&
+        isset($field['und']) &&
+        is_array($field['und']) &&
+        isset($field['und'][0]) &&
+        is_array($field['und'][0]) ) {
 
       // This is a text field.
-      if( isset($field[0]['value']) && is_string($field[0]['value']) ) {
-        $additions[$fieldname] = $field[0]['value'];
+      if( isset($field['und'][0]['value']) && is_string($field['und'][0]['value']) ) {
+        $additions[$fieldname] = $field['und'][0]['value'];
       }
 
       // This is a file field.
-      if( isset($field[0]['filepath']) ) {
+      if( isset($field['und'][0]['filename']) ) {
 
         // Get the media type for this field.
-        $media_field = mediafront_filefield_get( $node->type, $fieldname );
+        $media_field = mediafront_filefield_get( 'node', $node->type, $fieldname );
 
         // If there is no media field defined OR if there is and they wish to include it.
         if( !$media_field || ($media_field->media_type != 'none') ) {
 
           // Iterate through the file field instances.
-          foreach( $field as $index => $instance ) {
+          foreach( $field['und'] as $index => $instance ) {
 
             // If this instance has a data struct...
-            if( $instance['data'] ) {
+            if( isset($instance['data']) && $instance['data'] ) {
               // Merge the file data with the file info.
               $fileData = $instance['data'];
               unset( $instance['data'] );
@@ -966,12 +774,11 @@ function mediafront_playlist_node( $node ) {
           if( $media_field ) {
 
             // Get the filename.
-            $filename = basename($field[0]['filepath']);
+            $filename = $field['und'][0]['filename'];
 
             // If this is a preview image.
             if( $media_field->node_preset ) {
-              $file = array();
-              $file['path'] = mediafront_get_image( $media_field->node_preset, $filename );
+              $file['path'] = image_style_url( $media_field->node_preset, $file['uri'] );
               $file['class'] = 'images';
               $file['mediaType'] = 'preview';
               mediafront_add_media( $additions, $file );
@@ -979,8 +786,7 @@ function mediafront_playlist_node( $node ) {
 
             // This is a thumbnail image.
             if( $media_field->thumb_preset ) {
-              $file = array();
-              $file['path'] = mediafront_get_image( $media_field->thumb_preset, $filename );
+              $file['path'] = image_style_url( $media_field->thumb_preset, $file['uri'] );
               $file['class'] = 'images';
               $file['mediaType'] = 'thumbnail';
               mediafront_add_media( $additions, $file );
@@ -1029,8 +835,8 @@ function mediafront_get_player() {
     $params = isset($args[1]) ? $preset->settings ? array_merge( $preset->settings, $args[1] ) : $args[1] : $preset->settings;
     $params['preset'] = $preset->name;
     $params['player'] = $preset->player;
-    $params['connect'] = $params['connect'] ? $params['connect'] : $preset->connect;
-    $params['id'] = $params['id'] ? $params['id'] : 'mediafront_' . $preset->name;
+    $params['connect'] = (isset($params['connect']) && $params['connect']) ? $params['connect'] : $preset->connect;
+    $params['id'] = (isset($params['id']) && $params['id']) ? $params['id'] : 'mediafront_' . $preset->name;
   }
 
   if( $params ) {

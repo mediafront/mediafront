@@ -18,35 +18,35 @@ function mediafront_schema() {
         'length' => 64,
         'not null' => TRUE,
         'default' => '',
-      ),    
+      ),
       'description' => array(
         'description' => 'A brief description of this preset.',
         'type' => 'text',
-        'size' => 'medium',      
+        'size' => 'medium',
         'translatable' => TRUE,
       ),
       'player' => array(
         'type' => 'varchar',
         'length' => 64,
         'not null' => TRUE,
-        'default' => '',      
+        'default' => '',
       ),
       'connect' => array(
         'type' => 'text',
         'size' => 'medium',
-        'serialize' => TRUE,        
+        'serialize' => TRUE,
         'description' => 'Serialized player connection settings.',
-      ),      
+      ),
       'settings' => array(
         'type' => 'text',
         'size' => 'medium',
-        'serialize' => TRUE,        
+        'serialize' => TRUE,
         'description' => 'Serialized player settings that do not warrant a dedicated column.',
-      ),      
+      ),
     ),
     'unique keys' => array(
       'name' => array('name'),
-    ),    
+    ),
     'primary key' => array('pid'),
   );
 
@@ -54,7 +54,8 @@ function mediafront_schema() {
     'description' => 'Table used to tell the MediaFront module how each FileField should be handled.',
     'fields' => array(
       'fid' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE),
-      'node_type' => array('type' => 'text', 'not null' => FALSE),
+      'entity' => array('type' => 'text', 'not null' => FALSE),
+      'bundle' => array('type' => 'text', 'not null' => FALSE),
       'field_name' => array('type' => 'text', 'not null' => FALSE),
       'media_type'  => array('type' => 'text', 'not null' => FALSE),
       'node_preset'  => array('type' => 'text', 'not null' => FALSE),
@@ -83,6 +84,31 @@ function mediafront_update_7001() {
     'primary key' => array('fid')
   ));
 
+  return $update;
+}
+
+function mediafront_update_7002() {
+  $update = array();
+
+  // Add the new fields to the database.
+  db_add_field('mediafront_filefield', 'entity', array('type' => 'text', 'not null' => FALSE));
+  db_add_field('mediafront_filefield', 'bundle', array('type' => 'text', 'not null' => FALSE));
+
+  // Update the current fields.
+  $fields = db_select('mediafront_filefield', 'f')->fields('f')->execute();
+  while( $field = $fields->fetchObject() ) {
+    db_update('mediafront_filefield')
+      ->fields(array(
+      'entity' => 'node',
+      'bundle' => $field->node_type,
+      ))
+      ->condition('fid', $field->fid)
+      ->execute();
+  }
+
+  // Now drop the node_type field.
+  db_drop_field('mediafront_filefield', 'node_type');
+  
   return $update;
 }
 
