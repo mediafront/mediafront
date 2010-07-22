@@ -401,6 +401,12 @@ function osmplayer_player_settings_form( $preset ) {
      '#description' => t('Enter the name or the URL of the playlist you would like to load by default.  This can either be an external XML file, or the name of the view that represents your playlist.  This, however, will be overridden if you explicitly provide the playlist when adding this preset to a page.'),
      '#default_value' => $preset->settings['playlist']
    ); 
+   $form['playlist_settings']['pageLimit'] = array(
+     '#type' => 'textfield',
+     '#title' => t('Page Limit'),
+     '#description' => t('Specify how many nodes you would like to show in each page of the playlist.'),
+     '#default_value' => $preset->settings['pageLimit']
+   );   
    $form['playlist_settings']['autoNext'] = array(
      '#type' => 'checkbox',
      '#title' => t('Auto Next'),
