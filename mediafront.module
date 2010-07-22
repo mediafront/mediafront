@@ -731,6 +731,20 @@ function mediafront_get_image( $preset_name, $filename ) {
 }
 
 /**
+ * Returns the field if it exists.
+ */
+function _mediafront_get_field( $node, $field_name, $index = -1 ) {
+  if( isset($node->{$field_name}) &&
+      isset($node->{$field_name}[0]) &&
+      is_array($node->{$field_name}[0]) ) {
+    return ($index >= 0) ? $node->{$field_name}[$index] : $node->{$field_name};
+  }
+  else {
+    return null;
+  }
+}
+
+/**
  * Implementation of hook_playlist_node()
  */
 function mediafront_playlist_node( $node ) {
@@ -739,8 +753,6 @@ function mediafront_playlist_node( $node ) {
   $additions['title'] = $node->title;
   $additions['description'] = $node->body;
 
-  //drupal_set_message("<pre>" . print_r( $node, true ) . "</pre>" );
-
   // Iterate through the files.
   if( $node->files && is_array($node->files) ) {
     foreach( $node->files as $fid => $file ) {
@@ -748,31 +760,39 @@ function mediafront_playlist_node( $node ) {
     }
   }
 
-  // If they provide the field_dashplayer_media field.
-  if( isset($node->field_dashplayer_media) && $node->field_dashplayer_media[0]['value'] ) {
-    $additions["mediafiles"]["media"]["media"] = $node->field_dashplayer_media[0]['value'];
-  }
-
-  // If they provide the field_dashplayer_image field.
-  if( isset($node->field_dashplayer_image) && $node->field_dashplayer_image[0]['value'] ) {
-    $additions["mediafiles"]["images"]["image"] = $node->field_dashplayer_image[0]['value'];
-  }
-
-  // If they provide the field_mediafront_media field.
-  if( isset($node->field_mediafront_media) && $node->field_mediafront_media[0]['value'] ) {
-    $additions["mediafiles"]["media"]["media"] = $node->field_mediafront_media[0]['value'];
+  // If they provide the field_mediafront_image field.
+  if( $field = _mediafront_get_field( $node, 'field_dashplayer_media', 0 ) ) {
+    if( $field ) {
+      $additions["mediafiles"]["media"]["media"] = $field['value'];  
+    }
   }
 
   // If they provide the field_mediafront_image field.
-  if( isset($node->field_mediafront_image) && $node->field_mediafront_image[0]['value'] ) {
-    $additions["mediafiles"]["images"]["image"] = $node->field_mediafront_image[0]['value'];
+  if( $field = _mediafront_get_field( $node, 'field_dashplayer_image', 0 ) ) {
+    if( $field ) {
+      $additions["mediafiles"]["images"]["image"] = $field['value']; 
+    }
+  }
+
+  // If they provide the field_mediafront_media field.
+  if( $field = _mediafront_get_field( $node, 'field_mediafront_media', 0 ) ) {
+    if( $field ) {
+      $additions["mediafiles"]["media"]["media"] = $field['value']; 
+    }
+  }
+
+  // If they provide the field_mediafront_image field.
+  if( $field = _mediafront_get_field( $node, 'field_mediafront_image', 0 ) ) {
+    if( $field ) {
+      $additions["mediafiles"]["images"]["image"] = $field['value']; 
+    }
   }
 
   // Now look for any CCK fields.
   foreach( $node as $fieldname => $field ) {
 
     // This is a CCK filefield.
-    if( is_array($field) && isset($field[0]) && is_array($field[0]) ) {
+    if( $field = _mediafront_get_field( $node, $fieldname ) ) {
 
       // This is a text field.
       if( isset($field[0]['value']) && is_string($field[0]['value']) ) {
@@ -780,7 +800,7 @@ function mediafront_playlist_node( $node ) {
       }
 
       // This is a file field.
-      if( isset($field[0]['filepath']) ) {
+      if( isset($field[0]['filename']) ) {
 
         // Get the media type for this field.
         $media_field = mediafront_filefield_get( $node->type, $fieldname );
@@ -792,7 +812,7 @@ function mediafront_playlist_node( $node ) {
           foreach( $field as $index => $instance ) {
 
             // If this instance has a data struct...
-            if( $instance['data'] ) {
+            if( isset($instance['data']) && $instance['data'] ) {
               // Merge the file data with the file info.
               $fileData = $instance['data'];
               unset( $instance['data'] );
