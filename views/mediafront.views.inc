@@ -21,7 +21,7 @@ function mediafront_views_plugins() {
         'theme' => 'mediafront_player_view',
         'path' => "$path/views",
         'theme path' => "$path/views",
-        'uses fields' => FALSE,
+        'uses fields' => TRUE,
         'uses row plugin' => FALSE,
         'uses options' => TRUE,
         'uses grouping' => FALSE,
