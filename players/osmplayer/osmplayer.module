@@ -49,7 +49,8 @@ function osmplayer_get_player_object( $settings = null ) {
           $settings['flashPlayer'] = $base_url . '/' . $playerPath . '/' . $settings['flashPlayer'];
         }
         if( isset($settings['logo']) ) {
-          $settings['logo'] = $base_url . '/' . $playerPath . '/' . $settings['logo'];
+          $logoPath = ($settings['logo'] == 'logo.png') ? ($playerPath . '/') : '';
+          $settings['logo'] = $base_url . '/' . $logoPath . $settings['logo'];
         }
 
         // Create the OSMPlayer object with these settings.
