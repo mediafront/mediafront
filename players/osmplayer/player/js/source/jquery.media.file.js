@@ -113,15 +113,12 @@
             return "flash"; 
              
          default:
-            if( this.extension.substring(0,3).toLowerCase() == "com" ) {
-               // Is this a vimeo this.path...
-               if( this.path.search(/^http(s)?\:\/\/(www\.)?vimeo\.com/i) == 0 ) {
-                  return "vimeo";
-               }
-               
-               // This is a youtube path...
-               else if( this.path.search(/^http(s)?\:\/\/(www\.)?youtube\.com/i) == 0 ) {
-                  return "youtube";
+            // Now iterate through all of our registered players.
+            for( var player in jQuery.media.playerTypes ) {
+               if( jQuery.media.playerTypes.hasOwnProperty( player ) ) {
+                  if( jQuery.media.playerTypes[player]( this.path ) ) {
+                     return player;
+                  }
                }
             }
       }           
