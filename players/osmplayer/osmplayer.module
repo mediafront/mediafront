@@ -363,6 +363,19 @@ function osmplayer_player_settings_form( $preset ) {
       '#collapsible' => true,
       '#collapsed' => true 
    ); 
+   $form['media_settings']['quality'] = array(
+     '#type' => 'select',
+     '#title' => t('Playback Quality'),
+     '#description' => t('Enter the quality for the media playback. <strong>This currently only works for YouTube content.</strong>'),
+     '#options' => array(
+       'default' => t('Default: Service selects resolution'),
+       'small' => t('Small: Less than 640x360'),
+       'medium' => t('Medium: Minimum of 640x360'),
+       'large' => t('Large: Minimum of 854x480'),
+       'hd720' => t('HD720: Minimum of 1280x720')
+     ),
+     '#default_value' => $preset->settings['quality']
+   );   
    $form['media_settings']['volume'] = array(
      '#type' => 'textfield',
      '#title' => t('Default Volume'),
@@ -387,6 +400,12 @@ function osmplayer_player_settings_form( $preset ) {
      '#description' => t('Enter the media stream location.'),
      '#default_value' => $preset->settings['streamer']
    );    
+   $form['media_settings']['incrementTime'] = array(
+     '#type' => 'textfield',
+     '#title' => t('Node Increment Delay'),
+     '#description' => t('The amount of time ( in seconds ) to play the media track before incrementing the node counter.  Enter 0 to disable or -1 to increment only on media completion.'),
+     '#default_value' => $preset->settings['incrementTime']
+   ); 
 
    /************************* PLAYLIST SETTINGS *************************************/
    $form['playlist_settings'] = array(
@@ -704,7 +723,7 @@ function osmplayer_add_js( $player ) {
  */
 function osmplayer_add_css( $player, $preset ) {
 	static $cssadded; 
-	if( !$cssadded[$preset] ) {
+	if( !isset($cssadded[$preset]) ) {
 	   $cssadded[$preset] = TRUE;
    
 	   // Set the CSS directory of our OSMPlayer component, and then add the CSS files to the page..
