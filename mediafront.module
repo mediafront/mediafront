@@ -703,6 +703,7 @@ function mediafront_add_media( &$additions, $file ) {
  */
 function _mediafront_get_field( $node, $field_name, $index = -1 ) {
   if( isset($node->{$field_name}) &&
+      is_array($node->{$field_name}) && 
       isset($node->{$field_name}['und']) &&
       is_array($node->{$field_name}['und']) && 
       isset($node->{$field_name}['und'][0]) &&
