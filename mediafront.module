@@ -735,6 +735,7 @@ function mediafront_get_image( $preset_name, $filename ) {
  */
 function _mediafront_get_field( $node, $field_name, $index = -1 ) {
   if( isset($node->{$field_name}) &&
+      is_array($node->{$field_name}) &&
       isset($node->{$field_name}[0]) &&
       is_array($node->{$field_name}[0]) ) {
     return ($index >= 0) ? $node->{$field_name}[$index] : $node->{$field_name};
