@@ -2322,11 +2322,9 @@
          
          // Store the play overlay.
          this.play = player.find( settings.ids.play );
+         // Toggle the play/pause state if they click on the play button.
          this.play.bind("click", function() {
-            _this.showPlay(false);
-            if( _this.media && _this.media.playerReady ) {
-               _this.media.player.playMedia();
-            }
+            _this.togglePlayPause();
          });
          this.playImg = this.play.find("img");
          this.playWidth = this.playImg.width();
@@ -2347,7 +2345,7 @@
          // Cache the width and height.
          this.width = this.display.width();
          this.height = this.display.height();
-         
+      
          // Hide or show an element.
          this.showElement = function( element, show, tween ) {
             if( element && !this.usePlayerControls ) {
@@ -2513,7 +2511,12 @@
          if( this.media ) {
             this.media.display.bind( "mediaupdate", function( event, data ) {
                _this.onMediaUpdate( data );            
-            });  
+            });
+
+            // Toggle the play/pause state if they click on the display.
+            this.media.display.bind("click", function() {
+               _this.togglePlayPause();
+            });
          }
          
          // Add the control bar to the media.
@@ -2649,6 +2652,20 @@
             
             if( this.media ) {
                this.media.reset();
+            }
+         };
+         
+         // Toggle the play/pause state.
+         this.togglePlayPause = function() {
+            if( this.media && this.media.playerReady ) {
+               if( this.playing ) {
+                  this.showPlay(true);
+                  this.media.player.pauseMedia();  
+               }
+               else {
+                  this.showPlay(false);
+                  this.media.player.playMedia(); 
+               }
             }
          };
          
@@ -3751,15 +3768,8 @@
          
          // When they press the space bar, we will toggle the player play/pause state.
          this.onSpaceBar = function() {
-            if( this.fullScreen ) {            
-               if( this.node && this.node.player && this.node.player.media && this.node.player.media.player ) {
-                  if( this.node.player.playing ) {
-                     this.node.player.media.player.pauseMedia();  
-                  }
-                  else {
-                     this.node.player.media.player.playMedia(); 
-                  }
-               } 
+            if( this.fullScreen && this.node && this.node.player ) {            
+               this.node.player.togglePlayPause();
             }
          };
 
