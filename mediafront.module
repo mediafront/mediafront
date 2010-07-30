@@ -61,7 +61,7 @@ function mediafront_menu() {
 
   $presets = mediafront_preset_get_presets();
   foreach( $presets as $preset ) {
-    $items['admin/build/mediafront/preset/manage/' . $preset->name] = array(
+    $items['admin/build/mediafront/preset/manage/' . $preset['name']] = array(
       'title' => 'Edit MediaFront Preset',
       'title callback' => 'mediafront_preset_page_title',
       'title arguments' => array(5),
@@ -70,11 +70,11 @@ function mediafront_menu() {
       'access arguments' => array('administer mediafront presets'),
       'file' => 'mediafront.admin.inc',
     );
-    $items['admin/build/mediafront/preset/manage/' . $preset->name . '/edit'] = array(
+    $items['admin/build/mediafront/preset/manage/' . $preset['name'] . '/edit'] = array(
       'title' => 'Edit',
       'type' => MENU_DEFAULT_LOCAL_TASK,
     );
-    $items['admin/build/mediafront/preset/manage/' . $preset->name . '/delete'] = array(
+    $items['admin/build/mediafront/preset/manage/' . $preset['name'] . '/delete'] = array(
       'title' => 'Delete',
       'page arguments' => array('mediafront_preset_delete_confirm', $preset),
       'access arguments' => array('administer mediafront presets'),
@@ -99,7 +99,7 @@ function mediafront_theme() {
 
   // Iterate through all of our presets, and create a formatter for each one.
   foreach(mediafront_preset_get_presets() as $preset) {
-    $theme['mediafront_formatter_'. $preset->name .'_player'] = array(
+    $theme['mediafront_formatter_'. $preset['name'] .'_player'] = array(
       'arguments' => array('element' => NULL),
       'function' => 'theme_mediafront_formatter_player',
     );
@@ -159,6 +159,20 @@ function mediafront_views_api() {
   return array(
     'api' => 2,
     'path' => drupal_get_path('module', 'mediafront') .'/views',
+  );
+}
+
+/**
+ * Implementation of hook_features_api()
+ * 
+ */
+function mediafront_features_api() {
+  return array(
+    'mediafront' => array(
+      'name' => t('MediaFront Presets'),
+      'default_hook' => 'mediafront_default_presets',
+      'file' => drupal_get_path('module', 'mediafront') .'/includes/mediafront.features.inc',
+    ),
   );
 }
 
@@ -263,7 +277,7 @@ function mediafront_parse_param( $value, $type ) {
  * Get's the player settings for the given player.
  */
 function mediafront_player_settings_form( $preset ) {
-  $settings_form = $preset->player . '_player_settings_form';
+  $settings_form = $preset['player'] . '_player_settings_form';
   if( function_exists( $settings_form ) ) {
     return $settings_form($preset);
   }
@@ -275,10 +289,10 @@ function mediafront_player_settings_form( $preset ) {
  */
 function mediafront_preset_save( $params ) {
   // If they provide the pid, then this needs to be an update.
-  $pid = (isset($params->pid) && $params->pid) ? array('pid') : array();
+  $pid = (isset($params['pid']) && $params['pid']) ? array('pid') : array();
 
   // Tell the player about this preset save.
-  $player_save = $params->player . '_mediafront_preset_save';
+  $player_save = $params['player'] . '_mediafront_preset_save';
   if( function_exists( $player_save ) ) {
     $player_save( $params );
   }
@@ -298,12 +312,31 @@ function mediafront_preset_save( $params ) {
  */
 function mediafront_preset_get_presets() {
   $presets = array();
+  $normal_presets = array();
   $result = db_query("SELECT * FROM {mediafront_preset} ORDER BY name ASC");
-  while( $preset = db_fetch_object($result) ) {
-    $preset->connect = unserialize( $preset->connect );
-    $preset->settings = unserialize( $preset->settings );
-    $presets[$preset->pid] = $preset;
+  while( $preset = db_fetch_array($result) ) {
+    $preset['connect'] = unserialize( $preset['connect'] );
+    $preset['settings'] = unserialize( $preset['settings'] );
+    $presets[$preset['pid']] = $preset;
+    $normal_presets[$preset['name']] = $preset['pid'];
   }
+
+  $default_presets = module_invoke_all('mediafront_default_presets');
+  drupal_alter('mediafront_default_presets', $default_presets);
+
+  // Now allow other modules to add their default presets.
+  foreach ($default_presets as $preset) {
+    if (!empty($preset['name'])) {
+      if (!isset($normal_presets[$preset['name']])) {
+        $preset['pid'] = $preset['name'];
+        $presets[$preset['name']] = $preset;
+      }
+      else {
+        $presets[$normal_presets[$preset['name']]] = $preset;
+      }
+    }
+  }
+
   return $presets;
 }
 
@@ -311,9 +344,9 @@ function mediafront_preset_get_presets() {
  * Get's the preset.
  */
 function mediafront_get_preset( $preset_name ) {
-  $preset = db_fetch_object( db_query("SELECT * FROM {mediafront_preset} WHERE name='%s'", $preset_name));
-  $preset->settings = unserialize( $preset->settings );
-  $preset->connect = unserialize( $preset->connect );
+  $preset = db_fetch_array( db_query("SELECT * FROM {mediafront_preset} WHERE name='%s'", $preset_name));
+  $preset['settings'] = unserialize( $preset['settings'] );
+  $preset['connect'] = unserialize( $preset['connect'] );
   return $preset;
 }
 
@@ -894,11 +927,11 @@ function mediafront_get_player() {
   // get the preset values.
   if( gettype($params) == 'string' ) {
     $preset = mediafront_get_preset( $params );
-    $params = isset($args[1]) ? $preset->settings ? array_merge( $preset->settings, $args[1] ) : $args[1] : $preset->settings;
-    $params['preset'] = $preset->name;
-    $params['player'] = $preset->player;
-    $params['connect'] = (isset($params['connect']) && $params['connect']) ? $params['connect'] : $preset->connect;
-    $params['id'] = (isset($params['id']) && $params['id']) ? $params['id'] : 'mediafront_' . $preset->name;
+    $params = isset($args[1]) ? $preset['settings'] ? array_merge( $preset['settings'], $args[1] ) : $args[1] : $preset['settings'];
+    $params['preset'] = $preset['name'];
+    $params['player'] = $preset['player'];
+    $params['connect'] = (isset($params['connect']) && $params['connect']) ? $params['connect'] : $preset['connect'];
+    $params['id'] = (isset($params['id']) && $params['id']) ? $params['id'] : 'mediafront_' . $preset['name'];
   }
 
   if( $params ) {
