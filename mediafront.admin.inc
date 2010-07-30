@@ -198,7 +198,7 @@ function mediafront_preset_delete_submit($form, &$form_state) {
 function mediafront_preset_delete_confirm(&$form_state, $preset) {
   $form['name'] = array('#type' => 'value', '#value' => $preset['name']);
   $message = t('Are you sure you want to delete the preset %name?', array('%name' => $preset['name']));
-  $caption .= '<p>' . t('This action cannot be undone.') . '</p>';
+  $caption = '<p>' . t('This action cannot be undone.') . '</p>';
   return confirm_form($form, $message, 'admin/build/mediafront/preset', $caption, t('Delete'));
 }
 
