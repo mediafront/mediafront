@@ -26,7 +26,11 @@ function mediafront_presets_overview() {
         $row[] = check_plain($preset['name']);
         $row[] = array('data' => filter_xss_admin($preset['description']), 'class' => 'description');
         $row[] = array('data' => l(t('edit'), 'admin/structure/mediafront/preset/manage/'. $preset['name']));
-        $row[] = array('data' => l(t('delete'), 'admin/structure/mediafront/preset/manage/'. $preset['name'] .'/delete'));
+        
+        if( !$preset['default'] ) {
+          $row[] = array('data' => l(t('delete'), 'admin/structure/mediafront/preset/manage/'. $preset['name'] .'/delete'));
+        }
+
         $rows[] = $row;
     }
     return theme('table', array('header' => $header, 'rows' => $rows));
@@ -166,7 +170,7 @@ function mediafront_preset_validate($form, &$form_state) {
  * Submit handler for the preset form.
  */
 function mediafront_preset_submit($form, &$form_state) {
-  $preset = new stdClass();
+  $preset = array();
   $preset['pid'] = $form_state['values']['pid'];
   $preset['name'] = $form_state['values']['name'];
   $preset['description'] = $form_state['values']['description'];
@@ -280,7 +284,7 @@ function mediafront_create_preset_validate($form, &$form_state) {
  * Submit handler for the preset form.
  */
 function mediafront_create_preset_submit($form, &$form_state) {
-  $preset = (object)$form_state['values'];
+  $preset = $form_state['values'];
   $preset['name'] = strtolower( $preset['name'] );
   mediafront_preset_save($preset);
   $form_state['redirect'] = 'admin/structure/mediafront/preset/manage/' . $preset['name'];

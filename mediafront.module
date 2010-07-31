@@ -319,10 +319,12 @@ function mediafront_preset_get_presets() {
     $preset = (array)$preset;
     $preset['connect'] = unserialize( $preset['connect'] );
     $preset['settings'] = unserialize( $preset['settings'] );
+    $preset['default'] = false;
     $presets[$preset['pid']] = $preset;
     $normal_presets[$preset['name']] = $preset['pid'];
   }
 
+  // Get all of the default presets.
   $default_presets = module_invoke_all('mediafront_default_presets');
   drupal_alter('mediafront_default_presets', $default_presets);
 
@@ -330,11 +332,10 @@ function mediafront_preset_get_presets() {
   foreach ($default_presets as $preset) {
     if (!empty($preset['name'])) {
       if (!isset($normal_presets[$preset['name']])) {
+        // Add this preset to the list.
         $preset['pid'] = $preset['name'];
+        $preset['default'] = true;
         $presets[$preset['name']] = $preset;
-      }
-      else {
-        $presets[$normal_presets[$preset['name']]] = $preset;
       }
     }
   }
@@ -353,6 +354,9 @@ function mediafront_get_preset( $preset_name ) {
     ->fetchAssoc();
   $preset['settings'] = unserialize( $preset['settings'] );
   $preset['connect'] = unserialize( $preset['connect'] );
+  $preset['default'] = false;
+  
+  // Return the preset.
   return $preset;
 }
 
@@ -368,12 +372,23 @@ function mediafront_preset_delete( $preset_name ) {
  * Checks to see if another preset is already taken.
  */
 function mediafront_preset_name_exists( $preset_name ) {
-  return (bool)db_select('mediafront_preset', 'p')
-    ->fields('p', array('name'))
-    ->condition('p.name', db_like($preset_name), 'LIKE')
-    ->range(0, 1)
-    ->execute()
-    ->fetchField();
+
+  // Get the default presets.
+  $default_presets = module_invoke_all('mediafront_default_presets');
+  drupal_alter('mediafront_default_presets', $default_presets);  
+  
+  // See if there is a default preset name.
+  if( $default_presets && isset($default_presets[$preset_name]) ) {
+    return true; 
+  }    
+  else { 
+    return (bool)db_select('mediafront_preset', 'p')
+      ->fields('p', array('name'))
+      ->condition('p.name', db_like($preset_name), 'LIKE')
+      ->range(0, 1)
+      ->execute()
+      ->fetchField();
+  }
 }
 
 /**
@@ -582,18 +597,11 @@ function mediafront_get_node( $nid, $args = null ) {
  * See http://php.mirror.camelnetwork.com/manual/kr/function.array-replace-recursive.php for more info.
  */
 function mediafront_array_replace_recursive( $toArray, $fromArray ) {
+
   // Loop through array key/value pairs
   foreach ($fromArray as $key => $value) {
-    // Value is an array or an object.
-    if( is_array($value) || is_object($value) ) {
-      // Traverse the array; replace or add result to original array
-      $toArray[$key] = mediafront_array_replace_recursive($toArray[$key], $fromArray[$key]);
-    }
-    // Value is not an array
-    else {
-      // Replace or add current value to original array
-      $toArray->{$key} = $value;
-    }
+    // Assign the value to the toArray.
+    $toArray[$key] = (is_array($value) || is_object($value)) ? mediafront_array_replace_recursive($toArray[$key], $value) : $value;
   }
 
   // Return the joined array
@@ -606,12 +614,7 @@ function mediafront_array_replace_recursive( $toArray, $fromArray ) {
 function mediafront_playlist_node_merge( $original, $additions ) {
   $merged = $original;
   foreach( $additions as $field => $value ) {
-    if( isset($original[$field]) ) {
-      $merged[$field] = mediafront_array_replace_recursive( $original[$field], $value );
-    }
-    else {
-      $merged[$field] = $value;
-    }
+    $merged[$field] = isset($original[$field]) ? mediafront_array_replace_recursive( $original[$field], $value ) : $value;
   }
   return $merged;
 }
@@ -668,6 +671,17 @@ function mediafront_array_to_object($array = array()) {
 }
 
 /**
+ * Determine the file path for the media file.
+ */
+function mediafront_get_media_filepath( $file ) {
+   return (isset($file->url) ? $file->url :   
+          (isset($file->path) ? $file->path :
+          (!isset($file->filepath) ? '' :   
+          (preg_match('/^http(s)?\:\/\//', $file->uri) ? $file->uri : 
+          file_create_url($file->uri) ))));
+}
+
+/**
  * Given a Drupal file object, this function returns the media player file object.
  *
  * @param object $file - The Drupal file to use when determining the media player file object.
@@ -676,7 +690,7 @@ function mediafront_array_to_object($array = array()) {
 function mediafront_get_media_file( $file ) {
   $media_file = new stdClass();
 
-  $media_file->path = isset($file->url) ? $file->url : (isset($file->path) ? $file->path : file_create_url($file->uri));
+  $media_file->path = mediafront_get_media_filepath( $file );
   $media_file->extension = mediafront_get_extension( $media_file->path );
 
   if( isset($file->class) && isset($file->mediaType) ) {
@@ -760,16 +774,12 @@ function mediafront_playlist_node( $node ) {
 
   // If they provide the field_mediafront_media field.
   if( $field = _mediafront_get_field( $node, 'field_mediafront_media', 0 ) ) {
-    if( $field ) {
-      $additions["mediafiles"]["media"]["media"] = $field['value']; 
-    }
+    $additions["mediafiles"]["media"]["media"] = $field['value']; 
   }
 
   // If they provide the field_mediafront_image field.
   if( $field = _mediafront_get_field( $node, 'field_mediafront_image', 0 ) ) {
-    if( $field ) {
-      $additions["mediafiles"]["images"]["image"] = $field['value']; 
-    }
+    $additions["mediafiles"]["images"]["image"] = $field['value']; 
   }
 
   // Now look for any CCK fields.

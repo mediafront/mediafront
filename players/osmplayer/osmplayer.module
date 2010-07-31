@@ -31,12 +31,12 @@ function osmplayer_get_path() {
 /**
  * Returns the OSMPlayer object.
  */
-function osmplayer_get_player_object( $settings = null ) {
+function osmplayer_get_player_object( $settings = null, $force = false ) {
   global $base_url, $user;
   static $osmplayers = array();
   if( $settings['preset'] ) {
     $preset = $settings['preset'];
-    if( !isset($osmplayers[$preset]) ) {
+    if( $force || !isset($osmplayers[$preset]) ) {
       if( $settings ) {
         // Create the OSMPlayer object with these settings.
         $playerPath = osmplayer_get_path();
@@ -233,7 +233,7 @@ function osmplayer_mediafront_preset_save( $params ) {
    $settings['preset'] = $params['name'];
 
    // Get the media player.
-   $player = osmplayer_get_player_object( $settings );
+   $player = osmplayer_get_player_object( $settings, true );
 
    if( $player ) {
      // Now reset the CSS files.
