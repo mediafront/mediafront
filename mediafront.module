@@ -701,11 +701,10 @@ function mediafront_array_to_object($array = array()) {
  */
 function mediafront_get_media_filepath( $file ) {
    return (isset($file->url) ? $file->url :   
-          (isset($file->path) ? $file->path : 
-          (isset($file->uri) ? $file->uri :  
+          (isset($file->path) ? $file->path :
           (!isset($file->filepath) ? '' :   
           (preg_match('/^http(s)?\:\/\//', $file->filepath) ? $file->filepath : 
-          file_create_url($file->filepath) )))));
+          file_create_url($file->filepath) ))));
 }
 
 /**
