@@ -337,11 +337,6 @@ function mediafront_preset_get_presets() {
         $preset['default'] = true;
         $presets[$preset['name']] = $preset;
       }
-      else {
-        // Override the current preset.
-        $preset['default'] = true;
-        $presets[$normal_presets[$preset['name']]] = $preset;   
-      }
     }
   }
 
@@ -351,29 +346,11 @@ function mediafront_preset_get_presets() {
 /**
  * Get's the preset.
  */
-function mediafront_get_preset( $preset_name, $use_default = true ) {
-  $preset = null;
-  
-  // Should we look for a default preset?
-  if( $use_default ) { 
-     // Get the default presets.
-     $default_presets = module_invoke_all('mediafront_default_presets');
-     drupal_alter('mediafront_default_presets', $default_presets);   
-     
-     // See if a default preset exists with this name.
-     if( $default_presets && isset($default_presets[$preset_name]) ) {
-       $preset = $default_presets[$preset_name];
-       $preset['default'] = true;
-     }
-  }
-  
-  // If a default preset is not found, then get it from the database. 
-  if( !$preset ) {
-    $preset = db_fetch_array( db_query("SELECT * FROM {mediafront_preset} WHERE name='%s'", $preset_name));
-    $preset['settings'] = unserialize( $preset['settings'] );
-    $preset['connect'] = unserialize( $preset['connect'] );
-    $preset['default'] = false;
-  }
+function mediafront_get_preset( $preset_name ) {
+  $preset = db_fetch_array( db_query("SELECT * FROM {mediafront_preset} WHERE name='%s'", $preset_name));
+  $preset['settings'] = unserialize( $preset['settings'] );
+  $preset['connect'] = unserialize( $preset['connect'] );
+  $preset['default'] = false;
   
   // Return the preset.
   return $preset;

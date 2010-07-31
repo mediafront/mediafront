@@ -14,18 +14,8 @@ function mediafront_features_export_options() {
  * Implementation of hook_features_export().
  */
 function mediafront_features_export($data, &$export, $module_name = '') {
-  // Collect a module to preset map
-  $map = features_get_default_map('mediafront', 'preset');
   foreach ($data as $preset) {
-    // If another module provides this preset, add it as a dependency
-    if (isset($map[$preset]) && $map[$preset] != $module_name) {
-      $module = $map[$preset];
-      $export['dependencies'][$module] = $module;
-    }
-    // Otherwise, export the preset
-    else {
-      $export['features']['mediafront'][$preset] = $preset;
-    }
+    $export['features']['mediafront'][$preset] = $preset;
   }
 }
 
@@ -35,7 +25,7 @@ function mediafront_features_export($data, &$export, $module_name = '') {
 function mediafront_features_export_render($module_name, $data) {
   $items = array();
   foreach ($data as $key) {
-    $items[$key] = mediafront_get_preset($key, false);
+    $items[$key] = mediafront_get_preset($key);
   }
   $code = "  \$items = ". features_var_export($items, '  ') .";\n";
   $code .= '  return $items;';
