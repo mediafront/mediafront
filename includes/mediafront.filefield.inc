@@ -72,24 +72,33 @@ function mediafront_form_field_ui_field_edit_form_alter(&$form, $form_state) {
       // Get all of the image styles.
       $styles = image_styles();
       $options = array();
+      $options['mediafront_original'] = t('Original Image');
+      $options['none'] = t('None');
       foreach( $styles as $name => $style ) {
         $options[$name] = $style['name'];
       }
 
+      $description = t('Select the Image style that you would like to use for this MediaFront display.  <strong>Note: The first two selections are special fields which have the following behavior.</strong>');
+      $description .= '<br/>';
+      $description .= '<ul>';
+      $description .= '<li><strong>' . t('Original Image') . '</strong>: ' . t('Only use the original image for the MediaFront Media Player') . '</li>';
+      $description .= '<li><strong>' . t('None') . '</strong>: ' . t('Do not include this image field in the MediaFront Media Player') . '</li>';
+      $description .= '</ul>';
+
       $form['mediafront_filefield']['node_preset'] = array(
         '#type' => 'select',
         '#title' => t('Media Preview Image'),
-        '#description' => t('Select the Image style that you would like to use for the MediaFront node display.'),
+        '#description' => $description,
         '#options' => $options,
-        '#default_value' => ($field ? $field->node_preset : 0),
+        '#default_value' => ($field ? $field->node_preset : 'mediafront_original'),
       );
 
       $form['mediafront_filefield']['thumb_preset'] = array(
         '#type' => 'select',
         '#title' => t('Media Thumbnail Image'),
-        '#description' => t('Select the Image style that you would like to use for the MediaFront thumbnail display.'),
+        '#description' => $description,
         '#options' => $options,
-        '#default_value' => ($field ? $field->thumb_preset : 0),
+        '#default_value' => ($field ? $field->thumb_preset : 'mediafront_original'),
       );
     }
     else {

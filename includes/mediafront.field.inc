@@ -4,7 +4,7 @@
  */
 function mediafront_field_info() {
   $preset = array_shift( mediafront_preset_get_presets() );
-  $default_formatter = ($preset) ? 'mediaplayer__' . $preset->name : 'hidden';
+  $default_formatter = ($preset) ? 'mediaplayer__' . $preset['name'] : 'hidden';
 
   return array(
     'mediaplayer' => array(
@@ -64,8 +64,8 @@ function mediafront_field_formatter_info() {
   $formatters = array();
 
   foreach (mediafront_preset_get_presets() as $preset) {
-    $formatters['mediaplayer__' . $preset->name] = array(
-      'label' => t('@preset', array('@preset' => $preset->name)),
+    $formatters['mediaplayer__' . $preset['name']] = array(
+      'label' => t('@preset', array('@preset' => $preset['name'])),
       'description' => t('Allows the Media Player field to be displayed.'),
       'field types' => array('mediaplayer'),
     );
