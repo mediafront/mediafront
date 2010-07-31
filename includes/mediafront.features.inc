@@ -35,7 +35,7 @@ function mediafront_features_export($data, &$export, $module_name = '') {
 function mediafront_features_export_render($module_name, $data) {
   $items = array();
   foreach ($data as $key) {
-    $items[$key] = mediafront_get_preset($key);
+    $items[$key] = mediafront_get_preset($key, false);
   }
   $code = "  \$items = ". features_var_export($items, '  ') .";\n";
   $code .= '  return $items;';

@@ -62,7 +62,7 @@ function mediafront_form_content_field_edit_form_alter(&$form, $form_state) {
         // Get all of the presets.
         $presets = array();
         $pids = array();
-        $presets[0] = 'none';
+        $presets['none'] = t('None');
         $result = db_query("SELECT * FROM {imagecache_preset}");
         while( $preset = db_fetch_object( $result ) ) {
           $presets[$preset->presetid] = $preset->presetname;
@@ -74,7 +74,7 @@ function mediafront_form_content_field_edit_form_alter(&$form, $form_state) {
           '#title' => t('Node: ImageCache Preset'),
           '#description' => t('Select the ImageCache preset that you would like to use for the MediaFront node display.'),
           '#options' => $presets,
-          '#default_value' => ($field ? $pids[$field->node_preset] : 0),
+          '#default_value' => ($field ? $pids[$field->node_preset] : 'none'),
         );
 
         $form['mediafront_filefield']['thumb_preset'] = array(
@@ -82,7 +82,7 @@ function mediafront_form_content_field_edit_form_alter(&$form, $form_state) {
           '#title' => t('Thumbnail: ImageCache Preset'),
           '#description' => t('Select the ImageCache preset that you would like to use for the MediaFront thumbnail display.'),
           '#options' => $presets,
-          '#default_value' => ($field ? $pids[$field->thumb_preset] : 0),
+          '#default_value' => ($field ? $pids[$field->thumb_preset] : 'none'),
         );
       }
       else {
