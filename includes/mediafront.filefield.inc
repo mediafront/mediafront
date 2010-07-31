@@ -62,6 +62,7 @@ function mediafront_form_content_field_edit_form_alter(&$form, $form_state) {
         // Get all of the presets.
         $presets = array();
         $pids = array();
+        $presets['mediafront_original'] = t('Original Image');
         $presets['none'] = t('None');
         $result = db_query("SELECT * FROM {imagecache_preset}");
         while( $preset = db_fetch_object( $result ) ) {
@@ -69,20 +70,29 @@ function mediafront_form_content_field_edit_form_alter(&$form, $form_state) {
           $pids[$preset->presetname] = $preset->presetid;
         }
 
+        // Preset the media field form.
+        $description = t('Select the ImageCache preset that you would like to use for this MediaFront image display.  <strong>Note: The first two selections are special fields which have the following behavior.</strong>');
+        $description .= '<br/>';
+        $description .= '<ul>';
+        $description .= '<li><strong>' . t('Original Image') . '</strong>: ' . t('Only use the original image for the MediaFront Media Player') . '</li>';
+        $description .= '<li><strong>' . t('None') . '</strong>: ' . t('Do not include this image field in the MediaFront Media Player') . '</li>';
+        $description .= '</ul>';
+
+
         $form['mediafront_filefield']['node_preset'] = array(
           '#type' => 'select',
-          '#title' => t('Node: ImageCache Preset'),
-          '#description' => t('Select the ImageCache preset that you would like to use for the MediaFront node display.'),
+          '#title' => t('Media Preview Image'),
+          '#description' => $description,
           '#options' => $presets,
-          '#default_value' => ($field ? $pids[$field->node_preset] : 'none'),
+          '#default_value' => ($field ? $pids[$field->node_preset] : 'mediafront_original'),
         );
 
         $form['mediafront_filefield']['thumb_preset'] = array(
           '#type' => 'select',
-          '#title' => t('Thumbnail: ImageCache Preset'),
-          '#description' => t('Select the ImageCache preset that you would like to use for the MediaFront thumbnail display.'),
+          '#title' => t('Media Thumbnail Image'),
+          '#description' => $description,
           '#options' => $presets,
-          '#default_value' => ($field ? $pids[$field->thumb_preset] : 'none'),
+          '#default_value' => ($field ? $pids[$field->thumb_preset] : 'mediafront_original'),
         );
       }
       else {
@@ -144,8 +154,8 @@ function mediafront_filefield_submit( $form, &$form_state ) {
     $form_state['values']['type_name'],
     $form_state['values']['field_name'],
     $form_state['values']['media_type'],
-    ($nid ? db_result(db_query($sql, $nid)) : ''),
-    ($tid ? db_result(db_query($sql, $tid)) : '')
+    (($nid && is_numeric($nid)) ? db_result(db_query($sql, $nid)) : $nid),
+    (($tid && is_numeric($tid)) ? db_result(db_query($sql, $tid)) : $tid)
   );
 }
 

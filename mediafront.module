@@ -872,7 +872,7 @@ function mediafront_playlist_node( $node ) {
           }
 
           // If the media field is defined.
-          if( $media_field ) {
+          if( $media_field && ($media_field->media_type != 'mediafront_original') ) {
 
             // Get the filename.
             $filename = basename($field[0]['filepath']);
