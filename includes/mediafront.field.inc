@@ -3,7 +3,7 @@
  * Implements hook_field_info().
  */
 function mediafront_field_info() {
-  $preset = array_shift( mediafront_preset_get_presets() );
+  $preset = array_shift( preset_get_presets('mediafront') );
   $default_formatter = ($preset) ? 'mediaplayer__' . $preset['name'] : 'hidden';
 
   return array(
@@ -63,7 +63,7 @@ function mediafront_field_widget_info() {
 function mediafront_field_formatter_info() {
   $formatters = array();
 
-  foreach (mediafront_preset_get_presets() as $preset) {
+  foreach (preset_get_presets('mediafront') as $preset) {
     $formatters['mediaplayer__' . $preset['name']] = array(
       'label' => t('@preset', array('@preset' => $preset['name'])),
       'description' => t('Allows the Media Player field to be displayed.'),

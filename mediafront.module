@@ -15,10 +15,6 @@ function mediafront_permission() {
     'administer mediafront' => array(
       'title' => t('Administer MediaFront'),
       'description' => t('Perform administration tasks for the MediaFront module.'),
-    ),
-    'administer mediafront presets' => array(
-      'title' => t('Administer MediaFront Presets'),
-      'description' => t('Add, Edit, and Delete mediafront presets.'),
     )
   );
 
@@ -41,60 +37,6 @@ function mediafront_menu() {
     'page arguments' => array(1, 2),
     'access arguments' => array('access content')
   );
-  /*  TO-DO:  Add some settings for this module.... if it is needed.
-  $items['admin/config/mediafront'] = array(
-    'title' => 'MediaFront Settings',
-    'description' => 'Manage and configure MediaFront Settings.',
-    'page callback' => 'mediafront_admin_page',
-    'access arguments' => array('administer mediafront'),
-    'file' => 'mediafront.admin.inc',
-  );
-  */
-  $items['admin/structure/mediafront'] = array(
-    'title' => 'MediaFront Presets',
-    'description' => 'Manage and configure the presets for MediaFront.',
-    'page callback' => 'mediafront_presets_overview',
-    'access arguments' => array('administer mediafront presets'),
-    'file' => 'mediafront.admin.inc',
-  );
-  $items['admin/structure/mediafront/preset/list'] = array(
-    'title' => 'List',
-    'type' => MENU_DEFAULT_LOCAL_TASK,
-    'weight' => -10,
-  );
-  $items['admin/structure/mediafront/preset/add'] = array(
-    'title' => 'Add preset',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('mediafront_preset_create_form'),
-    'access arguments' => array('administer mediafront presets'),
-    'type' => MENU_LOCAL_TASK,
-    'file' => 'mediafront.admin.inc',
-  );
-
-  $presets = mediafront_preset_get_presets();
-  foreach( $presets as $preset ) {
-    $items['admin/structure/mediafront/preset/manage/' . $preset['name']] = array(
-      'title' => 'Edit MediaFront Preset',
-      'title callback' => 'mediafront_preset_page_title',
-      'title arguments' => array(5),
-      'page callback' => 'drupal_get_form',
-      'page arguments' => array('mediafront_preset_form', $preset),
-      'access arguments' => array('administer mediafront presets'),
-      'file' => 'mediafront.admin.inc',
-    );
-    $items['admin/structure/mediafront/preset/manage/' . $preset['name'] . '/edit'] = array(
-      'title' => 'Edit',
-      'type' => MENU_DEFAULT_LOCAL_TASK,
-    );
-    $items['admin/structure/mediafront/preset/manage/' . $preset['name'] . '/delete'] = array(
-      'title' => 'Delete',
-      'page arguments' => array('mediafront_preset_delete_confirm', $preset),
-      'access arguments' => array('administer mediafront presets'),
-      'type' => MENU_CALLBACK,
-      'file' => 'mediafront.admin.inc',
-    );
-  }
-
   return $items;
 }
 
@@ -149,6 +91,23 @@ function theme_mediafront_player( $variables ) {
 }
 
 /**
+ * Implements hook_preset_info()
+ */
+function mediafront_preset_info() {
+  return array(
+    'title' => t('MediaFront Presets'),
+    'description' => t('Manage the prests for the MediaFront module.'),
+    'permissions' => array(
+      'name' => 'administer mediafront presets',
+      'title' => t('Administer MediaFront Presets'),
+      'description' => t('Create and manage the presets for the MediaFront module.')
+    ),
+    'default_settings' => 'mediafront_get_default_settings',
+    'file' => drupal_get_path('module', 'mediafront') .'/includes/mediafront.preset.inc'
+  );
+}
+
+/**
  * Implements hook_views_api().
  *
  * This one is used as the base to reduce errors when updating.
@@ -162,7 +121,7 @@ function mediafront_views_api() {
 
 /**
  * Implements hook_features_api()
- * 
+ *
  */
 function mediafront_features_api() {
   return array(
@@ -172,13 +131,6 @@ function mediafront_features_api() {
       'file' => drupal_get_path('module', 'mediafront') .'/includes/mediafront.features.inc',
     ),
   );
-}
-
-/**
- * Title callback for a preset.
- */
-function mediafront_preset_page_title($preset) {
-  return $preset;
 }
 
 /**
@@ -206,10 +158,20 @@ function mediafront_get_default_params( $player ) {
 }
 
 /**
+ * Returns the default parameters.
+ *
+ * @param <array> The preset settings object.
+ */
+function mediafront_get_default_settings( $preset ) {
+  $player = $preset['settings']['player'];
+  return array_merge( mediafront_get_default_params($player), mediafront_get_player_settings($player) );
+}
+
+/**
  * Returns the player's default settings.
  * @param $player
  */
-function mediafront_get_default_settings( $player ) {
+function mediafront_get_player_settings( $player ) {
   $get_settings = $player . '_get_player_settings';
   if( function_exists( $get_settings ) ) {
     return $get_settings();
@@ -221,7 +183,7 @@ function mediafront_get_default_settings( $player ) {
  * Returns ALL the player settings for the given player provided settings to override.
  */
 function mediafront_get_settings( $player, $override ) {
-  $defaults = array_merge( mediafront_get_default_params($player), mediafront_get_default_settings($player) );
+  $defaults = array_merge( mediafront_get_default_params($player), mediafront_get_player_settings($player) );
   return array_merge( $defaults, $override );
 }
 
@@ -233,7 +195,7 @@ function mediafront_get_params( $player, $params, $playeronly = true ) {
   $player_params = array();
   $defaults = mediafront_get_default_params( $player );
   if( !$playeronly ) {
-    $defaults = array_merge( $defaults, mediafront_get_default_settings($player) );
+    $defaults = array_merge( $defaults, mediafront_get_player_settings($player) );
   }
 
   // Iterate through all of the default settings.
@@ -275,146 +237,11 @@ function mediafront_parse_param( $value, $type ) {
  * Get's the player settings for the given player.
  */
 function mediafront_player_settings_form( $preset ) {
-  $settings_form = $preset['player'] . '_player_settings_form';
+  $settings_form = $preset['settings']['player'] . '_player_settings_form';
   if( function_exists( $settings_form ) ) {
     return $settings_form($preset);
   }
   return array();
-}
-
-/**
- * Saves a new preset.
- */
-function mediafront_preset_save( $params ) {
-  // If they provide the pid, then this needs to be an update.
-  $pid = (isset($params['pid']) && $params['pid']) ? array('pid') : array();
-
-  // Tell the player about this preset save.
-  $player_save = $params['player'] . '_mediafront_preset_save';
-  if( function_exists( $player_save ) ) {
-    $player_save( $params );
-  }
-
-  // Save or update a preset.
-  drupal_write_record( 'mediafront_preset', $params, $pid );
-
-  // Rebuild the menu's
-  menu_rebuild();
-
-  // Rebuild Theme Registry
-  drupal_theme_rebuild();
-}
-
-/**
- * Gets a list of all presets.
- */
-function mediafront_preset_get_presets() {
-  $presets = array();
-  $normal_presets = array();
-  $result = db_select('mediafront_preset', 'p')
-    ->fields('p')
-    ->orderBy('p.name', 'ASC')
-    ->execute();
-  foreach( $result as $preset ) {
-    $preset = (array)$preset;
-    $preset['connect'] = unserialize( $preset['connect'] );
-    $preset['settings'] = unserialize( $preset['settings'] );
-    $preset['default'] = false;
-    $presets[$preset['pid']] = $preset;
-    $normal_presets[$preset['name']] = $preset['pid'];
-  }
-
-  // Get all of the default presets.
-  $default_presets = module_invoke_all('mediafront_default_presets');
-  drupal_alter('mediafront_default_presets', $default_presets);
-
-  // Now allow other modules to add their default presets.
-  foreach ($default_presets as $preset) {
-    if (!empty($preset['name'])) {
-      if (!isset($normal_presets[$preset['name']])) {
-        // Add this preset to the list.
-        $preset['pid'] = $preset['name'];
-        $preset['default'] = true;
-        $presets[$preset['name']] = $preset;
-      }
-    }
-  }
-
-  return $presets;
-}
-
-/**
- * Get's the preset.
- */
-function mediafront_get_preset( $preset_name ) {
-  $preset = db_select('mediafront_preset', 'p')
-    ->fields('p')
-    ->condition('p.name', $preset_name)
-    ->execute()
-    ->fetchAssoc();
-  $preset['settings'] = unserialize( $preset['settings'] );
-  $preset['connect'] = unserialize( $preset['connect'] );
-  $preset['default'] = false;
-  
-  // Return the preset.
-  return $preset;
-}
-
-/**
- * Deletes a preset
- */
-function mediafront_preset_delete( $preset_name ) {
-  // Delete the preset.
-  db_delete('mediafront_preset')->condition('name', $preset_name)->execute();
-}
-
-/**
- * Checks to see if another preset is already taken.
- */
-function mediafront_preset_name_exists( $preset_name ) {
-
-  // Get the default presets.
-  $default_presets = module_invoke_all('mediafront_default_presets');
-  drupal_alter('mediafront_default_presets', $default_presets);  
-  
-  // See if there is a default preset name.
-  if( $default_presets && isset($default_presets[$preset_name]) ) {
-    return true; 
-  }    
-  else { 
-    return (bool)db_select('mediafront_preset', 'p')
-      ->fields('p', array('name'))
-      ->condition('p.name', db_like($preset_name), 'LIKE')
-      ->range(0, 1)
-      ->execute()
-      ->fetchField();
-  }
-}
-
-/**
- * Verify the syntax of the given prefix name.
- *
- * Borrowed from the user.module.   :)
- */
-function mediafront_validate_preset_name($name) {
-  if (!$name) {
-    return t('You must enter a preset.');
-  }
-  if( mediafront_preset_name_exists( $name ) ) {
-    return t('The preset name %name is already taken.', array('%name' => $name));
-  }
-  if (strpos($name, ' ') !== FALSE ) {
-    return t('The preset name cannot contain a space.');
-  }
-  if( is_numeric( $name[0] ) ) {
-    return t('The preset name cannot begin with a number.');
-  }
-  if (preg_match('/[^a-z0-9_]/i', $name)) {
-    return t('The preset name contains an illegal character.');
-  }
-  if (drupal_strlen($name) > MEDIAFRONT_PRESET_MAX_LENGTH) {
-    return t('The preset name %name is too long: it must be %max characters or less.', array('%name' => $name, '%max' => MEDIAFRONT_PRESET_MAX_LENGTH));
-  }
 }
 
 /**
@@ -674,11 +501,11 @@ function mediafront_array_to_object($array = array()) {
  * Determine the file path for the media file.
  */
 function mediafront_get_media_filepath( $file ) {
-   return (isset($file->url) ? $file->url :   
-          (isset($file->path) ? $file->path :
-          (!isset($file->filepath) ? '' :   
-          (preg_match('/^http(s)?\:\/\//', $file->uri) ? $file->uri : 
-          file_create_url($file->uri) ))));
+  return (isset($file->url) ? $file->url :
+    (isset($file->path) ? $file->path :
+    (!isset($file->filepath) ? '' :
+    (preg_match('/^http(s)?\:\/\//', $file->uri) ? $file->uri :
+    file_create_url($file->uri) ))));
 }
 
 /**
@@ -751,11 +578,11 @@ function mediafront_add_media( &$additions, $file ) {
  */
 function _mediafront_get_field( $node, $field_name, $index = -1 ) {
   if( isset($node->{$field_name}) &&
-      is_array($node->{$field_name}) && 
-      isset($node->{$field_name}['und']) &&
-      is_array($node->{$field_name}['und']) && 
-      isset($node->{$field_name}['und'][0]) &&
-      is_array($node->{$field_name}['und'][0]) ) {
+    is_array($node->{$field_name}) &&
+    isset($node->{$field_name}['und']) &&
+    is_array($node->{$field_name}['und']) &&
+    isset($node->{$field_name}['und'][0]) &&
+    is_array($node->{$field_name}['und'][0]) ) {
     return ($index >= 0) ? $node->{$field_name}['und'][$index] : $node->{$field_name}['und'];
   }
   else {
@@ -774,12 +601,12 @@ function mediafront_playlist_node( $node ) {
 
   // If they provide the field_mediafront_media field.
   if( $field = _mediafront_get_field( $node, 'field_mediafront_media', 0 ) ) {
-    $additions["mediafiles"]["media"]["media"] = $field['value']; 
+    $additions["mediafiles"]["media"]["media"] = $field['value'];
   }
 
   // If they provide the field_mediafront_image field.
   if( $field = _mediafront_get_field( $node, 'field_mediafront_image', 0 ) ) {
-    $additions["mediafiles"]["images"]["image"] = $field['value']; 
+    $additions["mediafiles"]["images"]["image"] = $field['value'];
   }
 
   // Now look for any CCK fields.
@@ -879,26 +706,27 @@ function mediafront_playlist_node( $node ) {
  */
 function mediafront_get_player() {
   $args = func_get_args();
-  $params = $args[0];
 
-  // If they pass in a string, then this is a preset.
-  // get the preset values.
-  if( gettype($params) == 'string' ) {
-    $preset = mediafront_get_preset( $params );
-    $params = isset($args[1]) ? $preset['settings'] ? array_merge( $preset['settings'], $args[1] ) : $args[1] : $preset['settings'];
+  // Get the first arguments.
+  $params = $args[0];
+  $param_type = gettype($params);
+
+  // If they pass in a string, then this is a preset. Get the preset values.
+  if( module_exists('preset') && $param_type == 'string' ) {
+    $preset = preset_get( 'mediafront', $params );
+    $params = $preset ? (isset($args[1]) ? array_merge( $preset['settings'], $args[1] ) : $preset['settings']) : array();
     $params['preset'] = $preset['name'];
-    $params['player'] = $preset['player'];
-    $params['connect'] = (isset($params['connect']) && $params['connect']) ? $params['connect'] : $preset['connect'];
-    $params['id'] = (isset($params['id']) && $params['id']) ? $params['id'] : 'mediafront_' . $preset['name'];
   }
 
-  if( $params ) {
+  if( $params && is_array($params) ) {
     $player = ($params && $params['player']) ? $params['player'] : 'osmplayer';
     $getPlayer = $player . '_get_player';
     return function_exists($getPlayer) ? $getPlayer($params) : t('Player not available');
   }
-  else {
-    return t('Player not available');
+  else if( $param_type == 'string' ) {
+    return t('You need to install the <a href="http://www.drupal.org/project/preset">Preset</a> module to show this player.');
   }
+
+  return t('Player not available');
 }
 ?>
