@@ -95,7 +95,7 @@ function theme_mediafront_player( $variables ) {
 function mediafront_preset_info() {
   return array(
     'title' => t('MediaFront Presets'),
-    'description' => t('Manage the prests for the MediaFront module.'),
+    'description' => t('Manage the presets for the MediaFront module.'),
     'permissions' => array(
       'name' => 'administer mediafront presets',
       'title' => t('Administer MediaFront Presets'),
