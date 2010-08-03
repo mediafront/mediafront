@@ -60,7 +60,7 @@ function mediafront_preset_form( $preset ) {
   );
 
   // Now add the player settings form to this fieldset.
-  $form['preset']['settings'] = array_merge( mediafront_player_settings_form( $preset ), $form['preset']['settings'] );
+  $form['preset']['settings'] = array_merge( mediafront_player_settings_form($preset), $form['preset']['settings'] );
 
   // Add the player to player settings.
   $form['preset']['settings']['connect'] = array(
@@ -96,4 +96,15 @@ function mediafront_preset_form( $preset ) {
     '#options' => $presets
   );
   return $form;
+}
+
+/**
+ * Get's the player settings for the given player.
+ */
+function mediafront_player_settings_form( $preset ) {
+  $settings_form = $preset['settings']['player'] . '_player_settings_form';
+  if( function_exists( $settings_form ) ) {
+    return $settings_form($preset);
+  }
+  return array();
 }

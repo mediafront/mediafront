@@ -1,5 +1,4 @@
 <?php 
-define('MEDIAFRONT_PRESET_MAX_LENGTH', 64);
 define('MEDIAFRONT_DEFAULT_WIDTH', 500);
 define('MEDIAFRONT_DEFAULT_HEIGHT', 350);
 
@@ -120,20 +119,6 @@ function mediafront_views_api() {
 }
 
 /**
- * Implements hook_features_api()
- *
- */
-function mediafront_features_api() {
-  return array(
-    'mediafront' => array(
-      'name' => t('MediaFront Presets'),
-      'default_hook' => 'mediafront_default_presets',
-      'file' => drupal_get_path('module', 'mediafront') .'/includes/mediafront.features.inc',
-    ),
-  );
-}
-
-/**
  * Returns a list of all available players.
  */
 function mediafront_get_players() {
@@ -149,22 +134,12 @@ function mediafront_get_players() {
  * Returns the player's default parameters.
  * @param $player
  */
-function mediafront_get_default_params( $player ) {
+function mediafront_get_player_params( $player ) {
   $get_params = $player . '_get_player_params';
   if( function_exists( $get_params ) ) {
     return $get_params();
   }
   return array();
-}
-
-/**
- * Returns the default parameters.
- *
- * @param <array> The preset settings object.
- */
-function mediafront_get_default_settings( $preset ) {
-  $player = $preset['settings']['player'];
-  return array_merge( mediafront_get_default_params($player), mediafront_get_player_settings($player) );
 }
 
 /**
@@ -180,68 +155,20 @@ function mediafront_get_player_settings( $player ) {
 }
 
 /**
+ * Returns the default parameters.
+ *
+ * @param <array> The preset settings object.
+ */
+function mediafront_get_default_settings( $preset ) {
+  return mediafront_get_settings( $preset['settings']['player'] );
+}
+
+/**
  * Returns ALL the player settings for the given player provided settings to override.
  */
-function mediafront_get_settings( $player, $override ) {
-  $defaults = array_merge( mediafront_get_default_params($player), mediafront_get_player_settings($player) );
-  return array_merge( $defaults, $override );
-}
-
-/**
- * Returns only the player parameters that are different than the default parameters for the given player.
- * This function will also populate the $params object with all the settings.
- */
-function mediafront_get_params( $player, $params, $playeronly = true ) {
-  $player_params = array();
-  $defaults = mediafront_get_default_params( $player );
-  if( !$playeronly ) {
-    $defaults = array_merge( $defaults, mediafront_get_player_settings($player) );
-  }
-
-  // Iterate through all of the default settings.
-  foreach( $defaults as $setting => $value ) {
-    if( isset($params[$setting]) ) {
-      // Only set the settings if the setting was provided and is different than the default.
-      $param = mediafront_parse_param( $params[$setting], getType($value) );
-      if( $param != $value ) {
-        // Set the necessary setting...
-        $player_params[$setting] = $param;
-      }
-    }
-  }
-  return $player_params;
-}
-
-/**
- * Parses a parameter from a serialized object.
- */
-function mediafront_parse_param( $value, $type ) {
-  switch( $type ) {
-    case 'integer':
-      return (integer)$value;
-      break;
-    case 'float':
-      return (float)$value;
-      break;
-    case 'boolean':
-      $value = (!$value || $value === "false" || $value === "0") ? false : $value;
-      return (boolean)$value;
-      break;
-    default:
-      return $value;
-      break;
-  }
-}
-
-/**
- * Get's the player settings for the given player.
- */
-function mediafront_player_settings_form( $preset ) {
-  $settings_form = $preset['settings']['player'] . '_player_settings_form';
-  if( function_exists( $settings_form ) ) {
-    return $settings_form($preset);
-  }
-  return array();
+function mediafront_get_settings( $player, $override = array() ) {
+  $defaults = array_merge( mediafront_get_player_params($player), mediafront_get_player_settings($player) );
+  return $override ? array_merge( $defaults, $override ) : $defaults;
 }
 
 /**
@@ -252,7 +179,7 @@ function mediafront_player_settings_form( $preset ) {
  */
 function mediafront_template_preprocess(&$variables) {
   // Get only the necessary settings for this player that are different than the defaults.
-  $variables['player_params'] = mediafront_get_params( $variables['params']['player'], $variables['params'] );
+  $variables['player_params'] = $variables['params'];
   $variables['params'] = mediafront_get_settings( $variables['params']['player'], $variables['params'] );
 }
 
