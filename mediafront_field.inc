@@ -76,8 +76,8 @@ function mediafront_field($op, &$node, $field, &$items, $teaser, $page) {
 function mediafront_field_formatter_info() {
   $formatters = array();
   foreach (mediafront_preset_get_presets() as $preset) {
-    $formatters[$preset->name . '_player'] = array(
-      'label' => t('@preset', array('@preset' => $preset->name)),
+    $formatters[$preset['name'] . '_player'] = array(
+      'label' => t('@preset', array('@preset' => $preset['name'])),
       'field types' => array('mediafront'),
     );
   }
