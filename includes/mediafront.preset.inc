@@ -77,6 +77,35 @@ function mediafront_preset_menu() {
 }
 
 /**
+ * Implementation of hook_theme
+ */
+function mediafront_preset_theme() {
+  $theme = array();
+
+  // Iterate through all of our presets, and create a formatter for each one.
+  foreach(mediafront_preset_get_presets() as $preset) {
+    $theme['mediafront_formatter_'. $preset['name'] .'_player'] = array(
+      'arguments' => array('element' => NULL),
+      'function' => 'theme_mediafront_formatter_player',
+    );
+  }
+
+  return $theme;
+}
+
+/**
+ * Implement the theme for the CCK fields.
+ */
+function theme_mediafront_formatter_player($element) {
+  // Extract the preset name from the formatter name.
+  $preset = substr($element['#formatter'], 0, strrpos($element['#formatter'], '_'));
+
+  // Return a node mediafront player.
+  return theme('mediafront_player', $element['#node'], $preset );
+}
+
+
+/**
  * Menu callback: MediaFront Module administration.
  */
 function mediafront_presets_overview() {
