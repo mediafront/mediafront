@@ -381,7 +381,13 @@ function osmplayer_player_settings_form( $preset ) {
      '#title' => t('Default Volume'),
      '#description' => t('Enter the initial volume for the player.'),
      '#default_value' => $preset['settings']['volume']
-   ); 
+   );
+   $form['media_settings']['repeat'] = array(
+     '#type' => 'checkbox',
+     '#title' => t('Auto Repeat'),
+     '#description' => t('If checked, the media will play repeatidly.'),
+     '#default_value' => $preset['settings']['repeat']
+   );
    $form['media_settings']['autostart'] = array(
      '#type' => 'checkbox',
      '#title' => t('Auto Start'),

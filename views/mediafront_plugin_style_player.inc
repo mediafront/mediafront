@@ -43,14 +43,14 @@ class mediafront_plugin_style_player extends views_plugin_style {
       '#default_value' => isset($this->options['mediafront_preset']) ? $this->options['mediafront_preset'] : '',
     );
   }
-  
+
   /**
-   * Make sure the view includes the total number of rows.
+   * Override the query to tell our view to get the total number of rows.
    */
-  function pre_execute() {
-    parent::pre_execute();
+  function query() {
+    parent::query();
     $this->view->get_total_rows = TRUE;
-  }  
+  } 
   
   /**
    * Renders the media player.
