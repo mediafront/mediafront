@@ -34,6 +34,11 @@ function mediafront_filefield_get( $node_type, $field_name ) {
   return db_fetch_object( db_query( $sql, $node_type, $field_name ) );
 }
 
+function mediafront_filefield_get_default( $field, $field_name, $presets ) {
+  return ($field && isset($presets[$field->{$field_name}]) ? $presets[$field->{$field_name}] :
+         ($field->{$field_name} ? $field->{$field_name} : "mediafront_original"));
+}
+
 /**
  * Implementation of hook_form_FORM_ID_alter().
  */
@@ -77,22 +82,21 @@ function mediafront_form_content_field_edit_form_alter(&$form, $form_state) {
         $description .= '<li><strong>' . t('Original Image') . '</strong>: ' . t('Only use the original image for the MediaFront Media Player') . '</li>';
         $description .= '<li><strong>' . t('None') . '</strong>: ' . t('Do not include this image field in the MediaFront Media Player') . '</li>';
         $description .= '</ul>';
-
-
-        $form['mediafront_filefield']['node_preset'] = array(
+        
+        $form['mediafront_filefield']['preview_image'] = array(
           '#type' => 'select',
           '#title' => t('Media Preview Image'),
           '#description' => $description,
           '#options' => $presets,
-          '#default_value' => ($field ? $pids[$field->node_preset] : 'mediafront_original'),
+          '#default_value' => mediafront_filefield_get_default( $field, 'node_preset', $pids ),
         );
 
-        $form['mediafront_filefield']['thumb_preset'] = array(
+        $form['mediafront_filefield']['thumb_image'] = array(
           '#type' => 'select',
           '#title' => t('Media Thumbnail Image'),
           '#description' => $description,
           '#options' => $presets,
-          '#default_value' => ($field ? $pids[$field->thumb_preset] : 'mediafront_original'),
+          '#default_value' => mediafront_filefield_get_default( $field, 'thumb_preset', $pids ),
         );
       }
       else {
@@ -146,8 +150,8 @@ function mediafront_content_fieldapi( $op, $field ) {
 function mediafront_filefield_submit( $form, &$form_state ) {
   // SQL to get the image cache preset name.
   $sql = "SELECT presetname FROM {imagecache_preset} WHERE presetid=%d";
-  $nid = $form_state['values']['node_preset'];
-  $tid = $form_state['values']['thumb_preset'];
+  $nid = $form_state['values']['preview_image'];
+  $tid = $form_state['values']['thumb_image'];
 
   // Save this filefield
   mediafront_filefield_save(
