@@ -403,9 +403,11 @@ function mediafront_playlist_node_merge( $original, $additions ) {
  */
 function mediafront_invoke_node( $node, $args ) {
   $additions = array();
-  foreach( module_implements('playlist_node') as $name ) {
-    $function = $name . '_playlist_node';
-    $additions = mediafront_playlist_node_merge( $additions, $function($node, $args) );
+  if( $node ) {
+    foreach( module_implements('playlist_node') as $name ) {
+      $function = $name . '_playlist_node';
+      $additions = mediafront_playlist_node_merge( $additions, $function($node, $args) );
+    }
   }
   return $additions;
 }
