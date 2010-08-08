@@ -388,7 +388,12 @@ function mediafront_array_replace_recursive( $toArray, $fromArray ) {
   // Loop through array key/value pairs
   foreach ($fromArray as $key => $value) {
     // Assign the value to the toArray.
-    $toArray[$key] = (is_array($value) || is_object($value)) ? mediafront_array_replace_recursive($toArray[$key], $value) : $value;
+    if( is_array($toArray) ) {
+      $toArray[$key] = (is_array($value) || is_object($value)) ? mediafront_array_replace_recursive($toArray[$key], $value) : $value;
+    }
+    else {
+      $toArray->{$key} = (is_array($value) || is_object($value)) ? mediafront_array_replace_recursive($toArray->{$key}, $value) : $value;
+    }
   }
 
   // Return the joined array
