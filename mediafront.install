@@ -339,4 +339,16 @@ function mediafront_update_6004() {
 
   return $update;
 }
+
+/**
+ * This update will remove the now unnecessary mediafront_imagecache table, which
+ * was replaced with the mediafront_filefield table.
+ */
+function mediafront_update_6005() {
+  $update = array();
+  if( db_table_exists('mediafront_imagecache') ) {
+    db_drop_table( $update, 'mediafront_imagecache' );
+  }
+  return $update;  
+}
 ?>
