@@ -76,7 +76,7 @@ function theme_mediafront_player( $node, $preset ) {
   $params['nodeObj'] = mediafront_invoke_node( $node, array() );
 
   // Also set the nodeId for those who cannot just use the object.
-  $params['node'] = $element['#node']->nid;
+  $params['node'] = $node->nid;
 
   // Nodes will never need the playlist.
   $params['disablePlaylist'] = true;
@@ -466,11 +466,11 @@ function mediafront_array_to_object($array = array()) {
  * Determine the file path for the media file.
  */
 function mediafront_get_media_filepath( $file ) {
-   return (isset($file->url) ? $file->url :   
-          (isset($file->path) ? $file->path :
-          (!isset($file->filepath) ? '' :   
-          (preg_match('/^http(s)?\:\/\//', $file->filepath) ? $file->filepath : 
-          file_create_url($file->filepath) ))));
+  return (isset($file->url) ? $file->url :
+    (isset($file->path) ? $file->path :
+    (!isset($file->filepath) ? '' :
+    (preg_match('/^http(s)?\:\/\//', $file->filepath) ? $file->filepath :
+    file_create_url($file->filepath) ))));
 }
 
 /**
@@ -550,9 +550,9 @@ function mediafront_get_image( $preset_name, $filename ) {
  */
 function _mediafront_get_field( $node, $field_name, $index = -1 ) {
   if( isset($node->{$field_name}) &&
-      is_array($node->{$field_name}) &&
-      isset($node->{$field_name}[0]) &&
-      is_array($node->{$field_name}[0]) ) {
+    is_array($node->{$field_name}) &&
+    isset($node->{$field_name}[0]) &&
+    is_array($node->{$field_name}[0]) ) {
     return ($index >= 0) ? $node->{$field_name}[$index] : $node->{$field_name};
   }
   else {
@@ -588,12 +588,12 @@ function mediafront_playlist_node( $node ) {
 
   // If they provide the field_mediafront_media field.
   if( $field = _mediafront_get_field( $node, 'field_mediafront_media', 0 ) ) {
-    $additions["mediafiles"]["media"]["media"] = $field['value']; 
+    $additions["mediafiles"]["media"]["media"] = $field['value'];
   }
 
   // If they provide the field_mediafront_image field.
   if( $field = _mediafront_get_field( $node, 'field_mediafront_image', 0 ) ) {
-    $additions["mediafiles"]["images"]["image"] = $field['value']; 
+    $additions["mediafiles"]["images"]["image"] = $field['value'];
   }
 
   // Now look for any CCK fields.
