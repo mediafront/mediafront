@@ -379,7 +379,13 @@ function osmplayer_player_settings_form( $preset ) {
      '#title' => t('Default Volume'),
      '#description' => t('Enter the initial volume for the player.'),
      '#default_value' => $preset['settings']['volume']
-   ); 
+   );
+   $form['media_settings']['repeat'] = array(
+     '#type' => 'checkbox',
+     '#title' => t('Auto Repeat'),
+     '#description' => t('If checked, the media will play repeatidly.'),
+     '#default_value' => $preset['settings']['repeat']
+   );
    $form['media_settings']['autostart'] = array(
      '#type' => 'checkbox',
      '#title' => t('Auto Start'),
@@ -412,7 +418,63 @@ function osmplayer_player_settings_form( $preset ) {
       '#weight' => -8,    
       '#collapsible' => true,
       '#collapsed' => true 
-   );     
+   );
+   $form['playlist_settings']['scrollSettings'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Scroll Settings'),
+      '#collapsible' => true,
+      '#collapsed' => true
+   );
+   $form['playlist_settings']['scrollSettings']['showScrollbar'] = array(
+     '#type' => 'checkbox',
+     '#title' => t('Show Scroll Bar'),
+     '#description' => t('Check to show the scroll bar or not.'),
+     '#default_value' => $preset['settings']['showScrollbar']
+   );
+   $form['playlist_settings']['scrollSettings']['scrollMode'] = array(
+     '#type' => 'select',
+     '#title' => t('Scroll Mode'),
+     '#options' => array('auto'=>'Auto Scroll', 'hover'=>'Hover Scroll', 'span'=>'Span Scroll', 'none'=>'No Scroll'),
+     '#description' => t('Specify how you would like the playlist to scroll.  Auto Scroll will make the playlist scroll follow the mouse movements.  Hover Scroll will only scroll once the user hover\'s over a certain button region in the scroll region.  Span Scroll will scroll the playlist using the exact mouse position.  No Scroll will disable playlist scrolling.'),
+     '#default_value' => $preset['settings']['scrollMode']
+   );
+   $form['playlist_settings']['scrollSettings']['scrollSpeed'] = array(
+     '#type' => 'textfield',
+     '#title' => t('Scroll Speed'),
+     '#description' => t('The speed which the playlist scrolls.'),
+     '#default_value' => $preset['settings']['scrollSpeed']
+   );
+   $form['playlist_settings']['displaySettings'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Display Settings'),
+      '#collapsible' => true,
+      '#collapsed' => true
+   );
+   $form['playlist_settings']['displaySettings']['disablePlaylist'] = array(
+     '#type' => 'checkbox',
+     '#title' => t('Disable Playlist'),
+     '#description' => t('Will completely remove the playlist funcitonality.'),
+     '#default_value' => $preset['settings']['disablePlaylist']
+   );
+   $form['playlist_settings']['displaySettings']['showPlaylist'] = array(
+     '#type' => 'checkbox',
+     '#title' => t('Show Playlist'),
+     '#description' => t('Select if you would like to see the playlist by default. ( They can then see the playlist my pressing the maximize button )'),
+     '#default_value' => $preset['settings']['showPlaylist']
+   );
+   $form['playlist_settings']['displaySettings']['playlistOnly'] = array(
+     '#type' => 'checkbox',
+     '#title' => t('Playlist Only'),
+     '#description' => t('Select if you would like to ONLY see the playlist.'),
+     '#default_value' => $preset['settings']['playlistOnly']
+   );
+   $form['playlist_settings']['displaySettings']['vertical'] = array(
+     '#type' => 'select',
+     '#title' => t('Playlist Orientation'),
+     '#options' => array(false=>'Horizontal', true=>'Vertical'),
+     '#description' => t('Selecting this will orient the playist either vertical or horizontal.  Note - This will only work if your template supports it.'),
+     '#default_value' => $preset['settings']['vertical']
+   );
    $form['playlist_settings']['playlist'] = array(
      '#type' => 'textfield',
      '#title' => t('Default Playlist'),
@@ -448,63 +510,7 @@ function osmplayer_player_settings_form( $preset ) {
      '#title' => t('Loop'),
      '#description' => t('If checked, the media playlist will play over once it has been completed.  This also applies if there is only a single media being played.'),
      '#default_value' => $preset['settings']['loop']
-   );     
-   $form['playlist_settings']['scrollSettings'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Scroll Settings'),
-      '#collapsible' => true,
-      '#collapsed' => true    
-   );   
-   $form['playlist_settings']['scrollSettings']['showScrollbar'] = array(
-     '#type' => 'checkbox',
-     '#title' => t('Show Scroll Bar'),
-     '#description' => t('Check to show the scroll bar or not.'),
-     '#default_value' => $preset['settings']['showScrollbar']
-   );    
-   $form['playlist_settings']['scrollSettings']['scrollMode'] = array(
-     '#type' => 'select',
-     '#title' => t('Scroll Mode'),
-     '#options' => array('auto'=>'Auto Scroll', 'hover'=>'Hover Scroll', 'span'=>'Span Scroll', 'none'=>'No Scroll'),
-     '#description' => t('Specify how you would like the playlist to scroll.  Auto Scroll will make the playlist scroll follow the mouse movements.  Hover Scroll will only scroll once the user hover\'s over a certain button region in the scroll region.  Span Scroll will scroll the playlist using the exact mouse position.  No Scroll will disable playlist scrolling.'),
-     '#default_value' => $preset['settings']['scrollMode']
-   );    
-   $form['playlist_settings']['scrollSettings']['scrollSpeed'] = array(
-     '#type' => 'textfield',
-     '#title' => t('Scroll Speed'),
-     '#description' => t('The speed which the playlist scrolls.'),
-     '#default_value' => $preset['settings']['scrollSpeed']
-   );          
-   $form['playlist_settings']['displaySettings'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Display Settings'),
-      '#collapsible' => true,
-      '#collapsed' => true    
-   );
-   $form['playlist_settings']['displaySettings']['disablePlaylist'] = array(
-     '#type' => 'checkbox',
-     '#title' => t('Disable Playlist'),
-     '#description' => t('Will completely remove the playlist funcitonality.'),
-     '#default_value' => $preset['settings']['disablePlaylist']
-   );    
-   $form['playlist_settings']['displaySettings']['showPlaylist'] = array(
-     '#type' => 'checkbox',
-     '#title' => t('Show Playlist'),
-     '#description' => t('Select if you would like to see the playlist by default. ( They can then see the playlist my pressing the maximize button )'),
-     '#default_value' => $preset['settings']['showPlaylist']
-   ); 
-   $form['playlist_settings']['displaySettings']['playlistOnly'] = array(
-     '#type' => 'checkbox',
-     '#title' => t('Playlist Only'),
-     '#description' => t('Select if you would like to ONLY see the playlist.'),
-     '#default_value' => $preset['settings']['playlistOnly']
-   );  
-   $form['playlist_settings']['displaySettings']['vertical'] = array(
-     '#type' => 'select',
-     '#title' => t('Playlist Orientation'),
-     '#options' => array(false=>'Horizontal', true=>'Vertical'),
-     '#description' => t('Selecting this will orient the playist either vertical or horizontal.  Note - This will only work if your template supports it.'),
-     '#default_value' => $preset['settings']['vertical']
-   );    
+   );         
           
    /**************************** NODE SETTINGS ***********************************/
    $form['node_settings'] = array(
@@ -676,7 +682,9 @@ function osmplayer_get_directories( $player_path ) {
    
    if (is_dir($base_directory) && $handle = opendir($base_directory)) {
       while (FALSE !== ($directory = readdir($handle))) {
-         if ( (strpos($directory, '.') === FALSE) && is_dir( $base_directory . '/' . $directory ) ) {
+         if ( (strpos($directory, '.') === FALSE) &&
+              (strtolower($directory) !== 'cvs') &&
+              (is_dir( $base_directory . '/' . $directory )) ) {
             $directories[$directory] = $directory;
          }
       }

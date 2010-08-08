@@ -24,6 +24,7 @@ function mediafront_permission() {
  * Implements hook_menu().
  */
 function mediafront_menu() {
+  
   $items['mediafront_getplaylist'] = array(
     'page callback' => 'mediafront_get_playlist_json',
     'type' => MENU_CALLBACK,
@@ -43,6 +44,7 @@ function mediafront_menu() {
  * Implements hook_theme().
  */
 function mediafront_theme() {
+  
   $theme = array();
 
   // Create a basic theme function for showing the media player.
@@ -83,9 +85,17 @@ function theme_mediafront_player_view( $variables ) {
 function theme_mediafront_player( $variables ) {
   $entity = $variables['entity'];
   $preset = $variables['preset'];
+
+  // Get the node for this player in JSON format.  
   $params['nodeObj'] = mediafront_invoke_node( $entity, array() );
+
+  // Also set the nodeId for those who cannot just use the object.
   $params['node'] = $entity->nid;
+
+  // Nodes will never need the playlist.
   $params['disablePlaylist'] = true;
+
+  // Return the player.
   return mediafront_get_player($preset, $params);
 }
 
@@ -167,8 +177,11 @@ function mediafront_get_default_settings( $preset ) {
  * Returns ALL the player settings for the given player provided settings to override.
  */
 function mediafront_get_settings( $player, $override = array() ) {
-  $defaults = array_merge( mediafront_get_player_params($player), mediafront_get_player_settings($player) );
-  return $override ? array_merge( $defaults, $override ) : $defaults;
+  static $defaults = array();
+  if( !isset($defaults[$player]) ) {
+    $defaults[$player] = array_merge( mediafront_get_player_params($player), mediafront_get_player_settings($player) );
+  }
+  return $override ? array_merge( $defaults[$player], $override ) : $defaults[$player];
 }
 
 /**
@@ -355,7 +368,12 @@ function mediafront_array_replace_recursive( $toArray, $fromArray ) {
   // Loop through array key/value pairs
   foreach ($fromArray as $key => $value) {
     // Assign the value to the toArray.
-    $toArray[$key] = (is_array($value) || is_object($value)) ? mediafront_array_replace_recursive($toArray[$key], $value) : $value;
+    if( is_array($toArray) ) {
+      $toArray[$key] = (is_array($value) || is_object($value)) ? mediafront_array_replace_recursive($toArray[$key], $value) : $value;
+    }
+    else {
+      $toArray->{$key} = (is_array($value) || is_object($value)) ? mediafront_array_replace_recursive($toArray->{$key}, $value) : $value;
+    }
   }
 
   // Return the joined array
