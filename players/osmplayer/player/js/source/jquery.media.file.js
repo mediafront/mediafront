@@ -122,7 +122,7 @@
                }
             }
       }           
-      return "";
+      return "flash";
    };
    
    // Get the type of media this is...
