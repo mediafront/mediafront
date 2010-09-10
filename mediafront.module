@@ -526,7 +526,7 @@ function mediafront_add_media( &$additions, $file ) {
     // If the file exists.
     if( $media_file = mediafront_get_media_file($file) ) {
       if( $media_file->class && $media_file->mediaType ) {
-        if( isset( $additions["mediafiles"][$media_file->class][$media_file->mediaType] ) ) {
+        if( ($media_file->mediaType != "image") && isset( $additions["mediafiles"][$media_file->class][$media_file->mediaType] ) ) {
           $media = $additions["mediafiles"][$media_file->class][$media_file->mediaType];
           $files = is_array($media) ? $media : array($media);
           array_push( $files, $media_file );
@@ -640,13 +640,13 @@ function mediafront_playlist_node( $node ) {
           }
 
           // If the media field is defined.
-          if( $media_field && ($media_field->media_type != 'mediafront_original') ) {
+          if( $media_field ) {
 
             // Get the filename.
             $filename = basename($field[0]['filepath']);
 
             // If this is a preview image.
-            if( $media_field->node_preset ) {
+            if( $media_field->node_preset && ($media_field->node_preset != 'mediafront_original') ) {
               $file = array();
               $file['path'] = mediafront_get_image( $media_field->node_preset, $filename );
               $file['class'] = 'images';
@@ -655,7 +655,7 @@ function mediafront_playlist_node( $node ) {
             }
 
             // This is a thumbnail image.
-            if( $media_field->thumb_preset ) {
+            if( $media_field->thumb_preset && ($media_field->thumb_preset != 'mediafront_original') ) {
               $file = array();
               $file['path'] = mediafront_get_image( $media_field->thumb_preset, $filename );
               $file['class'] = 'images';
