@@ -27,11 +27,9 @@
    /**
     * Load and scale an image while maintining original aspect ratio.
     */
-   jQuery.fn.mediaimage = function( link, fitToImage ) {
-      if( this.length === 0 ) {
-         return null;
-      }
-      return new (function( container, link, fitToImage ) {
+   jQuery.fn.mediaimage = function( link ) {
+      if( this.length === 0 ) { return null; }
+      return new (function( container, link ) {
          this.display = container;
          var _this = this;
          
@@ -51,27 +49,21 @@
          
          // Now add the image object.
          var code = link ? '<a target="_blank" href="' + link + '"><img src=""></img></a>' : '<img src=""></img>';
-         this.image = container.append( code ).find("img");    
+         this.image = container.empty().append( code ).find("img");    
          
          // Set the container to not show any overflow...       
          container.css("overflow", "hidden");
          
          // Resize the image.
          this.resize = function( newWidth, newHeight ) {
-            this.width = fitToImage ? this.imgLoader.width : (newWidth ? newWidth : this.width ? this.width : this.display.width());
-            this.height = fitToImage ? this.imgLoader.height : (newHeight ? newHeight : this.height ? this.height : this.display.height());
+            this.width = newWidth ? newWidth : this.width ? this.width : this.display.width();
+            this.height = newHeight ? newHeight : this.height ? this.height : this.display.height();
             if( this.width && this.height && loaded ) {  
                // Resize the wrapper.
-               this.display.css({
-                  width:this.width,
-                  height:this.height
-                  });
+               this.display.css({width:this.width, height:this.height});
                
                // Now resize the image in the container...
-               var rect = jQuery.media.utils.getScaledRect( ratio, {
-                  width:this.width,
-                  height:this.height
-                  } );
+               var rect = jQuery.media.utils.getScaledRect( ratio, {width:this.width, height:this.height} );
                this.image.attr( "src", this.imgLoader.src ).css({
                   marginLeft:rect.x, 
                   marginTop:rect.y, 
@@ -88,7 +80,6 @@
                this.image.hide();               
                this.image.attr( "src", "" );
             }
-            container.empty();
          };
          
          // Refreshes the image.
@@ -101,6 +92,6 @@
             this.image.hide();
             this.imgLoader.src = src;
          };
-      })( this, link, fitToImage );     
+      })( this, link );     
    };
 })(jQuery);

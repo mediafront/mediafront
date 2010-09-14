@@ -28,40 +28,34 @@
    
    // Set up our defaults for this component.
    jQuery.media.defaults = jQuery.extend( jQuery.media.defaults, {
-      node:"",
-      incrementTime:5             
+      node:""                  
    }); 
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      voter:"#mediavoter",
-      uservoter:"#mediauservoter",
-      mediaRegion:"#mediaregion",
+      voter:".mediavoter",
+      uservoter:".mediauservoter",
+      mediaRegion:".mediaregion",
       field:".mediafield"                 
    });   
    
    jQuery.fn.medianode = function( server, settings ) {
-      if( this.length === 0 ) {
-         return null;
-      }
+      if( this.length === 0 ) { return null; }
       return new (function( server, node, settings ) {
          settings = jQuery.media.utils.getSettings(settings);
          
          // Save the jQuery display.
          this.display = node;
          this.nodeInfo = {};
-         this.incremented = false;
          var _this = this;
          
          // Add the min player as the player for this node.
          this.player = this.display.find(settings.ids.mediaRegion).minplayer( settings );  
-         if( this.player && this.player.media && (settings.incrementTime !== 0)) {
-            this.player.media.display.bind( "mediaupdate", function( event, data ) {
-               _this.onMediaUpdate( data );            
-            });  
-         }         
          
          // Store all loaded images.
          this.images = [];
+         
+         // Indicator to let us know we are waiting on something...
+         this.waiting = false;
          
          // Get the width and height.
          this.width = this.display.width();
@@ -72,41 +66,26 @@
          this.uservoter = this.display.find(settings.ids.uservoter).mediavoter( settings, server, true );
          if( this.uservoter && this.voter ) {
             this.uservoter.display.bind( "processing", function() {
-               _this.player.showBusy(2, true);
+               _this.waiting = true;
+               _this.player.busy.show();
             });
             this.uservoter.display.bind( "voteGet", function() {
-               _this.player.showBusy(2, false);
+               if( _this.waiting ) {
+                  _this.waiting = false;
+                  _this.player.busy.hide();
+               }
             });            
             this.uservoter.display.bind( "voteSet", function( event, vote ) {
-               _this.player.showBusy(2, false);
+               if( _this.waiting ) {
+                  _this.waiting = false;
+                  _this.player.busy.hide();
+               }
                _this.voter.updateVote( vote );   
             });
          }
          
-         // Handle the media events.
-         this.onMediaUpdate = function( data ) {
-            if( !this.incremented ) {
-               switch( data.type ) {
-                  case "update":
-                     // Increment node counter if the increment time is positive and is less than the current time.
-                     if( (settings.incrementTime > 0) && (data.currentTime > settings.incrementTime) ) {
-                        this.incremented = true;
-                        server.call( jQuery.media.commands.incrementCounter, null, null, _this.nodeInfo.nid );
-                     }
-                     break;
-                  case "complete":
-                     // If the increment time is negative, then that means to increment on media completion.
-                     if( settings.incrementTime < 0 ) {
-                        this.incremented = true;
-                        server.call( jQuery.media.commands.incrementCounter, null, null, _this.nodeInfo.nid );
-                     }
-                     break;
-               }
-            }
-         };         
-         
          this.loadNode = function( _nodeInfo ) {
-            return this.getNode( this.translateNode( _nodeInfo ) );
+            this.getNode( this.translateNode( _nodeInfo ) );
          };
 
          this.translateNode = function( _nodeInfo ) {
@@ -118,17 +97,11 @@
                   return defaultNode;   
                }
                else {
-                  return defaultNode ? {
-                     nid:defaultNode,
-                     load:true
-                  } : null;
+                  return defaultNode ? {nid:defaultNode, load:true} : null;
                }
             }
             else if( isValue ) {
-               return {
-                  nid:_nodeInfo,
-                  load:true
-               };
+               return {nid:_nodeInfo, load:true};
             }
             else {
                _nodeInfo.load = false;
@@ -145,7 +118,7 @@
             // Refresh all images.
             var i=this.images.length;
             while(i--) {
-               this.images[i].refresh();
+              this.images[i].refresh(); 
             }
          };
          
@@ -159,34 +132,27 @@
                else {
                   this.setNode( _nodeInfo ); 
                }
-
-               // Return that the node was loaded.
-               return true;
             }
-
-            // Return that there was no node loaded.
-            return false;
          };
 
          this.setNode = function( _nodeInfo ) {
             if( _nodeInfo ) {
                // Set the node information object.
                this.nodeInfo = _nodeInfo;
-               this.incremented = false;
    
                // Load the media...
                if( this.player && this.nodeInfo.mediafiles ) {
+                  // Load the media...
+                  this.player.loadFiles( this.nodeInfo.mediafiles.media );
+                  
                   // Load the preview image.
                   var image = this.getImage("preview");
                   if( image ) {
                      this.player.loadImage( image.path );
                   }
                   else {
-                     this.player.clearImage();
+                     this.player.clearImage();   
                   }
-
-                  // Load the media...
-                  this.player.loadFiles( this.nodeInfo.mediafiles.media );
                }
                
                // Get the vote for these voters.
@@ -262,9 +228,7 @@
                }
                
                // If they just provided a string, then still show the image.
-               image = (typeof image === "string") ? {
-                  path:image
-               } : image;
+               image = (typeof image === "string") ? {path:image} : image;
                image.path = image.path ? jQuery.trim(image.path) : ( settings.baseURL + jQuery.trim(image.filepath) );
                if( image && image.path ) {
                   image.path = image.path ? jQuery.trim(image.path) : ( settings.baseURL + jQuery.trim(image.filepath) );

@@ -25,9 +25,7 @@
  */
 (function($) {
    jQuery.fn.mediavoter = function( settings, server, userVote ) {
-      if( this.length === 0 ) {
-         return null;
-      }
+      if( this.length === 0 ) { return null; }
       return new (function( voteObj, settings, server, userVote ) {
          // Save the jQuery display.
          this.display = voteObj;
@@ -50,15 +48,10 @@
                   _this.setVote( parseInt($(this).attr("vote"), 10) );
                });
                $(this).bind( "mouseenter", function( event ) {
-                  _this.updateVote( {
-                     value: parseInt($(this).attr("vote"), 10)
-                     }, true );
+                  _this.updateVote( {value: parseInt($(this).attr("vote"), 10)}, true );      
                });
             }
-            _this.votes.push( {
-               vote:parseInt($(this).attr("vote"), 10),
-               display:$(this)
-            } );
+            _this.votes.push( { vote:parseInt($(this).attr("vote"), 10), display:$(this) } );
          });
 
          // Sort the votes based on numerical order.
@@ -69,9 +62,7 @@
          // If this is a uservoter, then add the mouse leave event.
          if( userVote ) {
             this.display.bind( "mouseleave", function( event ) {
-               _this.updateVote( {
-                  value:0
-               }, true );
+               _this.updateVote( {value:0}, true );
             });
          }        
          
@@ -108,9 +99,7 @@
          this.setVote = function( voteValue ) {
             if( server && this.nodeId ) {
                this.display.trigger( "processing" );
-               this.updateVote( {
-                  value:voteValue
-               }, false );
+               this.updateVote( {value:voteValue}, false );         
                server.call( jQuery.media.commands.setVote, function( vote ) {
                   _this.display.trigger( "voteSet", vote );            
                }, null, "node", this.nodeId, voteValue, this.tag );

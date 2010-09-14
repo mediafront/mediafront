@@ -34,16 +34,14 @@
    }); 
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      pager:"#mediapager",
-      scroll:"#mediascroll",
-      busy:"#mediabusy",
-      links:"#medialinks"       
+      pager:".mediapager",
+      scroll:".mediascroll",
+      busy:".mediabusy",
+      links:".medialinks"       
    });   
    
    jQuery.fn.mediaplaylist = function( server, settings ) {
-      if( this.length === 0 ) {
-         return null;
-      }
+      if( this.length === 0 ) { return null; }
       return new (function( server, playlist, settings ) {
          settings = jQuery.media.utils.getSettings(settings);
          
@@ -68,12 +66,9 @@
          // Used to keep track if we should set the node active after a playlist load.
          this.setActive = true;
 
-         // The active pager.
-         this.activePager = null;
+         // Get the pager and the width delta.
+         this.pager = playlist.find( settings.ids.pager ).mediapager( settings );
 
-         // The attached pager bar..
-         this.pager = null;
-                  
          // Set up the playlist parser.
          this.parser = jQuery.media.parser( settings );
 
@@ -83,7 +78,7 @@
 
          // Store the dimensions.
          this.width = this.scrollRegion.width;
-         this.height = this.scrollRegion.height;
+         this.height = this.scrollRegion.height;  
          
          if( settings.vertical ) {
             this.display.width( this.width );
@@ -93,7 +88,6 @@
          
          // Store the busy cursor.
          this.busy = playlist.find( settings.ids.busy );
-         this.busyVisible = false;
          this.busyImg = this.busy.find("img");
          this.busyWidth = this.busyImg.width();
          this.busyHeight = this.busyImg.height();         
@@ -103,18 +97,11 @@
          this.links.loadLinks();
          
          this.loading = function( _loading ) {
-            if( this.pager ) {
-               this.pager.enabled = !_loading;
-            }
-            if( this.activePager ) {
-               this.activePager.enabled = !_loading;
-            }
+            this.pager.enabled = !_loading;
             if( _loading ) {
-               this.busyVisible = true;
                this.busy.show();
             }
             else {
-               this.busyVisible = false;
                this.busy.hide();   
             }
          };       
@@ -132,47 +119,29 @@
                }
                
                // Resize the busy symbol.
-               this.busy.css({
-                  width:this.width,
-                  height:this.height
-               });
+               this.busy.css({width:this.width, height:this.height});
                this.busyImg.css({
                   marginLeft:((this.width - this.busyWidth)/2) + "px", 
                   marginTop:((this.height - this.busyHeight)/2) + "px" 
                });                 
             }   
          };              
-
-         // Allow mulitple pagers to control this playlist.
-         this.addPager = function( newPager, active ) {
-            if( newPager ) {
-               // Handler for the loadindex event.
-               newPager.display.bind( "loadindex", function( event, data ) {
-                  if( data.active ) {
-                     _this.activateTeaser( _this.teasers[data.index] );
-                  }
-                  else {
-                     _this.selectTeaser( _this.teasers[data.index] );
-                  }
-               });      
-      
-               // Handler for the loadpage event.         
-               newPager.display.bind( "loadpage", function( event, data ) {
-                  _this.setActive = data.active;
-                  _this.loadPlaylist( {
-                     pageIndex:data.index
-                  } );
-               });
-               
-               if( active && !this.activePager ) {
-                  this.activePager = newPager;   
-               }
+         
+         // Handler for the loadindex event.
+         this.pager.display.bind( "loadindex", function( event, data ) {
+            if( data.active ) {
+               _this.activateTeaser( _this.teasers[data.index] );
             }
-            return newPager;
-         };
+            else {
+               _this.selectTeaser( _this.teasers[data.index] );
+            }
+         });      
 
-         // Add the pager.
-         this.pager = this.addPager( playlist.find( settings.ids.pager ).mediapager( settings ), false );
+         // Handler for the loadpage event.         
+         this.pager.display.bind( "loadpage", function( event, data ) {
+            _this.setActive = data.active;
+            _this.loadPlaylist( {pageIndex:data.index} );
+         });
 
          // Handler for when a link is clicked.
          this.links.display.bind( "linkclick", function( event, link ) {
@@ -184,38 +153,17 @@
             var newPlaylist = link.playlist;
             var newArgs = [];
             newArgs[index] = link.arg;
-            
-            if( this.pager ) {
-               this.pager.reset();
-            }
-            
-            if( this.activePager ) {
-               this.activePager.reset();
-            }
-            
-            this.loadPlaylist( {
-               playlist:newPlaylist,
-               args:newArgs
-            } );
-         };
-
-         // Loads the next track.
-         this.loadNext = function() {
-            if( this.pager ) {
-               this.pager.loadNext( true );
-            }
-            else if( this.activePager ) {
-               this.activePager.loadNext( true );
-            }
+            this.pager.reset();
+            this.loadPlaylist( {playlist:newPlaylist, args:newArgs} );           
          };
 
          // Function to load the playlist.
          this.loadPlaylist = function( _args ) {
             var defaults = {
-               playlist:settings.playlist,
-               pageLimit:settings.pageLimit,
-               pageIndex:(this.pager ? this.pager.activePage : 0),
-               args:{}
+                  playlist:settings.playlist,
+                  pageLimit:settings.pageLimit,
+                  pageIndex:this.pager.activePage,
+                  args:{}
             };          
 
             var playlistArgs = jQuery.extend( {}, defaults, _args );
@@ -248,31 +196,14 @@
                      }, null, playlistArgs.playlist, playlistArgs.pageLimit, playlistArgs.pageIndex, this.args );
                   }
                }
-
-               // Return that the playlist was loaded.
-               return true;
             }
-
-            // Return that the playlist was not loaded.
-            return false;
          };
 
          // Set this playlist.
          this.setPlaylist = function( _playlist ) {
             if( _playlist && _playlist.nodes ) {
-               // Now check the visibility of the parents, and add the offenders to the array.
-               var invisibleParents = [];
-               jQuery.media.utils.checkVisibility( this.display, invisibleParents );
-
                // Set the total number of items for the pager.
-               if( this.pager ) {   
-                  this.pager.setTotalItems( _playlist.total_rows ); 
-               }
-               
-               // Set the total number of items for the active pager.
-               if( this.activePager ) {
-                  this.activePager.setTotalItems( _playlist.total_rows ); 
-               } 
+               this.pager.setTotalItems( _playlist.total_rows );  
    
                // Empty the scroll region.
                this.scrollRegion.clear();
@@ -291,16 +222,7 @@
                this.scrollRegion.activate();          
    
                // Load the next node.
-               if( this.pager ) {
-                  this.pager.loadNext( this.setActive );
-               }
-               
-               if( this.activePager ) {
-                  this.activePager.loadNext( this.setActive );
-               }
-
-               // Now reset the invisibilty.
-               jQuery.media.utils.resetVisibility( invisibleParents );
+               this.pager.loadNext( this.setActive );
             }
             
             // We are finished loading.
@@ -309,15 +231,13 @@
 
          // When a vote has been cast, we also need to update the playlist.
          this.onVoteSet = function( vote ) {
-            if( vote ) {
-               var i = this.teasers.length;
-               while(i--) {
-                  var teaser = this.teasers[i];
-                  if( teaser.node.nodeInfo.nid == vote.content_id ) {
-                     teaser.node.voter.updateVote( vote );
-                  }
-               }
-            }
+            var i = this.teasers.length;
+            while(i--) {
+               var teaser = this.teasers[i];
+               if( teaser.node.nodeInfo.nid == vote.content_id ) {
+                  teaser.node.voter.updateVote( vote );     
+               }               
+            }               
          };
          
          // Add a single teaser to the list.
@@ -382,19 +302,17 @@
 
             // Set the current active teaser to false.
             if( this.selectedTeaser ) {
-               this.selectedTeaser.setSelected( false );
+              this.selectedTeaser.setSelected( false );
             }
             
             // Store the active teaser for next time.                                   
             this.selectedTeaser = teaser;             
 
-            if( this.selectedTeaser ) {
-               // Now activate the new teaser.
-               this.selectedTeaser.setSelected( true );           
-                        
-               // Set this item as visible in the scroll region.
-               this.scrollRegion.setVisible( teaser.index ); 
-            }
+            // Now activate the new teaser.
+            this.selectedTeaser.setSelected( true );           
+                     
+            // Set this item as visible in the scroll region.
+            this.scrollRegion.setVisible( teaser.index ); 
          };
 
          // Activate the teaser.
@@ -404,28 +322,20 @@
             
             // Set the current active teaser to false.
             if( this.activeTeaser ) {
-               this.activeTeaser.setActive( false );
+              this.activeTeaser.setActive( false );
             }
             
             // Store the active teaser for next time.                                   
             this.activeTeaser = teaser;             
 
-            if( this.activeTeaser ) {
-               // Now activate the new teaser.
-               this.activeTeaser.setActive( true );      
-   
-               // Set the active and current index to this one.
-               if( this.pager ) {
-                  this.pager.activeIndex = this.pager.currentIndex = teaser.index;
-               }
-               
-               if( this.activePager ) {
-                  this.activePager.activeIndex = this.activePager.currentIndex = teaser.index;
-               }
-               
-               // Trigger an even that the teaser has been activated.
-               this.display.trigger( "playlistload", teaser.node.nodeInfo );
-            }
+            // Now activate the new teaser.
+            this.activeTeaser.setActive( true );      
+
+            // Set the active and current index to this one.
+            this.pager.activeIndex = this.pager.currentIndex = teaser.index;
+            
+            // Trigger an even that the teaser has been activated.
+            jQuery.event.trigger( "playlistload", teaser.node.nodeInfo ); 
          };
       })( server, this, settings );
    };

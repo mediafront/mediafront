@@ -32,9 +32,7 @@
    });   
   
    jQuery.fn.mediateaser = function( server, nodeInfo, _index, settings ) {  
-      if( this.length === 0 ) {
-         return null;
-      }
+      if( this.length === 0 ) { return null; }
       return new (function( server, nodeInfo, _index, teaser, settings ) {
          settings = jQuery.media.utils.getSettings(settings);       
          

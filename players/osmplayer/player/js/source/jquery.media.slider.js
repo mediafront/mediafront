@@ -24,16 +24,11 @@
  *  THE SOFTWARE.
  */
 (function($) {
-   jQuery.fn.mediaslider = function( handleId, vertical, inverted ) {
-      if( this.length === 0 ) {
-         return null;
-      }
-      return new (function( control, handleId, vertical, inverted ) {
+   jQuery.fn.mediaslider = function( handleId, vertical ) {
+      if( this.length === 0 ) { return null; }
+      return new (function( control, handleId, vertical ) {
          var _this = this;
-         this.display = control.css({
-            cursor:"pointer",
-            position:"relative"
-         });
+         this.display = control.css({cursor:"pointer",position:"relative"});
          this.dragging = false;
          this.value = 0;
          this.handle = this.display.find(handleId);
@@ -41,32 +36,23 @@
          this.width = this.display.width();
          this.height = this.display.height();         
          this.handleSize = vertical ? this.handle.height() : this.handle.width();
-         this.handleOffset = vertical ? this.handle.position().top : this.handle.position().left;
-         this.handleMid = (this.handleSize/2);
-         this.handlePoint = this.handleMid + this.handleOffset;     
+         this.trackSize = vertical ? this.height : this.width;         
          this.handlePos = 0;
-                 
+         
          this.onResize = function( deltaX, deltaY ) {
             this.setSize( this.width + deltaX, this.height + deltaY );
          };
          
-         this.setTrackSize = function() {
-            this.trackSize = vertical ? this.height : this.width;  
-            this.trackSize -= (this.handleOffset + this.handleSize);
-         };
-         
-         this.setTrackSize();         
-         
          this.setSize = function( newWidth, newHeight ) {
             this.width = newWidth ? newWidth : this.width;
             this.height = newHeight ? newHeight : this.height;
-            this.setTrackSize();
+            this.trackSize = vertical ? this.height : this.width;
             this.updateValue( this.value );
          };          
          
          this.setValue = function( _value ) {
             this.setPosition( _value );
-            this.display.trigger( "setvalue", this.value ); 
+            this.display.trigger( "setvalue", _value ); 
          };         
          
          this.updateValue = function( _value ) {
@@ -78,10 +64,7 @@
             _value = (_value < 0) ? 0 : _value;
             _value = (_value > 1) ? 1 : _value;
             this.value = _value;
-
-            this.handlePos = inverted ? (1-this.value) : this.value;
-            this.handlePos *= this.trackSize;
-
+            this.handlePos = (this.value * (this.trackSize - this.handleSize));
             if( vertical ) {
                this.handle.css( "marginTop", this.handlePos + "px" );
             }
@@ -101,37 +84,33 @@
          };
          
          this.getPosition = function( pagePos ) {
-            var pos = (pagePos - this.getOffset()) / this.trackSize;
+            var pos = (pagePos - this.getOffset()) / (this.trackSize - this.handleSize);
             pos = (pos < 0) ? 0 : pos;
             pos = (pos > 1) ? 1 : pos;   
-            pos = inverted ? (1-pos) : pos;
             return pos;
          };
          
          this.display.bind("mousemove", function( event ) {
-            event.preventDefault();
             if( _this.dragging ) {
                _this.updateValue( _this.getPosition( event[_this.pagePos] ) );
             }               
          });
 
          this.display.bind("mouseleave", function( event ) {
-            event.preventDefault();
             if( _this.dragging ) {          
-               _this.dragging = false;
-               _this.setValue( _this.getPosition( event[_this.pagePos] ) );
+              _this.dragging = false;             
+              _this.setValue( _this.getPosition( event[_this.pagePos] ) );
             }
          });  
          
          this.display.bind("mouseup", function( event ) {
-            event.preventDefault();
             if( _this.dragging ) {             
-               _this.dragging = false;
-               _this.setValue( _this.getPosition( event[_this.pagePos] ) );
+              _this.dragging = false;
+              _this.setValue( _this.getPosition( event[_this.pagePos] ) );
             }
          });   
          
          this.onResize(0,0); 
-      })( this, handleId, vertical, inverted );
+      })( this, handleId, vertical );
    };
 })(jQuery);

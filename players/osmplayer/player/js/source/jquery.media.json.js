@@ -39,34 +39,18 @@
             // ************************************************  
             
             // A character conversion map
-            var m = {
-               '\b':'\\b',
-               '\t':'\\t',
-               '\n':'\\n',
-               '\f':'\\f',
-               '\r':'\\r',
-               '"':'\\"',
-               '\\':'\\\\'
-            };
+            var m = {'\b':'\\b','\t':'\\t','\n':'\\n','\f':'\\f','\r':'\\r','"':'\\"','\\':'\\\\'};
             
             // Map type names to functions for serializing those types
             var s = { 
-               'boolean': function (x) {
-                  return String(x);
-               },
-               'null': function (x) {
-                  return "null";
-               },
-               number: function (x) {
-                  return isFinite(x) ? String(x) : 'null';
-               },
+               'boolean': function (x) { return String(x); },
+               'null': function (x) { return "null"; },
+               number: function (x) { return isFinite(x) ? String(x) : 'null'; },
                string: function (x) {
                   if (/["\\\x00-\x1f]/.test(x)) {
                      x = x.replace(/([\x00-\x1f\\"])/g, function(a, b) {
                         var c = m[b];
-                        if (c) {
-                           return c;
-                        }
+                        if (c) { return c; }
                         c = b.charCodeAt();
                         return '\\u00' + Math.floor(c / 16).toString(16) + (c % 16).toString(16);
                      });
@@ -137,10 +121,7 @@
                      "url": settings.baseURL + method,
                      "dataType": "json",
                      "type": "POST",
-                     "data": {
-                        methodName:method,
-                        params:this.serializeToJSON(params)
-                        },
+                     "data": {methodName:method, params:this.serializeToJSON(params)},
                      "error": function( XMLHttpRequest, textStatus, errorThrown ) {
                         if( onFailed ) {
                            onFailed( textStatus );
@@ -150,13 +131,11 @@
                         }
                      },
                      "success": function( data ) {
-                        if( onSuccess ) {
-                           onSuccess( data );
-                        }
+                        onSuccess( data );
                      }             
                   });
                } 
-               else if( onSuccess ) {
+               else {
                   onSuccess( null );
                }     
             };

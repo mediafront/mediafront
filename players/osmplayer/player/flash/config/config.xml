@@ -1,6 +1,7 @@
 <config>
    <settings>
-   	<file></file>
+   	<debug>true</debug>
+   	<file>http://localhost/drupal6/sites/all/modules/mediafront/players/osmplayer/player/media/wanted.flv</file>
    </settings>
    <plugins>
       <plugin>

@@ -71,37 +71,9 @@
             }
 
             return scaledRect;         
-         },
-
-         // Checks all parents visibility, and resets them and adds those items to a passed in
-         // array which can be used to reset their visibiltiy at a later point by calling
-         // resetVisibility
-         checkVisibility : function( display, invisibleParents ) {
-            var isVisible = true;
-            display.parents().each( function() {
-               var jObject = jQuery(this);
-               if( !jObject.is(':visible') ) {
-                  isVisible = false;
-                  var attrClass = jObject.attr("class");
-                  invisibleParents.push( {
-                     obj:jObject,
-                     attr:attrClass
-                  } );
-                  jObject.removeClass(attrClass);
-               }
-            });
-         },
-
-         // Reset's the visibility of the passed in parent elements.
-         resetVisibility : function( invisibleParents ) {
-            // Now iterate through all of the invisible objects and rehide them.
-            var i = invisibleParents.length;
-            while(i--){
-               invisibleParents[i].obj.addClass(invisibleParents[i].attr);
-            }
-         },
+         },             
          
-         getFlash : function( player, id, width, height, flashvars, wmode ) {
+         getFlash : function( player, id, width, height, flashvars ) {
             // Get the protocol.
             var protocol = window.location.protocol; 
             if (protocol.charAt(protocol.length - 1) == ':') { 
@@ -109,7 +81,13 @@
             } 
 
             // Convert the flashvars object to a string...
-            var flashVarsString = jQuery.param(flashvars);
+            var flashVarsString = "";
+            for( var key in flashvars ) {
+               if( flashvars.hasOwnProperty(key) ) {
+                  flashVarsString += key + "=" + encodeURIComponent(flashvars[key]) + "&";
+               }
+            }
+            flashVarsString = flashVarsString.replace(/&$/, '');
 
             // Get the HTML flash object string.
             var flash = '<object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" ';
@@ -121,11 +99,11 @@
             flash += '<param name="allowScriptAccess" value="always"></param>'; 
             flash += '<param name="allowfullscreen" value="true" />';
             flash += '<param name="movie" value="' + player + '"></param>';
-            flash += '<param name="wmode" value="' + wmode + '"></param>';
+            flash += '<param name="wmode" value="transparent"></param>';
             flash += '<param name="quality" value="high"></param>';
             flash += '<param name="FlashVars" value="' + flashVarsString + '"></param>';
             flash += '<embed src="' + player + '" quality="high" width="' + width + '" height="' + height + '" ';
-            flash += 'id="' + id + '" name="' + id + '" swLiveConnect="true" allowScriptAccess="always" wmode="' + wmode + '"';
+            flash += 'id="' + id + '" name="' + id + '" swLiveConnect="true" allowScriptAccess="always" wmode="transparent"';
             flash += 'allowfullscreen="true" type="application/x-shockwave-flash" FlashVars="' + flashVarsString + '" ';
             flash += 'pluginspage="' + protocol + '://www.macromedia.com/go/getflashplayer" />';
             flash += '</object>';
@@ -145,7 +123,7 @@
          },
          
          // Insert flash routine.  If they have swfobject, then this function will dynamically use that instead.
-         insertFlash : function( obj, player, id, width, height, flashvars, wmode, onAdded ) {
+         insertFlash : function( obj, player, id, width, height, flashvars, onAdded ) {
             jQuery.media.utils.removeFlash( obj, id );
             obj.children().remove();             
             obj.append('<div id="' + id + '"><p><a href="http://www.adobe.com/go/getflashplayer"><img src="http://www.adobe.com/images/shared/download_buttons/get_flash_player.gif" alt="Get Adobe Flash player" /></a></p></div>');
@@ -153,7 +131,7 @@
                var params = {
                   allowScriptAccess:"always",
                   allowfullscreen:"true",
-                  wmode:wmode,
+                  wmode:"transparent",
                   quality:"high"
                };                              
                swfobject.embedSWF( 
@@ -169,10 +147,10 @@
                   function( swf ) {
                      onAdded( swf.ref );  
                   }
-                  );
+               );
             }
             else {            
-               var flash = jQuery.media.utils.getFlash( player, id, width, height, flashvars, wmode );
+               var flash = jQuery.media.utils.getFlash( player, id, width, height, flashvars );
                var container = obj.find('#' + id).eq(0);
                if( jQuery.browser.msie ) {
                   container[0].outerHTML = flash;

@@ -95,14 +95,10 @@
                var childs = jQuery(node).children();
                var numChildren = childs.length;
                var newArray = function(items) {
-                  return function() {
-                     items.push( _this.parseXMLValue(this) );
-                  };
+                  return function() { items.push( _this.parseXMLValue(this) ); };
                };
                var newObject = function( items ) {
-                  return function() {
-                     items[jQuery( "> name", this).text()] = _this.parseXMLValue(jQuery("value", this));
-                  };
+                  return function() { items[jQuery( "> name", this).text()] = _this.parseXMLValue(jQuery("value", this)); };
                };               
                for(var i=0; i < numChildren; i++) {
                   var element = childs[i];
@@ -184,7 +180,7 @@
                               console.dir( xml.error );
                            }
                         }
-                        else if( onSuccess ) {
+                        else {
                            onSuccess( xml.result );
                         }
                      },
@@ -192,7 +188,7 @@
                      "contentType": "text/xml"
                   });
                }
-               else if( onSuccess ) {
+               else {
                   onSuccess( null ); 
                }
             };
