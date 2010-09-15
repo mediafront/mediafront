@@ -34,12 +34,12 @@
    });
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      prev:".mediaprev",
-      next:".medianext",
-      loadPrev:".medialoadprev",
-      loadNext:".medialoadnext",
-      prevPage:".mediaprevpage",
-      nextPage:".medianextpage"         
+      prev:"#mediaprev",
+      next:"#medianext",
+      loadPrev:"#medialoadprev",
+      loadNext:"#medialoadnext",
+      prevPage:"#mediaprevpage",
+      nextPage:"#medianextpage"         
    });   
    
    jQuery.fn.mediapager = function( settings ){
@@ -141,7 +141,7 @@
             var indexVar = setActive ? "activeIndex" : "currentIndex";           
             var newIndex = this[indexVar];
             switch ( this.loadState ) {
-               case "prev":   
+               case "prev":
                   this.loadState = "";
                   this.loadPrev(setActive);
                   return;
@@ -163,7 +163,10 @@
             if( newIndex != this[indexVar] ) {
                this.loadState = "";
                this[indexVar] = newIndex;
-               this.display.trigger("loadindex", {index:this[indexVar], active:setActive});
+               this.display.trigger("loadindex", {
+                  index:this[indexVar],
+                  active:setActive
+               });
             }
          };
 
@@ -185,23 +188,41 @@
                   if( (this.activeIndex == (this.activeNumItems - 1)) && (this.activePage == (this.currentPage - 1)) ) {
                      this.currentIndex = this.activeIndex = 0;
                      this.activePage = this.currentPage;
-                     this.display.trigger("loadindex", {index:0, active:true}); 
+                     this.display.trigger("loadindex", {
+                        index:0,
+                        active:true
+                     });
                   }
                   else {
                      this.currentPage = this.activePage;
                      this.loadState = "";
-                     this.display.trigger("loadpage", {index:this.activePage, active:setActive});
+                     this.display.trigger("loadpage", {
+                        index:this.activePage,
+                        active:setActive
+                     });
                   }
                }
                else {
                   this[indexVar]++;
                   if ( this[indexVar] >= this.numItems ) {
-                     this[indexVar] = (this.numItems - 1);
-                     this.loadState = this.loadState ? this.loadState : "first";
-                     this.nextPage( setActive );
+                     if( this.numPages > 1 ) {
+                        this[indexVar] = (this.numItems - 1);
+                        this.loadState = this.loadState ? this.loadState : "first";
+                        this.nextPage( setActive );
+                     }
+                     else if( !setActive || settings.loop ) {
+                        this[indexVar] = 0;
+                        this.display.trigger("loadindex", {
+                           index:this[indexVar],
+                           active:setActive
+                        });
+                     }
                   }
                   else {
-                     this.display.trigger("loadindex", {index:this[indexVar], active:setActive}); 
+                     this.display.trigger("loadindex", {
+                        index:this[indexVar],
+                        active:setActive
+                     });
                   }
                }
             }               
@@ -213,17 +234,32 @@
             if( setActive && ( this.activePage != this.currentPage ) ) {
                this.currentPage = this.activePage;
                this.loadState = "prev";
-               this.display.trigger("loadpage", {index:this.activePage, active:setActive});
+               this.display.trigger("loadpage", {
+                  index:this.activePage,
+                  active:setActive
+               });
             }
             else {
                this[indexVar]--;
                if ( this[indexVar] < 0 ) {
-                  this[indexVar] = 0;
-                  this.loadState = this.loadState ? this.loadState : "last";
-                  this.prevPage( setActive );
+                  if( this.numPages > 1 ) {
+                     this[indexVar] = 0;
+                     this.loadState = this.loadState ? this.loadState : "last";
+                     this.prevPage( setActive );
+                  }
+                  else if( !setActive || settings.loop ) {
+                     this[indexVar] = (this.numItems - 1);
+                     this.display.trigger("loadindex", {
+                        index:this[indexVar],
+                        active:setActive
+                     });
+                  }
                }
                else {
-                  this.display.trigger( "loadindex", {index:this[indexVar], active:setActive} ); 
+                  this.display.trigger( "loadindex", {
+                     index:this[indexVar],
+                     active:setActive
+                  } );
                }  
             }
          };
@@ -234,11 +270,17 @@
             if (newPage != this.activePage) {
                this.activePage = newPage;
                this.loadState = this.loadState ? this.loadState : "rand";
-               this.display.trigger("loadpage", {index:this.activePage, active:true});
+               this.display.trigger("loadpage", {
+                  index:this.activePage,
+                  active:true
+               });
             }
             else {
                this.activeIndex = Math.floor(Math.random() * this.numItems);
-               this.display.trigger("loadindex", {index:this.activeIndex, active:true}); 
+               this.display.trigger("loadindex", {
+                  index:this.activeIndex,
+                  active:true
+               });
             }              
          };
 
@@ -263,7 +305,10 @@
             this.setPageState( setActive );  
 
             if( pageLoaded ) {
-               this.display.trigger("loadpage", {index:this[pageVar], active:setActive});
+               this.display.trigger("loadpage", {
+                  index:this[pageVar],
+                  active:setActive
+               });
             }                            
          };
 
@@ -288,7 +333,10 @@
             this.setPageState( setActive );           
 
             if( pageLoaded ) {
-               this.display.trigger("loadpage", {index:this[pageVar], active:setActive});
+               this.display.trigger("loadpage", {
+                  index:this[pageVar],
+                  active:setActive
+               });
             }              
          };
 

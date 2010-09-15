@@ -72,32 +72,39 @@
  *  THE SOFTWARE.
  */
 
-      
+   
+   
+   // Set up our defaults for this component.
+   jQuery.media.defaults = jQuery.extend( jQuery.media.defaults, {
+      volumeVertical:false                  
+   });   
    
    // Set up our defaults for this component.
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      currentTime:".mediacurrenttime",
-      totalTime:".mediatotaltime",
-      playPause:".mediaplaypause",
-      seekUpdate:".mediaseekupdate",
-      seekProgress:".mediaseekprogress",
-      seekBar:".mediaseekbar",
-      seekHandle:".mediaseekhandle",
-      volumeUpdate:".mediavolumeupdate",
-      volumeBar:".mediavolumebar",
-      volumeHandle:".mediavolumehandle",
-      mute:".mediamute"   
-   });    
+      currentTime:"#mediacurrenttime",
+      totalTime:"#mediatotaltime",
+      playPause:"#mediaplaypause",
+      seekUpdate:"#mediaseekupdate",
+      seekProgress:"#mediaseekprogress",
+      seekBar:"#mediaseekbar",
+      seekHandle:"#mediaseekhandle",
+      volumeUpdate:"#mediavolumeupdate",
+      volumeBar:"#mediavolumebar",
+      volumeHandle:"#mediavolumehandle",
+      mute:"#mediamute"
+   });
    
-   jQuery.fn.mediacontrol = function( settings ) { 
-      if( this.length === 0 ) { return null; }
+   jQuery.fn.mediacontrol = function( settings ) {
+      if( this.length === 0 ) {
+         return null;
+      }
       return new (function( controlBar, settings ) {
-         settings = jQuery.media.utils.getSettings(settings);      
+         settings = jQuery.media.utils.getSettings(settings);
          this.display = controlBar;
          var _this = this;
          
          // Allow the template to provide their own function for this...
-         this.formatTime = (settings.template && settings.template.formatTime) ? settings.template.formatTime : 
+         this.formatTime = (settings.template && settings.template.formatTime) ? settings.template.formatTime :
          function( time ) {
             time = time ? time : 0;
             var seconds = 0;
@@ -120,17 +127,20 @@
             timeString += (minutes >= 10) ? String(minutes) : ("0" + String(minutes));
             timeString += ":";
             timeString += (seconds >= 10) ? String(seconds) : ("0" + String(seconds));
-            return {time:timeString, units:""};            
-         };          
+            return {
+               time:timeString,
+               units:""
+            };
+         };
          
          this.setToggle = function( button, state ) {
             var on = state ? ".on" : ".off";
             var off = state ? ".off" : ".on";
             if( button ) {
                button.find(on).show();
-               button.find(off).hide();   
+               button.find(off).hide();
             }
-         };         
+         };
          
          var zeroTime = this.formatTime( 0 );
          this.duration = 0;
@@ -141,14 +151,28 @@
          this.muteState = false;
          this.allowResize = true;
          this.currentTime = controlBar.find( settings.ids.currentTime ).text( zeroTime.time );
-         this.totalTime = controlBar.find( settings.ids.totalTime ).text( zeroTime.time );     
-         
+         this.totalTime = controlBar.find( settings.ids.totalTime ).text( zeroTime.time );
+
+         // Allow them to attach custom links to the control bar that perform player functions.
+         this.display.find("a.mediaplayerlink").each( function() {
+            var linkId = $(this).attr("href");
+            $(this).medialink( settings, function( event ) {
+               event.preventDefault();
+               _this.display.trigger( event.data.id );
+            }, {
+               id:linkId.substr(1),
+               obj:$(this)
+            } );
+         });
+
          // Set up the play pause button.
          this.playPauseButton = controlBar.find( settings.ids.playPause ).medialink( settings, function( event, target ) {
             _this.playState = !_this.playState;
-            _this.setToggle( target, _this.playState );           
-            _this.display.trigger( "controlupdate", {type: (_this.playState ? "pause" : "play")});
-         });               
+            _this.setToggle( target, _this.playState );
+            _this.display.trigger( "controlupdate", {
+               type: (_this.playState ? "pause" : "play")
+            });
+         });
          
          // Set up the seek bar...
          this.seekUpdate = controlBar.find( settings.ids.seekUpdate ).css("width", "0px");
@@ -156,7 +180,10 @@
          this.seekBar = controlBar.find( settings.ids.seekBar ).mediaslider( settings.ids.seekHandle, false );
          this.seekBar.display.bind( "setvalue", function( event, data ) {
             _this.updateSeek( data );
-            _this.display.trigger( "controlupdate", {type:"seek", value:(data * _this.duration)}); 
+            _this.display.trigger( "controlupdate", {
+               type:"seek",
+               value:(data * _this.duration)
+            });
          });
          this.seekBar.display.bind( "updatevalue", function( event, data ) {
             _this.updateSeek( data );
@@ -164,20 +191,39 @@
 
          this.updateSeek = function( value ) {
             this.seekUpdate.css( "width", (value * this.seekBar.trackSize) + "px" );
-            this.currentTime.text( this.formatTime( value * this.duration ).time );         
+            this.currentTime.text( this.formatTime( value * this.duration ).time );
+         };
+         
+         this.setVolume = function( vol ) {
+            if( this.volumeBar ) {
+               if( settings.volumeVertical ) {
+                  this.volumeUpdate.css({
+                     "marginTop":(this.volumeBar.handlePos + this.volumeBar.handleMid + this.volumeBar.handleOffset) + "px",
+                     "height":(this.volumeBar.trackSize - this.volumeBar.handlePos) + "px"
+                  });
+               }
+               else {
+                  this.volumeUpdate.css( "width", (vol * this.volumeBar.trackSize) + "px" );
+               }  
+            }
          };
          
          // Set up the volume bar.
          this.volumeUpdate = controlBar.find( settings.ids.volumeUpdate );
-         this.volumeBar = controlBar.find( settings.ids.volumeBar ).mediaslider( settings.ids.volumeHandle, false );   
-         this.volumeBar.display.bind("setvalue", function( event, data ) {
-            _this.volumeUpdate.css( "width", (data * _this.volumeBar.trackSize) + "px" );
-            _this.display.trigger( "controlupdate", {type:"volume", value:data});
-         });
-         this.volumeBar.display.bind("updatevalue", function( event, data ) {
-            _this.volumeUpdate.css( "width", (data * _this.volumeBar.trackSize) + "px" );
-            _this.volume = data;
-         });
+         this.volumeBar = controlBar.find( settings.ids.volumeBar ).mediaslider( settings.ids.volumeHandle, settings.volumeVertical, settings.volumeVertical );
+         if( this.volumeBar ) {
+            this.volumeBar.display.bind("setvalue", function( event, data ) {
+               _this.setVolume( data );
+               _this.display.trigger( "controlupdate", {
+                  type:"volume",
+                  value:data
+               });
+            });
+            this.volumeBar.display.bind("updatevalue", function( event, data ) {
+               _this.setVolume( data );
+               _this.volume = data;
+            });
+         }
          
          // Setup the mute button.
          this.mute = controlBar.find(settings.ids.mute).medialink( settings, function( event, target ) {
@@ -189,17 +235,26 @@
          this.setMute = function( state ) {
             this.prevVolume = (this.volumeBar.value > 0) ? this.volumeBar.value : this.prevVolume;
             this.volumeBar.updateValue( state ? 0 : this.prevVolume );
-            this.display.trigger( "controlupdate", {type:"mute", value:state});            
-         }; 
-         
+            this.display.trigger( "controlupdate", {
+               type:"mute",
+               value:state
+            });
+         };
+
+         this.setProgress = function( percent ) {
+            if( this.seekProgress ) {
+               this.seekProgress.css( "width", (percent * (this.seekBar.trackSize + this.seekBar.handleSize)) + "px" );
+            }
+         };
+
          this.onResize = function( deltaX, deltaY ) {
             if( this.allowResize ) {
                if( this.seekBar ) {
                   this.seekBar.onResize( deltaX, deltaY );
                }
-               this.seekProgress.css( "width", (this.percentLoaded * this.seekBar.trackSize) + "px" );
+               this.setProgress( this.percentLoaded );
             }
-         };         
+         };
          
          // Handle the media events...
          this.onMediaUpdate = function( data ) {
@@ -218,23 +273,25 @@
                   break;
                case "progress":
                   this.percentLoaded = data.percentLoaded;
-                  this.seekProgress.css( "width", (this.percentLoaded * this.seekBar.trackSize) + "px" );
+                  this.setProgress( this.percentLoaded );
                   break;
                case "meta":
                case "update":
                   this.timeUpdate( data.currentTime, data.totalTime );
-                  this.volumeBar.updateValue( data.volume );   
+                  if( this.volumeBar ) {
+                     this.volumeBar.updateValue( data.volume );
+                  }
                   break;
                default:
                   break;
-            }           
+            }
          };
          
          // Call to reset all controls...
          this.reset = function() {
             this.totalTime.text( this.formatTime( 0 ).time );
             if( this.seekBar ) {
-               this.seekBar.updateValue(0);  
+               this.seekBar.updateValue(0);
             }
          };
          
@@ -244,10 +301,10 @@
             if( tTime && !this.seekBar.dragging ) {
                this.seekBar.updateValue( cTime / tTime );
             }
-         };            
+         };
          
-          // Reset the time values.
-         this.timeUpdate( 0, 0 ); 
+         // Reset the time values.
+         this.timeUpdate( 0, 0 );
       })( this, settings );
    };
 /**
@@ -276,11 +333,20 @@
  *  THE SOFTWARE.
  */
 
+   
+
    // Called when the YouTube player is ready.
    window.onDailymotionPlayerReady = function( playerId ) {
       playerId = playerId.replace("_media", "");      
       jQuery.media.players[playerId].node.player.media.player.onReady();   
    };
+
+   // Tell the media player how to determine if a file path is a YouTube media type.
+   jQuery.media.playerTypes = jQuery.extend( jQuery.media.playerTypes, {
+      "dailymotion":function( file ) {
+         return (file.search(/^http(s)?\:\/\/(www\.)?dailymotion\.com/i) === 0);      
+      }
+   });
 
    jQuery.fn.mediadailymotion = function( options, onUpdate ) {  
       return new (function( video, options, onUpdate ) {
@@ -292,24 +358,25 @@
          this.loaded = false;
          this.ready = false;
          
-         this.createMedia = function( videoFile ) {
+         this.createMedia = function( videoFile, preview ) {
             this.videoFile = videoFile;
             this.ready = false;
             var playerId = (options.id + "_media");
             var rand = Math.floor(Math.random() * 1000000);  
-            var flashplayer = 'http://www.dailymotion.com/swf/' + videoFile.path + '?rand=' + rand + '&amp;enablejsapi=1&amp;playerapiid=' + playerId;            
+            var flashPlayer = 'http://www.dailymotion.com/swf/' + videoFile.path + '?rand=' + rand + '&amp;enablejsapi=1&amp;playerapiid=' + playerId;
             jQuery.media.utils.insertFlash( 
                this.display, 
-               flashplayer, 
+               flashPlayer,
                playerId, 
                this.display.width(), 
                this.display.height(),
                {},
+               options.wmode,
                function( obj ) {
                   _this.player = obj;  
                   _this.loadPlayer(); 
                }
-            );
+               );
          };      
          
          this.loadMedia = function( videoFile ) {
@@ -319,7 +386,9 @@
                this.videoFile = videoFile;
                
                // Let them know the player is ready.          
-               onUpdate( {type:"playerready"} );               
+               onUpdate( {
+                  type:"playerready"
+               } );
                
                // Load our video.
                this.player.loadVideoById( this.videoFile.path, 0 );             
@@ -348,7 +417,9 @@
                this.player.addEventListener('onError', options.id + 'PlayerError');
                
                // Let them know the player is ready.          
-               onUpdate( {type:"playerready"} );                
+               onUpdate( {
+                  type:"playerready"
+               } );
                
                // Load our video.
                this.player.loadVideoById( this.videoFile.path, 0 );  
@@ -363,12 +434,16 @@
             // write some hacks to just make it work.
             
             if( !(!this.meta && playerState =="stopped") ) {
-               onUpdate( {type:playerState} ); 
+               onUpdate( {
+                  type:playerState
+               } );
             }
             
             if( !this.loaded && playerState == "buffering" ) {
                this.loaded = true;
-               onUpdate( {type:"paused"} ); 
+               onUpdate( {
+                  type:"paused"
+               } );
                if( options.autostart ) {
                   this.playMedia();
                }
@@ -379,7 +454,9 @@
                this.meta = true;
                
                // Update our meta data.
-               onUpdate( {type:"meta"} ); 
+               onUpdate( {
+                  type:"meta"
+               } );
             }            
          };
          
@@ -394,19 +471,29 @@
                errorText = "The video requested does not allow playback in an embedded player.";
             }
             console.log(errorText);
-            onUpdate( {type:"error", data:errorText} );            
+            onUpdate( {
+               type:"error",
+               data:errorText
+            } );
          };
          
          // Translates the player state for the  API player.
          this.getPlayerState = function( playerState ) {
             switch (playerState) {
-               case 5:  return 'ready';
-               case 3:  return 'buffering';
-               case 2:  return 'paused';
-               case 1:  return 'playing';
-               case 0:  return 'complete';
-               case -1: return 'stopped';
-               default: return 'unknown';
+               case 5:
+                  return 'ready';
+               case 3:
+                  return 'buffering';
+               case 2:
+                  return 'paused';
+               case 1:
+                  return 'playing';
+               case 0:
+                  return 'complete';
+               case -1:
+                  return 'stopped';
+               default:
+                  return 'unknown';
             }
             return 'unknown';
          };                  
@@ -416,7 +503,9 @@
          };           
          
          this.playMedia = function() {
-            onUpdate({type:"buffering"});
+            onUpdate({
+               type:"buffering"
+            });
             this.player.playVideo();
          };
          
@@ -429,7 +518,9 @@
          };
          
          this.seekMedia = function( pos ) {
-            onUpdate({type:"buffering"});
+            onUpdate({
+               type:"buffering"
+            });
             this.player.seekTo( pos, true );           
          };
          
@@ -465,10 +556,14 @@
             return this.player.getVideoUrl();   
          };  
          
-         this.hasControls = function() { return true; };
+         this.hasControls = function() {
+            return true;
+         };
          this.showControls = function(show) {};           
          this.setQuality = function( quality ) {};         
-         this.getQuality = function() { return ""; };           
+         this.getQuality = function() {
+            return "";
+         };
       })( this, options, onUpdate );
    };
   /**
@@ -505,53 +600,42 @@
       autostart:false,
       streamer:"",
       embedWidth:450,
-      embedHeight:337
+      embedHeight:337,
+      wmode:"transparent",
+      forceOverflow:false,
+      quality:"default",
+      repeat:false
    }); 
 
-   jQuery.fn.mediadisplay = function( settings ) {  
-      if( this.length === 0 ) { return null; }
-      return new (function( mediaWrapper, settings ) {
-         settings = jQuery.media.utils.getSettings( settings ); 
+   jQuery.fn.mediadisplay = function( options ) {
+      if( this.length === 0 ) {
+         return null;
+      }
+      return new (function( mediaWrapper, options ) {
+         this.settings = jQuery.media.utils.getSettings( options );
          this.display = mediaWrapper;
          var _this = this;
          this.volume = 0;
          this.player = null;
+         this.preview = '';
          this.reflowInterval = null;
          this.updateInterval = null;
          this.progressInterval = null;
-         this.playQueue = []; 
+         this.playQueue = [];
+         this.playIndex = 0;
          this.playerReady = false;
          this.loaded = false;
          this.mediaFile = null; 
          this.width = 0;
          this.height = 0;
-         
-         this.checkPlayType = function( elem, playType ) {
-            if( (typeof elem.canPlayType) == 'function' ) { 
-               return ("no" != elem.canPlayType(playType)) && ("" != elem.canPlayType(playType));
-            }
-            else {
-               return false;   
-            }
-         };
-         
-         // Get all the types of media that this browser can play.
-         this.getPlayTypes = function() {
-            var types = {};
-            
-            // Check for video types...
-            var elem = document.createElement("video");
-            types.ogg  = this.checkPlayType( elem, "video/ogg");  
-            types.h264  = this.checkPlayType( elem, "video/mp4"); 
-               
-            // Now check for audio types...
-            elem = document.createElement("audio");
-            types.audioOgg = this.checkPlayType( elem, "audio/ogg");
-            types.mp3 = this.checkPlayType( elem, "audio/mpeg");  
-                            
-            return types;            
-         };
-         this.playTypes = this.getPlayTypes();    
+
+         // If they provide the forceOverflow variable, then that means they
+         // wish to force the media player to override all parents overflow settings.
+         if( this.settings.forceOverflow ) {
+            // Make sure that all parents have overflow visible so that
+            // browser full screen will always work.
+            this.display.parents().css("overflow", "visible");
+         }   
          
          // Set the size of this media display region.
          this.setSize = function( newWidth, newHeight ) {
@@ -559,7 +643,10 @@
             this.height = newHeight ? newHeight : this.height;
             
             // Set the width and height of this media region.
-            this.display.css({height:this.height + "px", width:this.width + "px"});  
+            this.display.css({
+               height:this.height + "px",
+               width:this.width + "px"
+            });
             
             // Now resize the player.
             if( this.playerReady && this.width && this.height ) {
@@ -575,7 +662,8 @@
             clearInterval( this.updateInterval );
             clearTimeout( this.reflowInterval );  
             this.playQueue.length = 0;                                  
-            this.playQueue = []; 
+            this.playQueue = [];
+            this.playIndex = 0;
             this.playerReady = false;
             this.mediaFile = null;             
          };         
@@ -585,16 +673,43 @@
             this.display.append( this.template );
          };
          
-         this.addToQueue = function( file ) {
-            if( file ) {
-               this.playQueue.push( file );
+         // Returns the media that has the lowest weight value, which means
+         // this player prefers that media over the others.
+         this.getPlayableMedia = function( files ) {
+            var mFile = null;
+            var i = files.length;
+            while(i--) {
+               var tempFile = new jQuery.media.file( files[i], this.settings );
+               if( !mFile || (tempFile.weight < mFile.weight) ) {
+                  mFile = tempFile;
+               }
             }
+            return mFile;
          };
          
+         // Returns a valid media file for this browser.
+         this.getMediaFile = function( file ) {
+            if( file ) {
+               var type = typeof file;
+               if( ((type === 'object') || (type === 'array')) && file[0] ) {
+                  file = this.getPlayableMedia( file );
+               }               
+            }
+            return file;
+         };         
+         
+         // Adds a media file to the play queue.
+         this.addToQueue = function( file ) {            
+            if( file ) {
+               this.playQueue.push( this.getMediaFile( file ) );
+            }
+         };
+                 
          this.loadFiles = function( files ) {
             if( files ) {
                this.playQueue.length = 0;                                  
-               this.playQueue = []; 
+               this.playQueue = [];
+               this.playIndex = 0;
                this.addToQueue( files.intro );
                this.addToQueue( files.commercial );
                this.addToQueue( files.prereel );
@@ -605,15 +720,23 @@
          };        
          
          this.playNext = function() {
-            if( this.playQueue.length > 0 ) {
-               this.loadMedia( this.playQueue.shift() );
+            if( this.playQueue.length > this.playIndex ) {
+               this.loadMedia( this.playQueue[this.playIndex] );
+               this.playIndex++;
+            }
+            else if( this.settings.repeat ) {
+               this.playIndex = 0;
+               this.playNext();
+            }
+            else {
+               this.reset();
             }
          };
          
          this.loadMedia = function( file ) {
             if( file ) {
                // Get the media file object.
-               file = this.getMediaFile( file );
+               file = new jQuery.media.file( this.getMediaFile( file ), this.settings );
                
                // Stop the current player.
                this.stopMedia();  
@@ -626,16 +749,18 @@
                   // Create a new media player.
                   if( file.player ) {                 
                      // Set the new media player.
-                     this.player = this.display["media" + file.player]( settings, function( data ) {
+                     this.player = this.display["media" + file.player]( this.settings, function( data ) {
                         _this.onMediaUpdate( data );                      
                      });
                   }
                   
-                  // Create our media player.
-                  this.player.createMedia( file ); 
-                  
-                  // Reflow the player if it does not show up.
-                  this.startReflow();
+                  if( this.player ) {
+                     // Create our media player.                     
+                     this.player.createMedia( file, this.preview );
+                     
+                     // Reflow the player if it does not show up.
+                     this.startReflow();
+                  }
                }   
                else if( this.player ) {
                   // Load our file into the current player.
@@ -646,60 +771,11 @@
                this.mediaFile = file;
                
                // Send out an update about the initialize.
-               this.onMediaUpdate({type:"initialize"});        
+               this.onMediaUpdate({
+                  type:"initialize"
+               });
             }
          };    
-
-         this.getMediaFile = function( file ) {
-            var mFile = {};
-            file = (typeof file === "string") ? {path:file} : file;
-            mFile.duration = file.duration ? file.duration : 0;
-            mFile.bytesTotal = file.bytesTotal ? file.bytesTotal : 0;
-            mFile.quality = file.quality ? file.quality : 0;
-            mFile.stream = settings.streamer ? settings.streamer : file.stream;
-            mFile.path = file.path ? jQuery.trim(file.path) : ( settings.baseURL + jQuery.trim(file.filepath) );
-            mFile.extension = file.extension ? file.extension : this.getFileExtension(mFile.path);
-            mFile.player = file.player ? file.player : this.getPlayer(mFile.extension);
-            mFile.type = file.type ? file.type : this.getType(mFile.extension);
-            return mFile;       
-         };
-         
-         // Get the file extension.
-         this.getFileExtension = function( file ) {
-            return file.substring(file.lastIndexOf(".") + 1).toLowerCase();
-         };
-         
-         // Get the player for this media.
-         this.getPlayer = function( extension ) {
-            switch( extension )
-            {
-               case "ogg":case "ogv":
-                  return this.playTypes.ogg ? "html5" : "flash";
-               
-               case "mp4":case "m4v":
-                  return this.playTypes.h264 ? "html5" : "flash";               
-               
-               case "oga":
-                  return this.playTypes.audioOgg ? "html5" : "flash";
-                  
-               case "mp3":
-                  return this.playTypes.mp3 ? "html5" : "flash";
-                  
-               case "flv":case "f4v":case "mov":case "3g2":case "m4a":case "aac":case "wav":case "aif":case "wma":            
-                  return "flash";  
-            }           
-            return "";
-         };
-         
-         // Get the type of media this is...
-         this.getType = function( extension ) {
-            switch( extension ) {  
-               case "ogg":case "ogv":case "mp4":case "m4v":case "flv":case "f4v":case "mov":case "3g2":
-                  return "video";
-               case "oga":case "mp3":case "m4a":case "aac":case "wav":case "aif":case "wma":
-                  return "audio";
-            }
-         };
 
          this.onMediaUpdate = function( data ) {
             // Now trigger the media update message.
@@ -749,10 +825,10 @@
             // If this is the playing state, we want to pause the video.
             if( data.type=="playing" && !this.loaded ) {
                this.loaded = true;
-               this.player.setVolume( (settings.volume / 100) );
-               if( !settings.autostart ) {
+               this.player.setVolume( (this.settings.volume / 100) );
+               if( this.settings.autoLoad && !this.settings.autostart ) {
                   this.player.pauseMedia();
-                  settings.autostart = true;
+                  this.settings.autostart = true;
                }
                else {
                   this.display.trigger( "mediaupdate", data ); 
@@ -763,16 +839,37 @@
             }
          };
 
+         this.reflowPlayer = function() {
+            // Store the CSS state before the reflow...
+            var displayCSS = {
+               marginLeft:parseInt( this.display.css("marginLeft"), 10 ),
+               height:this.display.css("height")
+            };
+
+            // Is the margin-left positive?
+            var isPositive = (displayCSS.marginLeft >=0);
+
+            // Now reflow the player by setting the margin-left value.  If the player
+            // has a margin-left value ( typically means it is off the screen ), then
+            // we need to give it a positive CSS value to trigger a reflow event.
+            this.display.css({
+               marginLeft:(isPositive ? (displayCSS.marginLeft+1) : 0),
+               height:(isPositive ? displayCSS.height : 0)
+            });
+
+            // Now set a timeout to set everything back 1ms later.
+            setTimeout( function() {
+
+               // Restore the display state.
+               _this.display.css(displayCSS);
+            }, 1 );
+         };
+
          this.startReflow = function() {
             clearTimeout( this.reflowInterval );
             this.reflowInterval = setTimeout( function() {
-               // If the player does not register after two seconds, try to wiggle it... just a little bit!
-               // No seriously... this is needed for Firefox in Windows for some odd reason.
-               var marginLeft = parseInt( _this.display.css("marginLeft"), 10 );
-               _this.display.css({marginLeft:(marginLeft+1)});
-               setTimeout( function() {
-                  _this.display.css({marginLeft:marginLeft});
-               }, 1 );
+               // If the player does not register after two seconds, try a reflow.
+               _this.reflowPlayer();
             }, 2000 );      
          };         
          
@@ -780,7 +877,9 @@
             if( this.playerReady ) {
                clearInterval( this.progressInterval );
                this.progressInterval = setInterval( function() {
-                  _this.onMediaUpdate( {type:"progress"} );
+                  _this.onMediaUpdate( {
+                     type:"progress"
+                  } );
                }, 500 ); 
             }        
          };
@@ -790,7 +889,9 @@
                clearInterval( this.updateInterval );
                this.updateInterval = setInterval( function() {
                   if( _this.playerReady ) {
-                     _this.onMediaUpdate( {type:"update"} );
+                     _this.onMediaUpdate( {
+                        type:"update"
+                     } );
                   }
                }, 1000 );   
             }
@@ -850,7 +951,7 @@
          };  
          
          this.setSize( this.display.width(), this.display.height() );
-      })( this, settings );
+      })( this, options );
    };
 /**
  *  Copyright (c) 2010 Alethia Inc,
@@ -885,7 +986,7 @@
       apiKey:"",
       api:2,
       sessid:"",
-      version:6         
+      drupalVersion:6         
    });
 
    // Extend the media namespace
@@ -899,7 +1000,7 @@
    
             var hasKey = (settings.apiKey.length > 0);
             var usesKey = (settings.api == 1);
-            var nodeGet = (settings.version >= 6) ? "node.get" : "node.load";
+            var nodeGet = (settings.drupalVersion >= 6) ? "node.get" : "node.load";
             var autoProtocol = (settings.protocol == "auto");
    
             // Set up the commands.
@@ -960,7 +1061,7 @@
                if( method ) {
                   protocol.call( method, onSuccess, onFailed, args, type );
                }
-               else {
+               else if( onSuccess ) {
                   onSuccess( null );   
                }
             };
@@ -1252,7 +1353,7 @@
 
    // Set up our defaults for this component.
    jQuery.media.defaults = jQuery.extend( jQuery.media.defaults, {
-      flashplayer:"./flash/mediafront.swf",
+      flashPlayer:"./flash/mediafront.swf",
       skin:"default",
       config:"nocontrols"
    });    
@@ -1264,6 +1365,7 @@
          var _this = this;
          this.player = null;
          this.videoFile = null;
+         this.preview = '';
          this.ready = false;
          
          // Translate the messages.
@@ -1277,18 +1379,19 @@
             "mediaMeta":"meta"        
          };
          
-         this.createMedia = function( videoFile ) {
+         this.createMedia = function( videoFile, preview ) {
             this.videoFile = videoFile;
+            this.preview = preview;
             this.ready = false;
             var playerId = (settings.id + "_media");            
             var rand = Math.floor(Math.random() * 1000000); 
-            var flashplayer = settings.flashplayer + "?rand=" + rand;
+            var flashPlayer = settings.flashPlayer + "?rand=" + rand;
             var flashvars = {
                config:settings.config,
                id:settings.id,
                file:videoFile.path,
                skin:settings.skin,
-               autostart:settings.autostart
+               autostart:(settings.autostart || !settings.autoLoad)
             };
             if( videoFile.stream ) {
                flashvars.stream = videoFile.stream;
@@ -1298,16 +1401,17 @@
             }
             jQuery.media.utils.insertFlash( 
                this.display, 
-               flashplayer, 
+               flashPlayer,
                playerId, 
                this.display.width(), 
                this.display.height(),
                flashvars,
+               settings.wmode,               
                function( obj ) {
                   _this.player = obj; 
                   _this.loadPlayer();  
                }
-            );
+               );
          };
          
          this.loadMedia = function( videoFile ) {
@@ -1318,7 +1422,9 @@
                this.player.loadMedia( videoFile.path, videoFile.stream ); 
                
                // Let them know the player is ready.          
-               onUpdate( {type:"playerready"} );                 
+               onUpdate( {
+                  type:"playerready"
+               } );
             } 
          };      
 
@@ -1329,12 +1435,16 @@
          
          this.loadPlayer = function() {
             if( this.ready && this.player ) {
-               onUpdate( {type:"playerready"} );
+               onUpdate( {
+                  type:"playerready"
+               } );
             }         
          };
          
          this.onMediaUpdate = function( eventType ) {
-            onUpdate( {type:this.translate[eventType]} ); 
+            onUpdate( {
+               type:this.translate[eventType]
+               } );
          };         
          
          this.playMedia = function() {
@@ -1377,7 +1487,9 @@
             return this.player.getMediaBytesTotal();
          };  
 
-         this.hasControls = function() { return true; };         
+         this.hasControls = function() {
+            return true;
+         };
          
          this.showControls = function(show) {
             this.player.showPlugin("controlBar", show);
@@ -1389,24 +1501,30 @@
                config:"config",
                id:"mediafront_player",
                file:this.videoFile.path,
+               image:this.preview,
                skin:settings.skin
             };
             if( this.videoFile.stream ) {
                flashVars.stream = this.videoFile.stream;
             }                    
             return jQuery.media.utils.getFlash( 
-               settings.flashplayer,
+               settings.flashPlayer,
                "mediafront_player", 
                settings.embedWidth, 
-               settings.embedHeight, 
-               flashVars );
+               settings.embedHeight,
+               flashVars,
+               settings.wmode );
          };         
          
          // Not implemented yet...
          this.setQuality = function( quality ) {};         
-         this.getQuality = function() { return ""; };
+         this.getQuality = function() {
+            return "";
+         };
          this.setSize = function( newWidth, newHeight ) {};           
-         this.getMediaLink = function() { return "This video currently does not have a link."; };       
+         this.getMediaLink = function() {
+            return "This video currently does not have a link.";
+         };
       })( this, settings, onUpdate );
    };
          /**
@@ -1444,26 +1562,71 @@
          this.bytesTotal = 0;
          this.mediaType = "";    
          
+         this.getPlayer = function( mediaFile, preview ) {
+            var playerId = options.id + '_' + this.mediaType;            
+            var html = '<' + this.mediaType + ' style="position:absolute" id="' + playerId + '"';
+            html += (this.mediaType == "video") ? ' width="' + this.display.width() + 'px" height="' + this.display.height() + 'px"' : '';
+            html += preview ? ' poster="' + preview + '"' : '';
+            
+            if( typeof mediaFile === 'array' ) {
+               html += '>';
+               var i = mediaFile.length;
+               while( i-- ) {
+                  html += '<source src="' + mediaFile[i].path + '" type="' + mediaFile[i].mimetype + '">';
+               }
+            }
+            else {
+               html += ' src="' + mediaFile.path + '">Unable to display media.';
+            } 
+            
+            html += '</' + this.mediaType + '>';
+            this.display.append( html );
+            return this.display.find('#' + playerId).eq(0)[0];;           
+         };
+         
          // Create a new HTML5 player.
-         this.createMedia = function( mediaFile ) {
+         this.createMedia = function( mediaFile, preview ) {
             // Remove any previous Flash players.
             jQuery.media.utils.removeFlash( this.display, options.id + "_media" );
             this.display.children().remove();    
-            this.mediaType = this.getMediaType( mediaFile.extension );            
-            var playerId = options.id + '_' + this.mediaType;     
-            var html = '<' + this.mediaType + ' style="position:absolute" id="' + playerId + '" src="' + mediaFile.path + '"';
-            html += (this.mediaType == "video") ? ' width="' + this.display.width() + 'px" height="' + this.display.height() + 'px"' : '';
-            html += '>Unable to display media.</' + this.mediaType + '>';
-            this.display.append( html );
-            this.player = this.display.find('#' + playerId).eq(0)[0];
+            this.mediaType = this.getMediaType( mediaFile );            
+            this.player = this.getPlayer( mediaFile, preview );
 
-            this.player.addEventListener( "abort", function() { onUpdate( {type:"stopped"} ); }, true);
-            this.player.addEventListener( "loadstart", function() { onUpdate( {type:"ready"} ); }, true);
-            this.player.addEventListener( "loadedmetadata", function() { onUpdate( {type:"meta"} ); }, true);
-            this.player.addEventListener( "ended", function() { onUpdate( {type:"complete"} ); }, true);
-            this.player.addEventListener( "pause", function() { onUpdate( {type:"paused"} ); }, true);
-            this.player.addEventListener( "play", function() { onUpdate( {type:"playing"} ); }, true);
-            this.player.addEventListener( "error", function() { onUpdate( {type:"error"} ); }, true);
+            this.player.addEventListener( "abort", function() {
+               onUpdate( {
+                  type:"stopped"
+               } );
+            }, true);
+            this.player.addEventListener( "loadstart", function() {
+               onUpdate( {
+                  type:"ready"
+               } );
+            }, true);
+            this.player.addEventListener( "loadedmetadata", function() {
+               onUpdate( {
+                  type:"meta"
+               } );
+            }, true);
+            this.player.addEventListener( "ended", function() {
+               onUpdate( {
+                  type:"complete"
+               } );
+            }, true);
+            this.player.addEventListener( "pause", function() {
+               onUpdate( {
+                  type:"paused"
+               } );
+            }, true);
+            this.player.addEventListener( "play", function() {
+               onUpdate( {
+                  type:"playing"
+               } );
+            }, true);
+            this.player.addEventListener( "error", function() {
+               onUpdate( {
+                  type:"error"
+               } );
+            }, true);
             
             // Now add the event for getting the progress indication.
             this.player.addEventListener( "progress", function( event ) {
@@ -1474,7 +1637,9 @@
             this.player.autoplay = true;
             this.player.autobuffer = true;   
             
-            onUpdate( {type:"playerready"} );
+            onUpdate( {
+               type:"playerready"
+            } );
          };      
          
          // Load new media into the HTML5 player.
@@ -1482,8 +1647,9 @@
             this.createMedia( mediaFile );
          };                       
          
-         this.getMediaType = function( ext ) {
-            switch( ext ) {
+         this.getMediaType = function( mediaFile ) {
+            var extension = (typeof mediaFile === 'array') ? mediaFile[0].extension : mediaFile.extension;
+            switch( extension ) {
                case "ogg": case "ogv": case "mp4": case "m4v":
                   return "video";
                   
@@ -1536,12 +1702,20 @@
          
          // Not implemented yet...
          this.setQuality = function( quality ) {};         
-         this.getQuality = function() { return ""; };
-         this.hasControls = function() { return false; };            
+         this.getQuality = function() {
+            return "";
+         };
+         this.hasControls = function() {
+            return false;
+         };
          this.showControls = function(show) {};          
          this.setSize = function( newWidth, newHeight ) {};           
-         this.getEmbedCode = function() { return "This media cannot be embedded."; };        
-         this.getMediaLink = function() { return "This media currently does not have a link."; };                
+         this.getEmbedCode = function() {
+            return "This media cannot be embedded.";
+         };
+         this.getMediaLink = function() {
+            return "This media currently does not have a link.";
+         };
       })( this, options, onUpdate );
    };
          /**
@@ -1573,9 +1747,11 @@
    /**
     * Load and scale an image while maintining original aspect ratio.
     */
-   jQuery.fn.mediaimage = function( link ) {
-      if( this.length === 0 ) { return null; }
-      return new (function( container, link ) {
+   jQuery.fn.mediaimage = function( link, fitToImage ) {
+      if( this.length === 0 ) {
+         return null;
+      }
+      return new (function( container, link, fitToImage ) {
          this.display = container;
          var _this = this;
          
@@ -1595,21 +1771,27 @@
          
          // Now add the image object.
          var code = link ? '<a target="_blank" href="' + link + '"><img src=""></img></a>' : '<img src=""></img>';
-         this.image = container.empty().append( code ).find("img");    
+         this.image = container.append( code ).find("img");    
          
          // Set the container to not show any overflow...       
          container.css("overflow", "hidden");
          
          // Resize the image.
          this.resize = function( newWidth, newHeight ) {
-            this.width = newWidth ? newWidth : this.width ? this.width : this.display.width();
-            this.height = newHeight ? newHeight : this.height ? this.height : this.display.height();
+            this.width = fitToImage ? this.imgLoader.width : (newWidth ? newWidth : this.width ? this.width : this.display.width());
+            this.height = fitToImage ? this.imgLoader.height : (newHeight ? newHeight : this.height ? this.height : this.display.height());
             if( this.width && this.height && loaded ) {  
                // Resize the wrapper.
-               this.display.css({width:this.width, height:this.height});
+               this.display.css({
+                  width:this.width,
+                  height:this.height
+                  });
                
                // Now resize the image in the container...
-               var rect = jQuery.media.utils.getScaledRect( ratio, {width:this.width, height:this.height} );
+               var rect = jQuery.media.utils.getScaledRect( ratio, {
+                  width:this.width,
+                  height:this.height
+                  } );
                this.image.attr( "src", this.imgLoader.src ).css({
                   marginLeft:rect.x, 
                   marginTop:rect.y, 
@@ -1626,6 +1808,7 @@
                this.image.hide();               
                this.image.attr( "src", "" );
             }
+            container.empty();
          };
          
          // Refreshes the image.
@@ -1638,7 +1821,7 @@
             this.image.hide();
             this.imgLoader.src = src;
          };
-      })( this, link );     
+      })( this, link, fitToImage );     
    };
 
 /**
@@ -1682,18 +1865,34 @@
             // ************************************************  
             
             // A character conversion map
-            var m = {'\b':'\\b','\t':'\\t','\n':'\\n','\f':'\\f','\r':'\\r','"':'\\"','\\':'\\\\'};
+            var m = {
+               '\b':'\\b',
+               '\t':'\\t',
+               '\n':'\\n',
+               '\f':'\\f',
+               '\r':'\\r',
+               '"':'\\"',
+               '\\':'\\\\'
+            };
             
             // Map type names to functions for serializing those types
             var s = { 
-               'boolean': function (x) { return String(x); },
-               'null': function (x) { return "null"; },
-               number: function (x) { return isFinite(x) ? String(x) : 'null'; },
+               'boolean': function (x) {
+                  return String(x);
+               },
+               'null': function (x) {
+                  return "null";
+               },
+               number: function (x) {
+                  return isFinite(x) ? String(x) : 'null';
+               },
                string: function (x) {
                   if (/["\\\x00-\x1f]/.test(x)) {
                      x = x.replace(/([\x00-\x1f\\"])/g, function(a, b) {
                         var c = m[b];
-                        if (c) { return c; }
+                        if (c) {
+                           return c;
+                        }
                         c = b.charCodeAt();
                         return '\\u00' + Math.floor(c / 16).toString(16) + (c % 16).toString(16);
                      });
@@ -1764,7 +1963,10 @@
                      "url": settings.baseURL + method,
                      "dataType": "json",
                      "type": "POST",
-                     "data": {methodName:method, params:this.serializeToJSON(params)},
+                     "data": {
+                        methodName:method,
+                        params:this.serializeToJSON(params)
+                        },
                      "error": function( XMLHttpRequest, textStatus, errorThrown ) {
                         if( onFailed ) {
                            onFailed( textStatus );
@@ -1774,11 +1976,13 @@
                         }
                      },
                      "success": function( data ) {
-                        onSuccess( data );
+                        if( onSuccess ) {
+                           onSuccess( data );
+                        }
                      }             
                   });
                } 
-               else {
+               else if( onSuccess ) {
                   onSuccess( null );
                }     
             };
@@ -1813,7 +2017,9 @@
  */
  
    jQuery.fn.medialink = function( settings, onClick, data ) { 
-      data = data ? data : {noargs:true};
+      data = data ? data : {
+         noargs:true
+      };
       return new (function( link, settings, onClick, data ) {
          var _this = this;
          this.display = link;     
@@ -1867,7 +2073,7 @@
    }); 
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      linkScroll:".medialinkscroll"               
+      linkScroll:"#medialinkscroll"               
    });    
    
    jQuery.fn.medialinks = function( settings ) {  
@@ -1954,14 +2160,16 @@
    
    // Set up our defaults for this component.
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      close:".mediamenuclose",
+      close:"#mediamenuclose",
       embed:"#mediaembed",
       elink:"#mediaelink",
       email:"#mediaemail"           
    });   
    
    jQuery.fn.mediamenu = function( server, settings ) {  
-      if( this.length === 0 ) { return null; }
+      if( this.length === 0 ) {
+         return null;
+      }
       return new (function( server, menu, settings ) {
          settings = jQuery.media.utils.getSettings(settings);  
          var _this = this;
@@ -1970,7 +2178,11 @@
          this.on = false;
          
          this.contents = [];
-         this.prevItem = {id:0, link:null, contents:null};
+         this.prevItem = {
+            id:0,
+            link:null,
+            contents:null
+         };
          
          this.close = this.display.find( settings.ids.close );
          this.close.bind( "click", function() {
@@ -1984,7 +2196,11 @@
                }
                var contents = this.contents[itemId];
                settings.template.onMenuSelect( link, contents, true );
-               this.prevItem = {id:itemId, link:link, contents:contents};
+               this.prevItem = {
+                  id:itemId,
+                  link:link,
+                  contents:contents
+               };
             }
          };         
          
@@ -2023,7 +2239,10 @@
                settings.template.onMenuOut( event.data );   
             });
             
-            link.bind("click", {id:linkId, obj:$(this)}, function( event ) {
+            link.bind("click", {
+               id:linkId,
+               obj:$(this)
+               }, function( event ) {
                event.preventDefault(); 
                _this.setMenuItem( event.data.obj, event.data.id );
             });
@@ -2082,15 +2301,17 @@
    }); 
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      busy:".mediabusy",
-      preview:".mediapreview",
-      play:".mediaplay",
-      media:".mediadisplay",
-      control:".mediacontrol"                 
+      busy:"#mediabusy",
+      preview:"#mediapreview",
+      play:"#mediaplay",
+      media:"#mediadisplay",
+      control:"#mediacontrol"                 
    });    
    
    jQuery.fn.minplayer = function( settings ) {
-      if( this.length === 0 ) { return null; }
+      if( this.length === 0 ) {
+         return null;
+      }
       return new (function( player, settings ) {
          // Get the settings.
          settings = jQuery.media.utils.getSettings(settings);
@@ -2098,6 +2319,9 @@
          // Save the jQuery display.
          this.display = player;
          var _this = this;
+
+         // If the player should auto load or not.
+         this.autoLoad = settings.autoLoad;
 
          // Our attached controller.
          this.controller = null;
@@ -2113,38 +2337,30 @@
          
          // Store the play overlay.
          this.play = player.find( settings.ids.play );
+         // Toggle the play/pause state if they click on the play button.
          this.play.bind("click", function() {
-            _this.showPlay(false);
-            if( _this.media && _this.media.playerReady ) {
-               _this.media.player.playMedia();
-            }
+            _this.togglePlayPause();
          });
          this.playImg = this.play.find("img");
          this.playWidth = this.playImg.width();
-         this.playHeight = this.playImg.height();         
+         this.playHeight = this.playImg.height();
          
          // Store the preview image.
-         this.preview = player.find( settings.ids.preview ).mediaimage();
-         
-         // Register for the even when it loads.
-         if( this.preview ) {
-            this.preview.display.bind("imageLoaded", function() {
-               _this.onPreviewLoaded();      
-            });
-         }
+         this.preview = null;
          
          // The internal player controls.
          this.usePlayerControls = false;
-         this.busyVisible = true;
+         this.busyFlags = 0;
          this.playVisible = false;
          this.previewVisible = false;
          this.controllerVisible = true;
          this.hasMedia = false;
+         this.playing = false;         
          
          // Cache the width and height.
          this.width = this.display.width();
          this.height = this.display.height();
-         
+      
          // Hide or show an element.
          this.showElement = function( element, show, tween ) {
             if( element && !this.usePlayerControls ) {
@@ -2162,9 +2378,14 @@
             this.showElement( this.play, show, tween );
          };
 
-         this.showBusy = function( show, tween ) {
-            this.busyVisible = show;
-            this.showElement( this.busy, show, tween );
+         this.showBusy = function( id, show, tween ) {
+            if( show ) {
+               this.busyFlags |= (1 << id);
+            }
+            else {
+               this.busyFlags &= ~(1 << id);
+            }
+            this.showElement( this.busy, (this.busyFlags > 0), tween );
          }; 
          
          this.showPreview = function( show, tween ) {
@@ -2207,7 +2428,7 @@
                // If there are files in the queue but no current media file.
                else if( (this.media.playQueue.length > 0) && !this.media.mediaFile ) {
                   // They interacted with the player.  Always autoload at this point on.
-                  settings.autoLoad = true;
+                  this.autoLoad = true;
                   
                   // Then play the next file in the queue.
                   this.playNext();
@@ -2229,10 +2450,11 @@
          
          // Handle when the preview image loads.
          this.onPreviewLoaded = function() {
-            // If we don't have any media, then we will assume that they 
-            // just want an image viewer.  Trigger a complete event after the timeout
-            // interval.
-            /* Doesn't quite work... need to investigate further.
+            this.previewVisible = true;
+         // If we don't have any media, then we will assume that they
+         // just want an image viewer.  Trigger a complete event after the timeout
+         // interval.
+         /* Doesn't quite work... need to investigate further.
             if( !this.hasMedia ) {
                setTimeout( function() {
                   _this.display.trigger("mediaupdate", {type:"complete"});
@@ -2245,24 +2467,27 @@
          this.onMediaUpdate = function( data ) {
             switch( data.type ) {
                case "paused":
+                  this.playing = false;
                   this.showPlay(true);
-                  this.showBusy(false);
+                  this.showBusy(1, false);
                   break;
                case "playing":
+                  this.playing = true;
                   this.showPlay(false);
-                  this.showBusy(false);
+                  this.showBusy(1, false);
                   this.showPreview((this.media.mediaFile.type == "audio"));
                   break;
                case "initialize":
+                  this.playing = false;
                   this.showPlay(true);
-                  this.showBusy(true);
+                  this.showBusy(1, this.autoLoad);
                   this.showPreview(true);
                   break;
                case "buffering":
                   this.showPlay(true);
-                  this.showBusy(true);
+                  this.showBusy(1, true);
                   this.showPreview((this.media.mediaFile.type == "audio"));
-                  break;
+                  break;                 
             }
             
             // Update our controller.
@@ -2279,9 +2504,6 @@
             if( settings.template && settings.template.onMediaUpdate ) {
                settings.template.onMediaUpdate( data );
             }
-            
-            // Now pass on this event for all that care.
-            this.display.trigger( "mediaupdate", data );  
          };
          
          // Allow mulitple controllers to control this media.
@@ -2304,14 +2526,14 @@
          if( this.media ) {
             this.media.display.bind( "mediaupdate", function( event, data ) {
                _this.onMediaUpdate( data );            
-            });  
+            });
          }
          
          // Add the control bar to the media.
          this.controller = this.addController( this.display.find( settings.ids.control ).mediacontrol( settings ), false ); 
          
          // Now add any queued controllers...
-         if( jQuery.media.controllers && jQuery.media.controllers[settings.id] ) {
+         if( jQuery.media.controllers[settings.id] ) {
             var controllers = jQuery.media.controllers[settings.id];
             var i = controllers.length;
             while(i--) {
@@ -2334,26 +2556,31 @@
                }           
                
                // Resize the busy symbol.
-               var busyMLeft = Math.ceil((this.width - this.busyWidth)/2);
-               var busyMTop = Math.ceil((this.height - this.busyHeight)/2);
-               this.busy.css({width:this.width, height:this.height});
+               this.busy.css({
+                  width:this.width,
+                  height:this.height
+                  });
                this.busyImg.css({
-                  marginLeft:busyMLeft + "px",
-                  marginTop:busyMTop + "px"
+                  marginLeft:((this.width - this.busyWidth)/2) + "px", 
+                  marginTop:((this.height - this.busyHeight)/2) + "px" 
                });
 
                // Resize the play symbol.
-               var playMLeft = Math.ceil((this.width - this.playWidth)/2);
-               var playMTop = Math.ceil((this.height - this.playHeight)/2);
-               this.play.css({width:this.width, height:this.height});
+               this.play.css({
+                  width:this.width,
+                  height:this.height
+                  });
                this.playImg.css({
-                  marginLeft:playMLeft + "px",
-                  marginTop:playMTop + "px"
-               });
+                  marginLeft:((this.width - this.playWidth)/2) + "px", 
+                  marginTop:((this.height - this.playHeight)/2) + "px" 
+               });            
                
                // Resize the media.
                if( this.media ) {
-                  this.media.display.css({width:this.width, height:this.height});
+                  this.media.display.css({
+                     width:this.width,
+                     height:this.height
+                     });
                   this.media.setSize( this.width, this.height );
                }
             }
@@ -2374,7 +2601,7 @@
                   }
                }
                else {
-                  this.showBusy( this.busyVisible );
+                  this.showBusy( 1, ((this.busyFlags & 0x2) == 0x2) );
                   this.showPlay( this.playVisible );
                   this.showPreview( this.previewVisible );
                   this.showController( this.controllerVisible );
@@ -2387,7 +2614,10 @@
          if( this.media ) {
             this.display.prepend('<div class="medialogo"></div>');
             this.logo = this.display.find(".medialogo").mediaimage( settings.link );
-            this.logo.display.css({position:"absolute", zIndex:10000});
+            this.logo.display.css({
+               position:"absolute",
+               zIndex:490
+            });
             this.logo.width = settings.logoWidth;
             this.logo.height = settings.logoHeight;
             this.logo.loadImage( settings.logo );
@@ -2400,7 +2630,10 @@
                var mediaLeft = parseInt(this.media.display.css("marginLeft"), 0);
                var marginTop = (settings.logopos=="se" || settings.logopos=="sw") ? (mediaTop + this.height - this.logo.height - settings.logoy) : mediaTop + settings.logoy;
                var marginLeft = (settings.logopos=="ne" || settings.logopos=="se") ? (mediaLeft + this.width - this.logo.width - settings.logox) : mediaLeft + settings.logox;
-               this.logo.display.css({marginTop:marginTop,marginLeft:marginLeft});
+               this.logo.display.css({
+                  marginTop:marginTop,
+                  marginLeft:marginLeft
+               });
             }            
          };
 
@@ -2417,25 +2650,64 @@
          // Reset to previous state...
          this.reset = function() {
             this.hasMedia = false;
+            this.playing = false;
             if( this.controller ) {
                this.controller.reset();   
             }
             if( this.activeController ) {
                this.activeController.reset();   
             }
-            this.showPlay(false);
-            this.showPreview(false);
-            this.showBusy(true);
+
+            this.showBusy(1, this.autoLoad);
             
             if( this.media ) {
                this.media.reset();
             }
          };
          
+         // Toggle the play/pause state.
+         this.togglePlayPause = function() {
+            if( this.media ) {
+               if( this.media.playerReady ) {
+                  if( this.playing ) {
+                     this.showPlay(true);
+                     this.media.player.pauseMedia();
+                  }
+                  else {
+                     this.showPlay(false);
+                     this.media.player.playMedia();
+                  }
+               }
+               else if( (this.media.playQueue.length > 0) && !this.media.mediaFile ) {
+                  // They interacted with the player.  Always autoload at this point on.
+                  this.autoLoad = true;
+
+                  // Then play the next file in the queue.
+                  this.playNext();
+               }
+            }
+         };
+         
          // Loads an image...
          this.loadImage = function( image ) {
+            this.preview = player.find( settings.ids.preview ).mediaimage();
+
             if( this.preview ) {
+               // Set the size of the preview.
+               this.preview.resize( this.width, this.height );
+
+               // Bind to the image loaded event.
+               this.preview.display.bind("imageLoaded", function() {
+                  _this.onPreviewLoaded();
+               });
+
+               // Load the image.
                this.preview.loadImage( image );
+
+               // Now set the preview image in the media player.
+               if( this.media ) {
+                  this.media.preview = image;
+               }
             }
          };
          
@@ -2449,7 +2721,7 @@
          // Expose the public load functions from the media display.
          this.loadFiles = function( files ) { 
             this.reset();
-            if( this.media && this.media.loadFiles( files ) && settings.autoLoad ) {
+            if( this.media && this.media.loadFiles( files ) && this.autoLoad ) {
                this.media.playNext();
             }
          };
@@ -2510,34 +2782,40 @@
    
    // Set up our defaults for this component.
    jQuery.media.defaults = jQuery.extend( jQuery.media.defaults, {
-      node:""                  
+      node:"",
+      incrementTime:5             
    }); 
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      voter:".mediavoter",
-      uservoter:".mediauservoter",
-      mediaRegion:".mediaregion",
+      voter:"#mediavoter",
+      uservoter:"#mediauservoter",
+      mediaRegion:"#mediaregion",
       field:".mediafield"                 
    });   
    
    jQuery.fn.medianode = function( server, settings ) {
-      if( this.length === 0 ) { return null; }
+      if( this.length === 0 ) {
+         return null;
+      }
       return new (function( server, node, settings ) {
          settings = jQuery.media.utils.getSettings(settings);
          
          // Save the jQuery display.
          this.display = node;
          this.nodeInfo = {};
+         this.incremented = false;
          var _this = this;
          
          // Add the min player as the player for this node.
          this.player = this.display.find(settings.ids.mediaRegion).minplayer( settings );  
+         if( this.player && this.player.media && (settings.incrementTime !== 0)) {
+            this.player.media.display.bind( "mediaupdate", function( event, data ) {
+               _this.onMediaUpdate( data );            
+            });  
+         }         
          
          // Store all loaded images.
          this.images = [];
-         
-         // Indicator to let us know we are waiting on something...
-         this.waiting = false;
          
          // Get the width and height.
          this.width = this.display.width();
@@ -2548,26 +2826,41 @@
          this.uservoter = this.display.find(settings.ids.uservoter).mediavoter( settings, server, true );
          if( this.uservoter && this.voter ) {
             this.uservoter.display.bind( "processing", function() {
-               _this.waiting = true;
-               _this.player.busy.show();
+               _this.player.showBusy(2, true);
             });
             this.uservoter.display.bind( "voteGet", function() {
-               if( _this.waiting ) {
-                  _this.waiting = false;
-                  _this.player.busy.hide();
-               }
+               _this.player.showBusy(2, false);
             });            
             this.uservoter.display.bind( "voteSet", function( event, vote ) {
-               if( _this.waiting ) {
-                  _this.waiting = false;
-                  _this.player.busy.hide();
-               }
+               _this.player.showBusy(2, false);
                _this.voter.updateVote( vote );   
             });
          }
          
+         // Handle the media events.
+         this.onMediaUpdate = function( data ) {
+            if( !this.incremented ) {
+               switch( data.type ) {
+                  case "update":
+                     // Increment node counter if the increment time is positive and is less than the current time.
+                     if( (settings.incrementTime > 0) && (data.currentTime > settings.incrementTime) ) {
+                        this.incremented = true;
+                        server.call( jQuery.media.commands.incrementCounter, null, null, _this.nodeInfo.nid );
+                     }
+                     break;
+                  case "complete":
+                     // If the increment time is negative, then that means to increment on media completion.
+                     if( settings.incrementTime < 0 ) {
+                        this.incremented = true;
+                        server.call( jQuery.media.commands.incrementCounter, null, null, _this.nodeInfo.nid );
+                     }
+                     break;
+               }
+            }
+         };         
+         
          this.loadNode = function( _nodeInfo ) {
-            this.getNode( this.translateNode( _nodeInfo ) );
+            return this.getNode( this.translateNode( _nodeInfo ) );
          };
 
          this.translateNode = function( _nodeInfo ) {
@@ -2579,11 +2872,17 @@
                   return defaultNode;   
                }
                else {
-                  return defaultNode ? {nid:defaultNode, load:true} : null;
+                  return defaultNode ? {
+                     nid:defaultNode,
+                     load:true
+                  } : null;
                }
             }
             else if( isValue ) {
-               return {nid:_nodeInfo, load:true};
+               return {
+                  nid:_nodeInfo,
+                  load:true
+               };
             }
             else {
                _nodeInfo.load = false;
@@ -2600,7 +2899,7 @@
             // Refresh all images.
             var i=this.images.length;
             while(i--) {
-              this.images[i].refresh(); 
+               this.images[i].refresh();
             }
          };
          
@@ -2614,27 +2913,34 @@
                else {
                   this.setNode( _nodeInfo ); 
                }
+
+               // Return that the node was loaded.
+               return true;
             }
+
+            // Return that there was no node loaded.
+            return false;
          };
 
          this.setNode = function( _nodeInfo ) {
             if( _nodeInfo ) {
                // Set the node information object.
                this.nodeInfo = _nodeInfo;
+               this.incremented = false;
    
                // Load the media...
                if( this.player && this.nodeInfo.mediafiles ) {
-                  // Load the media...
-                  this.player.loadFiles( this.nodeInfo.mediafiles.media );
-                  
                   // Load the preview image.
                   var image = this.getImage("preview");
                   if( image ) {
                      this.player.loadImage( image.path );
                   }
                   else {
-                     this.player.clearImage();   
+                     this.player.clearImage();
                   }
+
+                  // Load the media...
+                  this.player.loadFiles( this.nodeInfo.mediafiles.media );
                }
                
                // Get the vote for these voters.
@@ -2710,7 +3016,9 @@
                }
                
                // If they just provided a string, then still show the image.
-               image = (typeof image === "string") ? {path:image} : image;
+               image = (typeof image === "string") ? {
+                  path:image
+               } : image;
                image.path = image.path ? jQuery.trim(image.path) : ( settings.baseURL + jQuery.trim(image.filepath) );
                if( image && image.path ) {
                   image.path = image.path ? jQuery.trim(image.path) : ( settings.baseURL + jQuery.trim(image.filepath) );
@@ -2771,12 +3079,12 @@
    });
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      prev:".mediaprev",
-      next:".medianext",
-      loadPrev:".medialoadprev",
-      loadNext:".medialoadnext",
-      prevPage:".mediaprevpage",
-      nextPage:".medianextpage"         
+      prev:"#mediaprev",
+      next:"#medianext",
+      loadPrev:"#medialoadprev",
+      loadNext:"#medialoadnext",
+      prevPage:"#mediaprevpage",
+      nextPage:"#medianextpage"         
    });   
    
    jQuery.fn.mediapager = function( settings ){
@@ -2878,7 +3186,7 @@
             var indexVar = setActive ? "activeIndex" : "currentIndex";           
             var newIndex = this[indexVar];
             switch ( this.loadState ) {
-               case "prev":   
+               case "prev":
                   this.loadState = "";
                   this.loadPrev(setActive);
                   return;
@@ -2900,7 +3208,10 @@
             if( newIndex != this[indexVar] ) {
                this.loadState = "";
                this[indexVar] = newIndex;
-               this.display.trigger("loadindex", {index:this[indexVar], active:setActive});
+               this.display.trigger("loadindex", {
+                  index:this[indexVar],
+                  active:setActive
+               });
             }
          };
 
@@ -2922,23 +3233,41 @@
                   if( (this.activeIndex == (this.activeNumItems - 1)) && (this.activePage == (this.currentPage - 1)) ) {
                      this.currentIndex = this.activeIndex = 0;
                      this.activePage = this.currentPage;
-                     this.display.trigger("loadindex", {index:0, active:true}); 
+                     this.display.trigger("loadindex", {
+                        index:0,
+                        active:true
+                     });
                   }
                   else {
                      this.currentPage = this.activePage;
                      this.loadState = "";
-                     this.display.trigger("loadpage", {index:this.activePage, active:setActive});
+                     this.display.trigger("loadpage", {
+                        index:this.activePage,
+                        active:setActive
+                     });
                   }
                }
                else {
                   this[indexVar]++;
                   if ( this[indexVar] >= this.numItems ) {
-                     this[indexVar] = (this.numItems - 1);
-                     this.loadState = this.loadState ? this.loadState : "first";
-                     this.nextPage( setActive );
+                     if( this.numPages > 1 ) {
+                        this[indexVar] = (this.numItems - 1);
+                        this.loadState = this.loadState ? this.loadState : "first";
+                        this.nextPage( setActive );
+                     }
+                     else if( !setActive || settings.loop ) {
+                        this[indexVar] = 0;
+                        this.display.trigger("loadindex", {
+                           index:this[indexVar],
+                           active:setActive
+                        });
+                     }
                   }
                   else {
-                     this.display.trigger("loadindex", {index:this[indexVar], active:setActive}); 
+                     this.display.trigger("loadindex", {
+                        index:this[indexVar],
+                        active:setActive
+                     });
                   }
                }
             }               
@@ -2950,17 +3279,32 @@
             if( setActive && ( this.activePage != this.currentPage ) ) {
                this.currentPage = this.activePage;
                this.loadState = "prev";
-               this.display.trigger("loadpage", {index:this.activePage, active:setActive});
+               this.display.trigger("loadpage", {
+                  index:this.activePage,
+                  active:setActive
+               });
             }
             else {
                this[indexVar]--;
                if ( this[indexVar] < 0 ) {
-                  this[indexVar] = 0;
-                  this.loadState = this.loadState ? this.loadState : "last";
-                  this.prevPage( setActive );
+                  if( this.numPages > 1 ) {
+                     this[indexVar] = 0;
+                     this.loadState = this.loadState ? this.loadState : "last";
+                     this.prevPage( setActive );
+                  }
+                  else if( !setActive || settings.loop ) {
+                     this[indexVar] = (this.numItems - 1);
+                     this.display.trigger("loadindex", {
+                        index:this[indexVar],
+                        active:setActive
+                     });
+                  }
                }
                else {
-                  this.display.trigger( "loadindex", {index:this[indexVar], active:setActive} ); 
+                  this.display.trigger( "loadindex", {
+                     index:this[indexVar],
+                     active:setActive
+                  } );
                }  
             }
          };
@@ -2971,11 +3315,17 @@
             if (newPage != this.activePage) {
                this.activePage = newPage;
                this.loadState = this.loadState ? this.loadState : "rand";
-               this.display.trigger("loadpage", {index:this.activePage, active:true});
+               this.display.trigger("loadpage", {
+                  index:this.activePage,
+                  active:true
+               });
             }
             else {
                this.activeIndex = Math.floor(Math.random() * this.numItems);
-               this.display.trigger("loadindex", {index:this.activeIndex, active:true}); 
+               this.display.trigger("loadindex", {
+                  index:this.activeIndex,
+                  active:true
+               });
             }              
          };
 
@@ -3000,7 +3350,10 @@
             this.setPageState( setActive );  
 
             if( pageLoaded ) {
-               this.display.trigger("loadpage", {index:this[pageVar], active:setActive});
+               this.display.trigger("loadpage", {
+                  index:this[pageVar],
+                  active:setActive
+               });
             }                            
          };
 
@@ -3025,7 +3378,10 @@
             this.setPageState( setActive );           
 
             if( pageLoaded ) {
-               this.display.trigger("loadpage", {index:this[pageVar], active:setActive});
+               this.display.trigger("loadpage", {
+                  index:this[pageVar],
+                  active:setActive
+               });
             }              
          };
 
@@ -3080,10 +3436,13 @@
                this.onLoaded = onLoaded;
                jQuery.ajax({
                   type: "GET",
-                  url: file,
-                  dataType: "xml",
+                  url:file,
+                  dataType:"xml",
                   success: function(xml) {
                      _this.parseXML( xml );
+                  },
+                  error: function( XMLHttpRequest, textStatus, errorThrown ) {
+                     console.log( "Error: " + textStatus );
                   }
                });               
             }; 
@@ -3106,7 +3465,10 @@
             
             // Parse XSPF contents.
             this.parseXSPF = function( xml ) {
-               var playlist = {total_rows:0, nodes:[]};
+               var playlist = {
+                  total_rows:0,
+                  nodes:[]
+               };
                var trackList = jQuery("playlist trackList track", xml);
                if( trackList.length > 0 ) {
                   trackList.each( function(index) {
@@ -3117,10 +3479,14 @@
                         description: $(this).find("annotation").text(),
                         mediafiles: {
                            images:{
-                              "image":{path:$(this).find("image").text()}
+                              "image":{
+                                 path:$(this).find("image").text()
+                                 }
                            },
                            media:{
-                              "media":{path:$(this).find("location").text()}
+                              "media":{
+                                 path:$(this).find("location").text()
+                                 }
                            }
                         }
                      });
@@ -3131,7 +3497,10 @@
 
             // Parse ASX contents.
             this.parseASX = function( xml ) {
-               var playlist = {total_rows:0, nodes:[]};
+               var playlist = {
+                  total_rows:0,
+                  nodes:[]
+               };
                var trackList = jQuery("asx entry", xml);         
                if( trackList.length > 0 ) {
                   trackList.each( function(index) {
@@ -3141,10 +3510,14 @@
                         title: $(this).find("title").text(),
                         mediafiles: {
                            images:{
-                              "image":{path:$(this).find("image").text()}
+                              "image":{
+                                 path:$(this).find("image").text()
+                                 }
                            },
                            media:{
-                              "media":{path:$(this).find("location").text()}
+                              "media":{
+                                 path:$(this).find("location").text()
+                                 }
                            }
                         }                        
                      });
@@ -3155,7 +3528,10 @@
 
             // Parse RSS contents.
             this.parseRSS = function( xml ) {
-               var playlist = {total_rows:0, nodes:[]};                            
+               var playlist = {
+                  total_rows:0,
+                  nodes:[]
+               };
                var channel = jQuery("rss channel", xml);         
                if( channel.length > 0 ) {
                   var youTube = (channel.find("generator").text() == "YouTube data API");
@@ -3178,10 +3554,14 @@
                   title: item.find("title").text(),
                   mediafiles: {
                      images:{
-                        "image":{path:item.find("image").text()}
+                        "image":{
+                           path:item.find("image").text()
+                           }
                      },
                      media:{
-                        "media":{path:item.find("location").text()}
+                        "media":{
+                           path:item.find("location").text()
+                           }
                      }
                   }                  
                };
@@ -3195,10 +3575,15 @@
                   title: item.find("title").text(),
                   mediafiles: {
                      images:{
-                        "image":{path:jQuery("img", description).eq(0).attr("src")}
+                        "image":{
+                           path:jQuery("img", description).eq(0).attr("src")
+                           }
                      },
                      media:{
-                        "media":{path:media, player:"youtube"}
+                        "media":{
+                           path:media,
+                           player:"youtube"
+                        }
                      }
                   }                                   
                };
@@ -3249,19 +3634,34 @@
    });    
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      loading:".mediaplayerloading",
-      player:".mediaplayer",
-      menu:".mediamenu",
-      titleBar:".mediatitlebar",
-      node:".medianode",
-      playlist:".mediaplaylist"   
+      loading:"#mediaplayerloading",
+      player:"#mediaplayer",
+      menu:"#mediamenu",
+      titleBar:"#mediatitlebar",
+      node:"#medianode",
+      playlist:"#mediaplaylist"   
    });   
    
    // Initialize our players, playlists, and controllers.   
-   jQuery.media.players = {};        
+   jQuery.media.players = {};
+   jQuery.media.loadCallbacks = {};
    jQuery.media.playlists = {}; 
    jQuery.media.controllers = {};   
    
+   // Use this function to trigger when the player has finished registering and loaded.
+   jQuery.media.onLoaded = function( playerId, callback ) {
+      var player = jQuery.media.players[playerId];
+      if( player && player.display && player.loaded ) {
+         callback( player );
+      }
+      else {
+         if( !jQuery.media.loadCallbacks[playerId] ) {
+            jQuery.media.loadCallbacks[playerId] = [];
+         }
+         jQuery.media.loadCallbacks[playerId].push( callback );
+      }
+   };
+
    // To add a new controller to any existing or future-included players.
    jQuery.media.addController = function( playerId, fromPlayer ) {
       // Check to make sure the fromPlayer has a controller.
@@ -3302,7 +3702,9 @@
    
    // The main entry point into the player. 
    jQuery.fn.mediaplayer = function( settings ) {
-      if( this.length === 0 ) { return null; }
+      if( this.length === 0 ) {
+         return null;
+      }
       // Return the media Media Player
       return new (function( player, settings ) {         
          // Get the settings.
@@ -3319,15 +3721,41 @@
          // Save the jQuery display.                                        
          this.display = this.dialog.find( settings.ids.player );
          var _this = this;          
-         
+
+         // Fix a really strange issue where if any of the parent elements are invisible
+         // when this player's template is initializing, it would crash due to the issue
+         // with calling the position() function on an invisible object.  This seems to fix
+         // that issue.
+         var invisibleParents = [];
+
+         // Now check the visibility of the parents, and add the offenders to the array.
+         jQuery.media.utils.checkVisibility( this.display, invisibleParents );
+
          // Add this player to the players object.
-         jQuery.media.players[settings.id] = this;                  
+         jQuery.media.players[settings.id] = this;
+
+         // Variable to keep track if this player has finished loading.
+         this.loaded = false;
          
          // Set the template object.
          settings.template = jQuery.media.templates[settings.template]( this, settings );
          
          // Get all of the setting overrides used in this template.
-         settings = jQuery.extend( settings, settings.template.getSettings() );       
+         if( settings.template.getSettings ) {
+            settings = jQuery.extend( settings, settings.template.getSettings() );
+         }
+         
+         // Add some keyboard event handlers.
+         $(window).keypress( function( event ) {
+            switch( event.keyCode ) {
+               case 0:   /* SpaceBar */
+                  _this.onSpaceBar();
+                  break;
+               case 27:  /* ESC Key */
+                  _this.onEscKey();
+                  break;
+            }
+         });
          
          // First get the communication protocol.
          if( jQuery.media[settings.protocol] ) {
@@ -3365,29 +3793,53 @@
          // Hide or Show the menu.
          this.showMenu = function( show ) {
             if( settings.template.onMenu ) {
-              this.menuOn = show;
-              settings.template.onMenu( this.menuOn, true );   
+               this.menuOn = show;
+               settings.template.onMenu( this.menuOn );
             }         
          };
          
-         // Setup the title bar.
-         this.titleBar = this.dialog.find( settings.ids.titleBar ).mediatitlebar( settings );
-         if( this.titleBar ) {
+         // Called when the user presses the ESC key.
+         this.onEscKey = function() {
+            // If they are in full screen mode, then escape when they press the ESC key.
+            if( this.fullScreen ) {
+               this.fullScreen = false;
+               if( this.node && this.node.player ) {
+                  this.node.player.fullScreen( this.fullScreen );
+               }              
+            }            
+         };
+         
+         // When they press the space bar, we will toggle the player play/pause state.
+         this.onSpaceBar = function() {
+            if( this.fullScreen && this.node && this.node.player ) {            
+               this.node.player.togglePlayPause();
+            }
+         };
+
+         // Adds the media player events to a given element.
+         this.addPlayerEvents = function( element ) {
             // Trigger on the menu.
-            this.titleBar.display.bind("menu", function(event) {
+            element.display.bind("menu", function(event) {
                _this.showMenu( !_this.menuOn );
             });
-            
-            this.titleBar.display.bind("maximize", function( event ) {
-               _this.maximize( !_this.maxOn );          
+
+            element.display.bind("maximize", function( event ) {
+               _this.maximize( !_this.maxOn );
             });
-            
-            this.titleBar.display.bind("fullscreen", function( event ) {
-               _this.fullScreen = !_this.fullScreen;   
+
+            element.display.bind("fullscreen", function( event ) {
+               _this.fullScreen = !_this.fullScreen;
                if( _this.node && _this.node.player ) {
                   _this.node.player.fullScreen( _this.fullScreen );
                }
             });
+         };
+
+         // Setup the title bar.
+         this.titleBar = this.dialog.find( settings.ids.titleBar ).mediatitlebar( settings );
+         if( this.titleBar ) {
+            // Add the player events to the titlebar.
+            this.addPlayerEvents( this.titleBar );
          
             // If they have jQuery UI, make this draggable.
             if( settings.draggable && this.dialog.draggable ) {
@@ -3408,16 +3860,19 @@
                });            
             }
          }         
-         
+
          // Get the node and register for events.
          this.node = this.display.find( settings.ids.node ).medianode( this.server, settings );
-         if( this.node ) {            
+         if( this.node ) {
+            // Add the player events to the node.
+            this.addPlayerEvents( this.node );
+
             this.node.display.bind( "nodeload", function( event, data ) {
                _this.onNodeLoad( data );
             });
             
-            if( this.node.player ) {
-               this.node.player.display.bind( "mediaupdate", function( event, data ) {
+            if( this.node.player && this.node.player.media ) {
+               this.node.player.media.display.bind( "mediaupdate", function( event, data ) {
                   _this.onMediaUpdate( data );
                });
             }            
@@ -3432,10 +3887,10 @@
          }
          
          // Called when the media updates.
-         this.onMediaUpdate = function( data ) { 
+         this.onMediaUpdate = function( data ) {
             // When the media completes, have the active playlist load the next item.
             if( settings.autoNext && this.activePlaylist && (data.type == "complete") ) {
-               this.activePlaylist.pager.loadNext( true );              
+               this.activePlaylist.loadNext();
             }                   
             
             // Set the media information in the menu.
@@ -3517,7 +3972,7 @@
          this.playlist = this.addPlaylist( this.display.find( settings.ids.playlist ).mediaplaylist( this.server, settings ) );
          
          // Now add any queued playlists...
-         if( jQuery.media.playlists && jQuery.media.playlists[settings.id] ) {
+         if( jQuery.media.playlists[settings.id] ) {
             var playlists = jQuery.media.playlists[settings.id];
             var i = playlists.length;
             while(i--) {
@@ -3527,7 +3982,7 @@
          
          // Allow the player to be resized.
          this.setSize = function( newWidth, newHeight ) {
-             // Only call onResize if the width or height changes.
+            // Only call onResize if the width or height changes.
             newWidth = newWidth ? newWidth : this.width;
             newHeight = newHeight ? newHeight : this.height;
             if( (newWidth != this.width) || (newHeight != this.height) ) {
@@ -3539,7 +3994,10 @@
                this.width = newWidth;
                this.height = newHeight;   
                
-               this.dialog.css({width:this.width, height:this.height});
+               this.dialog.css({
+                  width:this.width,
+                  height:this.height
+               });
                
                // Call the resize function.             
                this.onResize( deltaX, deltaY );
@@ -3548,19 +4006,36 @@
 
          // Load the content into the player.
          this.loadContent = function() {
+            var playlistLoaded = false;
+
             if( this.playlist ) {
-               this.playlist.loadPlaylist();
+               playlistLoaded = this.playlist.loadPlaylist();
             }
-            if( this.node ) {
+
+            // Don't load the node if there is a plalist loaded.
+            if( !playlistLoaded && this.node ) {
+               // Make sure to transfer any playlist settings over to the node.
+               if( this.node.player && this.node.player.media ) {
+                  this.node.player.media.settings.repeat = (settings.loop || settings.repeat);
+               }
+
                this.node.loadNode(); 
             }
          }; 
 
-         this.load = function() {            
+         this.initializeTemplate = function() {
             // Initialize our template.
             if( settings.template.initialize ) {
                settings.template.initialize( settings );
-            }        
+            }
+
+            // Now reset the visibility of the parents.
+            jQuery.media.utils.resetVisibility( invisibleParents );
+         };
+
+         this.load = function() {            
+            // Initialize our template.
+            this.initializeTemplate();
             
             // Resize the player.
             this.onResize( 0, 0 );
@@ -3569,7 +4044,20 @@
             this.dialog.css("position","relative");
             this.dialog.css("marginLeft",0);  
             this.dialog.css("overflow","visible");
-            
+
+            // Set our loaded flag to true.
+            this.loaded = true;
+            this.display.trigger( "playerLoaded", this );
+
+            // Call all of our queued onLoaded callback functions.
+            if( jQuery.media.loadCallbacks[settings.id] ) {
+               var callbacks = jQuery.media.loadCallbacks[settings.id];
+               var i = callbacks.length;
+               while(i--) {
+                  callbacks[i]( this );
+               }
+            }
+
             // Connect to the server.
             this.server.connect( function( result ) {
                _this.loadContent();
@@ -3616,14 +4104,16 @@
    }); 
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      pager:".mediapager",
-      scroll:".mediascroll",
-      busy:".mediabusy",
-      links:".medialinks"       
+      pager:"#mediapager",
+      scroll:"#mediascroll",
+      busy:"#mediabusy",
+      links:"#medialinks"       
    });   
    
    jQuery.fn.mediaplaylist = function( server, settings ) {
-      if( this.length === 0 ) { return null; }
+      if( this.length === 0 ) {
+         return null;
+      }
       return new (function( server, playlist, settings ) {
          settings = jQuery.media.utils.getSettings(settings);
          
@@ -3648,9 +4138,12 @@
          // Used to keep track if we should set the node active after a playlist load.
          this.setActive = true;
 
-         // Get the pager and the width delta.
-         this.pager = playlist.find( settings.ids.pager ).mediapager( settings );
+         // The active pager.
+         this.activePager = null;
 
+         // The attached pager bar..
+         this.pager = null;
+                  
          // Set up the playlist parser.
          this.parser = jQuery.media.parser( settings );
 
@@ -3660,7 +4153,7 @@
 
          // Store the dimensions.
          this.width = this.scrollRegion.width;
-         this.height = this.scrollRegion.height;  
+         this.height = this.scrollRegion.height;
          
          if( settings.vertical ) {
             this.display.width( this.width );
@@ -3670,6 +4163,7 @@
          
          // Store the busy cursor.
          this.busy = playlist.find( settings.ids.busy );
+         this.busyVisible = false;
          this.busyImg = this.busy.find("img");
          this.busyWidth = this.busyImg.width();
          this.busyHeight = this.busyImg.height();         
@@ -3679,11 +4173,18 @@
          this.links.loadLinks();
          
          this.loading = function( _loading ) {
-            this.pager.enabled = !_loading;
+            if( this.pager ) {
+               this.pager.enabled = !_loading;
+            }
+            if( this.activePager ) {
+               this.activePager.enabled = !_loading;
+            }
             if( _loading ) {
+               this.busyVisible = true;
                this.busy.show();
             }
             else {
+               this.busyVisible = false;
                this.busy.hide();   
             }
          };       
@@ -3701,29 +4202,47 @@
                }
                
                // Resize the busy symbol.
-               this.busy.css({width:this.width, height:this.height});
+               this.busy.css({
+                  width:this.width,
+                  height:this.height
+               });
                this.busyImg.css({
                   marginLeft:((this.width - this.busyWidth)/2) + "px", 
                   marginTop:((this.height - this.busyHeight)/2) + "px" 
                });                 
             }   
          };              
-         
-         // Handler for the loadindex event.
-         this.pager.display.bind( "loadindex", function( event, data ) {
-            if( data.active ) {
-               _this.activateTeaser( _this.teasers[data.index] );
-            }
-            else {
-               _this.selectTeaser( _this.teasers[data.index] );
-            }
-         });      
 
-         // Handler for the loadpage event.         
-         this.pager.display.bind( "loadpage", function( event, data ) {
-            _this.setActive = data.active;
-            _this.loadPlaylist( {pageIndex:data.index} );
-         });
+         // Allow mulitple pagers to control this playlist.
+         this.addPager = function( newPager, active ) {
+            if( newPager ) {
+               // Handler for the loadindex event.
+               newPager.display.bind( "loadindex", function( event, data ) {
+                  if( data.active ) {
+                     _this.activateTeaser( _this.teasers[data.index] );
+                  }
+                  else {
+                     _this.selectTeaser( _this.teasers[data.index] );
+                  }
+               });      
+      
+               // Handler for the loadpage event.         
+               newPager.display.bind( "loadpage", function( event, data ) {
+                  _this.setActive = data.active;
+                  _this.loadPlaylist( {
+                     pageIndex:data.index
+                  } );
+               });
+               
+               if( active && !this.activePager ) {
+                  this.activePager = newPager;   
+               }
+            }
+            return newPager;
+         };
+
+         // Add the pager.
+         this.pager = this.addPager( playlist.find( settings.ids.pager ).mediapager( settings ), false );
 
          // Handler for when a link is clicked.
          this.links.display.bind( "linkclick", function( event, link ) {
@@ -3735,17 +4254,38 @@
             var newPlaylist = link.playlist;
             var newArgs = [];
             newArgs[index] = link.arg;
-            this.pager.reset();
-            this.loadPlaylist( {playlist:newPlaylist, args:newArgs} );           
+            
+            if( this.pager ) {
+               this.pager.reset();
+            }
+            
+            if( this.activePager ) {
+               this.activePager.reset();
+            }
+            
+            this.loadPlaylist( {
+               playlist:newPlaylist,
+               args:newArgs
+            } );
+         };
+
+         // Loads the next track.
+         this.loadNext = function() {
+            if( this.pager ) {
+               this.pager.loadNext( true );
+            }
+            else if( this.activePager ) {
+               this.activePager.loadNext( true );
+            }
          };
 
          // Function to load the playlist.
          this.loadPlaylist = function( _args ) {
             var defaults = {
-                  playlist:settings.playlist,
-                  pageLimit:settings.pageLimit,
-                  pageIndex:this.pager.activePage,
-                  args:{}
+               playlist:settings.playlist,
+               pageLimit:settings.pageLimit,
+               pageIndex:(this.pager ? this.pager.activePage : 0),
+               args:{}
             };          
 
             var playlistArgs = jQuery.extend( {}, defaults, _args );
@@ -3778,14 +4318,31 @@
                      }, null, playlistArgs.playlist, playlistArgs.pageLimit, playlistArgs.pageIndex, this.args );
                   }
                }
+
+               // Return that the playlist was loaded.
+               return true;
             }
+
+            // Return that the playlist was not loaded.
+            return false;
          };
 
          // Set this playlist.
          this.setPlaylist = function( _playlist ) {
             if( _playlist && _playlist.nodes ) {
+               // Now check the visibility of the parents, and add the offenders to the array.
+               var invisibleParents = [];
+               jQuery.media.utils.checkVisibility( this.display, invisibleParents );
+
                // Set the total number of items for the pager.
-               this.pager.setTotalItems( _playlist.total_rows );  
+               if( this.pager ) {   
+                  this.pager.setTotalItems( _playlist.total_rows ); 
+               }
+               
+               // Set the total number of items for the active pager.
+               if( this.activePager ) {
+                  this.activePager.setTotalItems( _playlist.total_rows ); 
+               } 
    
                // Empty the scroll region.
                this.scrollRegion.clear();
@@ -3804,7 +4361,16 @@
                this.scrollRegion.activate();          
    
                // Load the next node.
-               this.pager.loadNext( this.setActive );
+               if( this.pager ) {
+                  this.pager.loadNext( this.setActive );
+               }
+               
+               if( this.activePager ) {
+                  this.activePager.loadNext( this.setActive );
+               }
+
+               // Now reset the invisibilty.
+               jQuery.media.utils.resetVisibility( invisibleParents );
             }
             
             // We are finished loading.
@@ -3813,13 +4379,15 @@
 
          // When a vote has been cast, we also need to update the playlist.
          this.onVoteSet = function( vote ) {
-            var i = this.teasers.length;
-            while(i--) {
-               var teaser = this.teasers[i];
-               if( teaser.node.nodeInfo.nid == vote.content_id ) {
-                  teaser.node.voter.updateVote( vote );     
-               }               
-            }               
+            if( vote ) {
+               var i = this.teasers.length;
+               while(i--) {
+                  var teaser = this.teasers[i];
+                  if( teaser.node.nodeInfo.nid == vote.content_id ) {
+                     teaser.node.voter.updateVote( vote );
+                  }
+               }
+            }
          };
          
          // Add a single teaser to the list.
@@ -3884,17 +4452,19 @@
 
             // Set the current active teaser to false.
             if( this.selectedTeaser ) {
-              this.selectedTeaser.setSelected( false );
+               this.selectedTeaser.setSelected( false );
             }
             
             // Store the active teaser for next time.                                   
             this.selectedTeaser = teaser;             
 
-            // Now activate the new teaser.
-            this.selectedTeaser.setSelected( true );           
-                     
-            // Set this item as visible in the scroll region.
-            this.scrollRegion.setVisible( teaser.index ); 
+            if( this.selectedTeaser ) {
+               // Now activate the new teaser.
+               this.selectedTeaser.setSelected( true );           
+                        
+               // Set this item as visible in the scroll region.
+               this.scrollRegion.setVisible( teaser.index ); 
+            }
          };
 
          // Activate the teaser.
@@ -3904,20 +4474,28 @@
             
             // Set the current active teaser to false.
             if( this.activeTeaser ) {
-              this.activeTeaser.setActive( false );
+               this.activeTeaser.setActive( false );
             }
             
             // Store the active teaser for next time.                                   
             this.activeTeaser = teaser;             
 
-            // Now activate the new teaser.
-            this.activeTeaser.setActive( true );      
-
-            // Set the active and current index to this one.
-            this.pager.activeIndex = this.pager.currentIndex = teaser.index;
-            
-            // Trigger an even that the teaser has been activated.
-            jQuery.event.trigger( "playlistload", teaser.node.nodeInfo ); 
+            if( this.activeTeaser ) {
+               // Now activate the new teaser.
+               this.activeTeaser.setActive( true );      
+   
+               // Set the active and current index to this one.
+               if( this.pager ) {
+                  this.pager.activeIndex = this.pager.currentIndex = teaser.index;
+               }
+               
+               if( this.activePager ) {
+                  this.activePager.activeIndex = this.activePager.currentIndex = teaser.index;
+               }
+               
+               // Trigger an even that the teaser has been activated.
+               this.display.trigger( "playlistload", teaser.node.nodeInfo );
+            }
          };
       })( server, this, settings );
    };
@@ -3952,7 +4530,7 @@
    
    // Set up our defaults for this component.
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      linkText:".medialinktext"
+      linkText:"#medialinktext"
    });    
    
    jQuery.fn.playlistlink = function( settings, linkInfo ) {  
@@ -4256,10 +4834,14 @@
                var childs = jQuery(node).children();
                var numChildren = childs.length;
                var newArray = function(items) {
-                  return function() { items.push( _this.parseXMLValue(this) ); };
+                  return function() {
+                     items.push( _this.parseXMLValue(this) );
+                  };
                };
                var newObject = function( items ) {
-                  return function() { items[jQuery( "> name", this).text()] = _this.parseXMLValue(jQuery("value", this)); };
+                  return function() {
+                     items[jQuery( "> name", this).text()] = _this.parseXMLValue(jQuery("value", this));
+                  };
                };               
                for(var i=0; i < numChildren; i++) {
                   var element = childs[i];
@@ -4341,7 +4923,7 @@
                               console.dir( xml.error );
                            }
                         }
-                        else {
+                        else if( onSuccess ) {
                            onSuccess( xml.result );
                         }
                      },
@@ -4349,7 +4931,7 @@
                      "contentType": "text/xml"
                   });
                }
-               else {
+               else if( onSuccess ) {
                   onSuccess( null ); 
                }
             };
@@ -4395,14 +4977,14 @@
    });   
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      listMask:".medialistmask",
-      list:".medialist",
-      scrollWrapper:".mediascrollbarwrapper",
-      scrollBar:".mediascrollbar",
-      scrollTrack:".mediascrolltrack",
-      scrollHandle:".mediascrollhandle",
-      scrollUp:".mediascrollup",
-      scrollDown:".mediascrolldown"        
+      listMask:"#medialistmask",
+      list:"#medialist",
+      scrollWrapper:"#mediascrollbarwrapper",
+      scrollBar:"#mediascrollbar",
+      scrollTrack:"#mediascrolltrack",
+      scrollHandle:"#mediascrollhandle",
+      scrollUp:"#mediascrollup",
+      scrollDown:"#mediascrolldown"        
    });     
    
    jQuery.fn.mediascroll = function( settings ) {
@@ -4535,13 +5117,21 @@
             if( this.scrollBar ) {
                var trackSize = this.scrollSize - 2*this.scrollButtonSize;
                if( settings.vertical ) {
-                  this.scrollBar.display.css({height:trackSize});
-                  this.scrollTrack.css({height:trackSize});
+                  this.scrollBar.display.css({
+                     height:trackSize
+                  });
+                  this.scrollTrack.css({
+                     height:trackSize
+                  });
                   this.scrollBar.setSize( 0, trackSize );
                }
                else {
-                  this.scrollBar.display.css({width:trackSize});
-                  this.scrollTrack.css({width:trackSize});
+                  this.scrollBar.display.css({
+                     width:trackSize
+                  });
+                  this.scrollTrack.css({
+                     width:trackSize
+                  });
                   this.scrollBar.setSize( trackSize, 0 );               
                }
             }        
@@ -4573,7 +5163,7 @@
             this.setScrollSize( settings.vertical ? this.listMask.height() : this.listMask.width() );                                 
 
             // Now reset the list position.
-            this.setScrollPos( this.listPos );
+            this.setScrollPos( /*this.listPos*/0, true );
          };
          
          // Refreshes the scroll region.
@@ -4589,11 +5179,18 @@
             
             this.listSize += element.size;
             if( settings.vertical ) {
-               this.list.css({height:this.listSize, marginTop:this.listSize});      
+               this.list.css({
+                  height:this.listSize,
+                  marginTop:this.listSize
+                  });
             }
             else {
-               element.obj.css({"float":"left"});
-               this.list.css({width:this.listSize});
+               element.obj.css({
+                  "float":"left"
+               });
+               this.list.css({
+                  width:this.listSize
+                  });
             }
             this.elements.push( element );
             return element.obj;
@@ -4603,8 +5200,18 @@
          this.getElement = function( element, index ) {
             var size = this.elementSize;
             var pos = this.listSize;
-            element.css({width:this.elementWidth, height:this.elementHeight});
-            return {obj:element, size:size, position:pos, bottom:(pos+size), mid:(size/2), index:index};         
+            element.css({
+               width:this.elementWidth,
+               height:this.elementHeight
+               });
+            return {
+               obj:element,
+               size:size,
+               position:pos,
+               bottom:(pos+size),
+               mid:(size/2),
+               index:index
+            };
          };
 
          // Scroll the list up or down one element.
@@ -4677,7 +5284,7 @@
             while(i--) {
                element = this.elements[i];
                if( ((element.position - this.listPos) < position) && 
-                   ((element.bottom - this.listPos) >= position) ) {
+                  ((element.bottom - this.listPos) >= position) ) {
                   element.straddle = ((element.bottom - this.listPos) != position);
                   break;      
                }               
@@ -4716,10 +5323,14 @@
             
             if( tween ) {
                if( settings.vertical ) {
-                  this.list.animate({marginTop: -this.listPos + "px"}, (settings.scrollSpeed*10));
+                  this.list.animate({
+                     marginTop: -this.listPos + "px"
+                     }, (settings.scrollSpeed*10));
                }
                else {
-                  this.list.animate({marginLeft: -this.listPos + "px"}, (settings.scrollSpeed*10));
+                  this.list.animate({
+                     marginLeft: -this.listPos + "px"
+                     }, (settings.scrollSpeed*10));
                }
             }
             else {
@@ -4802,11 +5413,16 @@
  *  THE SOFTWARE.
  */
 
-   jQuery.fn.mediaslider = function( handleId, vertical ) {
-      if( this.length === 0 ) { return null; }
-      return new (function( control, handleId, vertical ) {
+   jQuery.fn.mediaslider = function( handleId, vertical, inverted ) {
+      if( this.length === 0 ) {
+         return null;
+      }
+      return new (function( control, handleId, vertical, inverted ) {
          var _this = this;
-         this.display = control.css({cursor:"pointer",position:"relative"});
+         this.display = control.css({
+            cursor:"pointer",
+            position:"relative"
+         });
          this.dragging = false;
          this.value = 0;
          this.handle = this.display.find(handleId);
@@ -4814,23 +5430,32 @@
          this.width = this.display.width();
          this.height = this.display.height();         
          this.handleSize = vertical ? this.handle.height() : this.handle.width();
-         this.trackSize = vertical ? this.height : this.width;         
+         this.handleOffset = vertical ? this.handle.position().top : this.handle.position().left;
+         this.handleMid = (this.handleSize/2);
+         this.handlePoint = this.handleMid + this.handleOffset;     
          this.handlePos = 0;
-         
+                 
          this.onResize = function( deltaX, deltaY ) {
             this.setSize( this.width + deltaX, this.height + deltaY );
          };
          
+         this.setTrackSize = function() {
+            this.trackSize = vertical ? this.height : this.width;  
+            this.trackSize -= (this.handleOffset + this.handleSize);
+         };
+         
+         this.setTrackSize();         
+         
          this.setSize = function( newWidth, newHeight ) {
             this.width = newWidth ? newWidth : this.width;
             this.height = newHeight ? newHeight : this.height;
-            this.trackSize = vertical ? this.height : this.width;
+            this.setTrackSize();
             this.updateValue( this.value );
          };          
          
          this.setValue = function( _value ) {
             this.setPosition( _value );
-            this.display.trigger( "setvalue", _value ); 
+            this.display.trigger( "setvalue", this.value ); 
          };         
          
          this.updateValue = function( _value ) {
@@ -4842,7 +5467,10 @@
             _value = (_value < 0) ? 0 : _value;
             _value = (_value > 1) ? 1 : _value;
             this.value = _value;
-            this.handlePos = (this.value * (this.trackSize - this.handleSize));
+
+            this.handlePos = inverted ? (1-this.value) : this.value;
+            this.handlePos *= this.trackSize;
+
             if( vertical ) {
                this.handle.css( "marginTop", this.handlePos + "px" );
             }
@@ -4862,34 +5490,38 @@
          };
          
          this.getPosition = function( pagePos ) {
-            var pos = (pagePos - this.getOffset()) / (this.trackSize - this.handleSize);
+            var pos = (pagePos - this.getOffset()) / this.trackSize;
             pos = (pos < 0) ? 0 : pos;
             pos = (pos > 1) ? 1 : pos;   
+            pos = inverted ? (1-pos) : pos;
             return pos;
          };
          
          this.display.bind("mousemove", function( event ) {
+            event.preventDefault();
             if( _this.dragging ) {
                _this.updateValue( _this.getPosition( event[_this.pagePos] ) );
             }               
          });
 
          this.display.bind("mouseleave", function( event ) {
+            event.preventDefault();
             if( _this.dragging ) {          
-              _this.dragging = false;             
-              _this.setValue( _this.getPosition( event[_this.pagePos] ) );
+               _this.dragging = false;
+               _this.setValue( _this.getPosition( event[_this.pagePos] ) );
             }
          });  
          
          this.display.bind("mouseup", function( event ) {
+            event.preventDefault();
             if( _this.dragging ) {             
-              _this.dragging = false;
-              _this.setValue( _this.getPosition( event[_this.pagePos] ) );
+               _this.dragging = false;
+               _this.setValue( _this.getPosition( event[_this.pagePos] ) );
             }
          });   
          
          this.onResize(0,0); 
-      })( this, handleId, vertical );
+      })( this, handleId, vertical, inverted );
    };
 /**
  *  Copyright (c) 2010 Alethia Inc,
@@ -4925,7 +5557,9 @@
    });   
   
    jQuery.fn.mediateaser = function( server, nodeInfo, _index, settings ) {  
-      if( this.length === 0 ) { return null; }
+      if( this.length === 0 ) {
+         return null;
+      }
       return new (function( server, nodeInfo, _index, teaser, settings ) {
          settings = jQuery.media.utils.getSettings(settings);       
          
@@ -5021,11 +5655,13 @@
  */
  
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      titleLinks:".mediatitlelinks"                 
+      titleLinks:"#mediatitlelinks"                 
    });     
    
    jQuery.fn.mediatitlebar = function( settings ) { 
-      if( this.length === 0 ) { return null; }
+      if( this.length === 0 ) {
+         return null;
+      }
       return new (function( titleBar, settings ) {        
          // Save the jQuery display.
          var _this = this;
@@ -5039,7 +5675,10 @@
             $(this).medialink( settings, function( event ) {
                event.preventDefault(); 
                _this.display.trigger( event.data.id );               
-            }, {id:linkId.substr(1), obj:$(this)} );           
+            }, {
+               id:linkId.substr(1),
+               obj:$(this)
+            } );
          });
       })( this, settings );
    };
@@ -5117,9 +5756,37 @@
             }
 
             return scaledRect;         
-         },             
+         },
+
+         // Checks all parents visibility, and resets them and adds those items to a passed in
+         // array which can be used to reset their visibiltiy at a later point by calling
+         // resetVisibility
+         checkVisibility : function( display, invisibleParents ) {
+            var isVisible = true;
+            display.parents().each( function() {
+               var jObject = jQuery(this);
+               if( !jObject.is(':visible') ) {
+                  isVisible = false;
+                  var attrClass = jObject.attr("class");
+                  invisibleParents.push( {
+                     obj:jObject,
+                     attr:attrClass
+                  } );
+                  jObject.removeClass(attrClass);
+               }
+            });
+         },
+
+         // Reset's the visibility of the passed in parent elements.
+         resetVisibility : function( invisibleParents ) {
+            // Now iterate through all of the invisible objects and rehide them.
+            var i = invisibleParents.length;
+            while(i--){
+               invisibleParents[i].obj.addClass(invisibleParents[i].attr);
+            }
+         },
          
-         getFlash : function( player, id, width, height, flashvars ) {
+         getFlash : function( player, id, width, height, flashvars, wmode ) {
             // Get the protocol.
             var protocol = window.location.protocol; 
             if (protocol.charAt(protocol.length - 1) == ':') { 
@@ -5127,13 +5794,7 @@
             } 
 
             // Convert the flashvars object to a string...
-            var flashVarsString = "";
-            for( var key in flashvars ) {
-               if( flashvars.hasOwnProperty(key) ) {
-                  flashVarsString += key + "=" + encodeURIComponent(flashvars[key]) + "&";
-               }
-            }
-            flashVarsString = flashVarsString.replace(/&$/, '');
+            var flashVarsString = jQuery.param(flashvars);
 
             // Get the HTML flash object string.
             var flash = '<object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" ';
@@ -5145,11 +5806,11 @@
             flash += '<param name="allowScriptAccess" value="always"></param>'; 
             flash += '<param name="allowfullscreen" value="true" />';
             flash += '<param name="movie" value="' + player + '"></param>';
-            flash += '<param name="wmode" value="transparent"></param>';
+            flash += '<param name="wmode" value="' + wmode + '"></param>';
             flash += '<param name="quality" value="high"></param>';
             flash += '<param name="FlashVars" value="' + flashVarsString + '"></param>';
             flash += '<embed src="' + player + '" quality="high" width="' + width + '" height="' + height + '" ';
-            flash += 'id="' + id + '" name="' + id + '" swLiveConnect="true" allowScriptAccess="always" wmode="transparent"';
+            flash += 'id="' + id + '" name="' + id + '" swLiveConnect="true" allowScriptAccess="always" wmode="' + wmode + '"';
             flash += 'allowfullscreen="true" type="application/x-shockwave-flash" FlashVars="' + flashVarsString + '" ';
             flash += 'pluginspage="' + protocol + '://www.macromedia.com/go/getflashplayer" />';
             flash += '</object>';
@@ -5169,7 +5830,7 @@
          },
          
          // Insert flash routine.  If they have swfobject, then this function will dynamically use that instead.
-         insertFlash : function( obj, player, id, width, height, flashvars, onAdded ) {
+         insertFlash : function( obj, player, id, width, height, flashvars, wmode, onAdded ) {
             jQuery.media.utils.removeFlash( obj, id );
             obj.children().remove();             
             obj.append('<div id="' + id + '"><p><a href="http://www.adobe.com/go/getflashplayer"><img src="http://www.adobe.com/images/shared/download_buttons/get_flash_player.gif" alt="Get Adobe Flash player" /></a></p></div>');
@@ -5177,7 +5838,7 @@
                var params = {
                   allowScriptAccess:"always",
                   allowfullscreen:"true",
-                  wmode:"transparent",
+                  wmode:wmode,
                   quality:"high"
                };                              
                swfobject.embedSWF( 
@@ -5193,10 +5854,10 @@
                   function( swf ) {
                      onAdded( swf.ref );  
                   }
-               );
+                  );
             }
             else {            
-               var flash = jQuery.media.utils.getFlash( player, id, width, height, flashvars );
+               var flash = jQuery.media.utils.getFlash( player, id, width, height, flashvars, wmode );
                var container = obj.find('#' + id).eq(0);
                if( jQuery.browser.msie ) {
                   container[0].outerHTML = flash;
@@ -5286,6 +5947,8 @@
  *  THE SOFTWARE.
  */
 
+    
+
    window.onVimeoReady = function( playerId ) {
       playerId = playerId.replace("_media", "");      
       jQuery.media.players[playerId].node.player.media.player.onReady();     
@@ -5311,6 +5974,13 @@
       jQuery.media.players[playerId].node.player.media.player.onPaused();   
    };
 
+   // Tell the media player how to determine if a file path is a YouTube media type.
+   jQuery.media.playerTypes = jQuery.extend( jQuery.media.playerTypes, {
+      "vimeo":function( file ) {
+         return (file.search(/^http(s)?\:\/\/(www\.)?vimeo\.com/i) === 0);      
+      }
+   });
+
    jQuery.fn.mediavimeo = function( options, onUpdate ) {  
       return new (function( video, options, onUpdate ) {
          this.display = video;
@@ -5322,12 +5992,12 @@
          this.bytesTotal = 0;
          this.currentVolume = 1;
          
-         this.createMedia = function( videoFile ) {
+         this.createMedia = function( videoFile, preview ) {
             this.videoFile = videoFile;
             this.ready = false;
             var playerId = (options.id + "_media");
             var flashvars = {
-               clip_id:videoFile.path,
+               clip_id:this.getId(videoFile.path),
                width:this.display.width(),
                height:this.display.height(),
                js_api:'1',
@@ -5335,20 +6005,26 @@
                js_swf_id:playerId
             };
             var rand = Math.floor(Math.random() * 1000000); 
-            var flashplayer = 'http://vimeo.com/moogaloop.swf?rand=' + rand;
+            var flashPlayer = 'http://vimeo.com/moogaloop.swf?rand=' + rand;
             jQuery.media.utils.insertFlash( 
                this.display, 
-               flashplayer, 
+               flashPlayer,
                playerId, 
                this.display.width(), 
                this.display.height(),
                flashvars,
+               options.wmode,
                function( obj ) {
                   _this.player = obj; 
                   _this.loadPlayer();  
                }
-            );
+               );
          };      
+         
+         this.getId = function( path ) {
+            var regex = /^http[s]?\:\/\/(www\.)?vimeo\.com\/([0-9]+)/i;
+            return (path.search(regex) == 0) ? path.replace(regex, "$2") : path;
+         };
          
          this.loadMedia = function( videoFile ) {
             this.bytesLoaded = 0;
@@ -5372,14 +6048,18 @@
                this.player.api_addEventListener('onPause', 'onVimeoPause');
                
                // Let them know the player is ready.          
-               onUpdate( {type:"playerready"} ); 
+               onUpdate( {
+                  type:"playerready"
+               } );
                
                this.playMedia();
             }         
          };
          
          this.onFinished = function() {
-            onUpdate( {type:"complete"} );
+            onUpdate( {
+               type:"complete"
+            } );
          };
 
          this.onLoading = function( data ) {
@@ -5388,15 +6068,21 @@
          };
          
          this.onPlaying = function() {
-            onUpdate( {type:"playing"} );
+            onUpdate( {
+               type:"playing"
+            } );
          };                 
 
          this.onPaused = function() {
-            onUpdate( {type:"paused"} );
+            onUpdate( {
+               type:"paused"
+            } );
          };                  
          
          this.playMedia = function() {
-            onUpdate({type:"buffering"});
+            onUpdate({
+               type:"buffering"
+            });
             this.player.api_play();
          };
          
@@ -5441,12 +6127,20 @@
          
          // Not implemented yet...
          this.setQuality = function( quality ) {};         
-         this.getQuality = function() { return ""; };
-         this.hasControls = function() { return true; };            
+         this.getQuality = function() {
+            return "";
+         };
+         this.hasControls = function() {
+            return true;
+         };
          this.showControls = function(show) {};           
          this.setSize = function( newWidth, newHeight ) {};         
-         this.getEmbedCode = function() { return "This video cannot be embedded."; };
-         this.getMediaLink = function() { return "This video currently does not have a link."; };                 
+         this.getEmbedCode = function() {
+            return "This video cannot be embedded.";
+         };
+         this.getMediaLink = function() {
+            return "This video currently does not have a link.";
+         };
       })( this, options, onUpdate );
    };
          /**
@@ -5476,7 +6170,9 @@
  */
 
    jQuery.fn.mediavoter = function( settings, server, userVote ) {
-      if( this.length === 0 ) { return null; }
+      if( this.length === 0 ) {
+         return null;
+      }
       return new (function( voteObj, settings, server, userVote ) {
          // Save the jQuery display.
          this.display = voteObj;
@@ -5499,10 +6195,15 @@
                   _this.setVote( parseInt($(this).attr("vote"), 10) );
                });
                $(this).bind( "mouseenter", function( event ) {
-                  _this.updateVote( {value: parseInt($(this).attr("vote"), 10)}, true );      
+                  _this.updateVote( {
+                     value: parseInt($(this).attr("vote"), 10)
+                     }, true );
                });
             }
-            _this.votes.push( { vote:parseInt($(this).attr("vote"), 10), display:$(this) } );
+            _this.votes.push( {
+               vote:parseInt($(this).attr("vote"), 10),
+               display:$(this)
+            } );
          });
 
          // Sort the votes based on numerical order.
@@ -5513,7 +6214,9 @@
          // If this is a uservoter, then add the mouse leave event.
          if( userVote ) {
             this.display.bind( "mouseleave", function( event ) {
-               _this.updateVote( {value:0}, true );
+               _this.updateVote( {
+                  value:0
+               }, true );
             });
          }        
          
@@ -5550,7 +6253,9 @@
          this.setVote = function( voteValue ) {
             if( server && this.nodeId ) {
                this.display.trigger( "processing" );
-               this.updateVote( {value:voteValue}, false );         
+               this.updateVote( {
+                  value:voteValue
+               }, false );
                server.call( jQuery.media.commands.setVote, function( vote ) {
                   _this.display.trigger( "voteSet", vote );            
                }, null, "node", this.nodeId, voteValue, this.tag );
@@ -5595,11 +6300,20 @@
  *  THE SOFTWARE.
  */
 
+      
+
    // Called when the YouTube player is ready.
    window.onYouTubePlayerReady = function( playerId ) {
       playerId = playerId.replace("_media", "");
       jQuery.media.players[playerId].node.player.media.player.onReady();   
    };
+
+   // Tell the media player how to determine if a file path is a YouTube media type.
+   jQuery.media.playerTypes = jQuery.extend( jQuery.media.playerTypes, {
+      "youtube":function( file ) {
+         return (file.search(/^http(s)?\:\/\/(www\.)?youtube\.com/i) === 0);      
+      }
+   });
 
    jQuery.fn.mediayoutube = function( options, onUpdate ) {  
       return new (function( video, options, onUpdate ) {
@@ -5610,25 +6324,31 @@
          this.loaded = false;
          this.ready = false;
          
-         this.createMedia = function( videoFile ) {
+         this.createMedia = function( videoFile, preview ) {
             this.videoFile = videoFile;
             this.ready = false;
             var playerId = (options.id + "_media");            
             var rand = Math.floor(Math.random() * 1000000);             
-            var flashplayer = 'http://www.youtube.com/apiplayer?rand=' + rand + '&amp;version=3&amp;enablejsapi=1&amp;playerapiid=' + playerId;            
+            var flashPlayer = 'http://www.youtube.com/apiplayer?rand=' + rand + '&amp;version=3&amp;enablejsapi=1&amp;playerapiid=' + playerId;
             jQuery.media.utils.insertFlash( 
                this.display, 
-               flashplayer, 
+               flashPlayer,
                playerId, 
                this.display.width(), 
                this.display.height(),
                {},
+               options.wmode,
                function( obj ) {
                   _this.player = obj; 
                   _this.loadPlayer();  
                }
-            );
+               );
          };      
+         
+         this.getId = function( path ) {
+            var regex = /^http[s]?\:\/\/(www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9]+)/i;
+            return (path.search(regex) == 0) ? path.replace(regex, "$2") : path;
+         };         
          
          this.loadMedia = function( videoFile ) {
             if( this.player ) {
@@ -5636,10 +6356,12 @@
                this.videoFile = videoFile;
                
                // Let them know the player is ready.          
-               onUpdate( {type:"playerready"} );                 
+               onUpdate( {
+                  type:"playerready"
+               } );
                
                // Load our video.
-               this.player.loadVideoById( this.videoFile.path, 0 );
+               this.player.loadVideoById( this.getId( this.videoFile.path ), 0, options.quality );
             }
          };
          
@@ -5671,24 +6393,30 @@
                this.player.addEventListener('onPlaybackQualityChange', options.id + 'QualityChange');
                
                // Let them know the player is ready.          
-               onUpdate( {type:"playerready"} );                
+               onUpdate( {
+                  type:"playerready"
+               } );
                
                // Load our video.
-               this.player.loadVideoById( this.videoFile.path, 0 );  
+               this.player.loadVideoById( this.getId( this.videoFile.path ), 0 );  
             }         
          };
          
          // Called when the YouTube player state changes.
          this.onStateChange = function( newState ) {
             var playerState = this.getPlayerState( newState );
-            onUpdate( {type:playerState} ); 
+            onUpdate( {
+               type:playerState
+            } );
             
             if( !this.loaded && playerState == "playing" ) {
                // Set this player to loaded.
                this.loaded = true;
                
                // Update our meta data.
-               onUpdate( {type:"meta"} );                   
+               onUpdate( {
+                  type:"meta"
+               } );
             }          
          };
          
@@ -5703,29 +6431,41 @@
                errorText = "The video requested does not allow playback in an embedded player.";
             }
             console.log(errorText);
-            onUpdate( {type:"error", data:errorText} );            
+            onUpdate( {
+               type:"error",
+               data:errorText
+            } );
          };
          
          // Translates the player state for the YouTube API player.
          this.getPlayerState = function( playerState ) {
             switch (playerState) {
-               case 5:  return 'ready';
-               case 3:  return 'buffering';
-               case 2:  return 'paused';
-               case 1:  return 'playing';
-               case 0:  return 'complete';
-               case -1: return 'stopped';
-               default: return 'unknown';
+               case 5:
+                  return 'ready';
+               case 3:
+                  return 'buffering';
+               case 2:
+                  return 'paused';
+               case 1:
+                  return 'playing';
+               case 0:
+                  return 'complete';
+               case -1:
+                  return 'stopped';
+               default:
+                  return 'unknown';
             }
             return 'unknown';
          };                  
          
          this.setSize = function( newWidth, newHeight ) {                
-            //this.player.setSize(newWidth, newHeight);
+         //this.player.setSize(newWidth, newHeight);
          };           
          
          this.playMedia = function() {
-            onUpdate({type:"buffering"});
+            onUpdate({
+               type:"buffering"
+            });
             this.player.playVideo();
          };
          
@@ -5738,7 +6478,9 @@
          };
          
          this.seekMedia = function( pos ) {
-            onUpdate({type:"buffering"});
+            onUpdate({
+               type:"buffering"
+            });
             this.player.seekTo( pos, true );           
          };
          
@@ -5782,7 +6524,9 @@
             return this.player.getVideoBytesTotal();
          };  
          
-         this.hasControls = function() { return false; };            
+         this.hasControls = function() {
+            return false;
+         };
          this.showControls = function(show) {};           
       })( this, options, onUpdate );
    };

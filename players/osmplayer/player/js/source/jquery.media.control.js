@@ -24,32 +24,39 @@
  *  THE SOFTWARE.
  */
 (function($) {
-   jQuery.media = jQuery.media ? jQuery.media : {};   
+   jQuery.media = jQuery.media ? jQuery.media : {};
+   
+   // Set up our defaults for this component.
+   jQuery.media.defaults = jQuery.extend( jQuery.media.defaults, {
+      volumeVertical:false                  
+   });   
    
    // Set up our defaults for this component.
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      currentTime:".mediacurrenttime",
-      totalTime:".mediatotaltime",
-      playPause:".mediaplaypause",
-      seekUpdate:".mediaseekupdate",
-      seekProgress:".mediaseekprogress",
-      seekBar:".mediaseekbar",
-      seekHandle:".mediaseekhandle",
-      volumeUpdate:".mediavolumeupdate",
-      volumeBar:".mediavolumebar",
-      volumeHandle:".mediavolumehandle",
-      mute:".mediamute"   
-   });    
+      currentTime:"#mediacurrenttime",
+      totalTime:"#mediatotaltime",
+      playPause:"#mediaplaypause",
+      seekUpdate:"#mediaseekupdate",
+      seekProgress:"#mediaseekprogress",
+      seekBar:"#mediaseekbar",
+      seekHandle:"#mediaseekhandle",
+      volumeUpdate:"#mediavolumeupdate",
+      volumeBar:"#mediavolumebar",
+      volumeHandle:"#mediavolumehandle",
+      mute:"#mediamute"
+   });
    
-   jQuery.fn.mediacontrol = function( settings ) { 
-      if( this.length === 0 ) { return null; }
+   jQuery.fn.mediacontrol = function( settings ) {
+      if( this.length === 0 ) {
+         return null;
+      }
       return new (function( controlBar, settings ) {
-         settings = jQuery.media.utils.getSettings(settings);      
+         settings = jQuery.media.utils.getSettings(settings);
          this.display = controlBar;
          var _this = this;
          
          // Allow the template to provide their own function for this...
-         this.formatTime = (settings.template && settings.template.formatTime) ? settings.template.formatTime : 
+         this.formatTime = (settings.template && settings.template.formatTime) ? settings.template.formatTime :
          function( time ) {
             time = time ? time : 0;
             var seconds = 0;
@@ -72,17 +79,20 @@
             timeString += (minutes >= 10) ? String(minutes) : ("0" + String(minutes));
             timeString += ":";
             timeString += (seconds >= 10) ? String(seconds) : ("0" + String(seconds));
-            return {time:timeString, units:""};            
-         };          
+            return {
+               time:timeString,
+               units:""
+            };
+         };
          
          this.setToggle = function( button, state ) {
             var on = state ? ".on" : ".off";
             var off = state ? ".off" : ".on";
             if( button ) {
                button.find(on).show();
-               button.find(off).hide();   
+               button.find(off).hide();
             }
-         };         
+         };
          
          var zeroTime = this.formatTime( 0 );
          this.duration = 0;
@@ -93,14 +103,28 @@
          this.muteState = false;
          this.allowResize = true;
          this.currentTime = controlBar.find( settings.ids.currentTime ).text( zeroTime.time );
-         this.totalTime = controlBar.find( settings.ids.totalTime ).text( zeroTime.time );     
-         
+         this.totalTime = controlBar.find( settings.ids.totalTime ).text( zeroTime.time );
+
+         // Allow them to attach custom links to the control bar that perform player functions.
+         this.display.find("a.mediaplayerlink").each( function() {
+            var linkId = $(this).attr("href");
+            $(this).medialink( settings, function( event ) {
+               event.preventDefault();
+               _this.display.trigger( event.data.id );
+            }, {
+               id:linkId.substr(1),
+               obj:$(this)
+            } );
+         });
+
          // Set up the play pause button.
          this.playPauseButton = controlBar.find( settings.ids.playPause ).medialink( settings, function( event, target ) {
             _this.playState = !_this.playState;
-            _this.setToggle( target, _this.playState );           
-            _this.display.trigger( "controlupdate", {type: (_this.playState ? "pause" : "play")});
-         });               
+            _this.setToggle( target, _this.playState );
+            _this.display.trigger( "controlupdate", {
+               type: (_this.playState ? "pause" : "play")
+            });
+         });
          
          // Set up the seek bar...
          this.seekUpdate = controlBar.find( settings.ids.seekUpdate ).css("width", "0px");
@@ -108,7 +132,10 @@
          this.seekBar = controlBar.find( settings.ids.seekBar ).mediaslider( settings.ids.seekHandle, false );
          this.seekBar.display.bind( "setvalue", function( event, data ) {
             _this.updateSeek( data );
-            _this.display.trigger( "controlupdate", {type:"seek", value:(data * _this.duration)}); 
+            _this.display.trigger( "controlupdate", {
+               type:"seek",
+               value:(data * _this.duration)
+            });
          });
          this.seekBar.display.bind( "updatevalue", function( event, data ) {
             _this.updateSeek( data );
@@ -116,20 +143,39 @@
 
          this.updateSeek = function( value ) {
             this.seekUpdate.css( "width", (value * this.seekBar.trackSize) + "px" );
-            this.currentTime.text( this.formatTime( value * this.duration ).time );         
+            this.currentTime.text( this.formatTime( value * this.duration ).time );
+         };
+         
+         this.setVolume = function( vol ) {
+            if( this.volumeBar ) {
+               if( settings.volumeVertical ) {
+                  this.volumeUpdate.css({
+                     "marginTop":(this.volumeBar.handlePos + this.volumeBar.handleMid + this.volumeBar.handleOffset) + "px",
+                     "height":(this.volumeBar.trackSize - this.volumeBar.handlePos) + "px"
+                  });
+               }
+               else {
+                  this.volumeUpdate.css( "width", (vol * this.volumeBar.trackSize) + "px" );
+               }  
+            }
          };
          
          // Set up the volume bar.
          this.volumeUpdate = controlBar.find( settings.ids.volumeUpdate );
-         this.volumeBar = controlBar.find( settings.ids.volumeBar ).mediaslider( settings.ids.volumeHandle, false );   
-         this.volumeBar.display.bind("setvalue", function( event, data ) {
-            _this.volumeUpdate.css( "width", (data * _this.volumeBar.trackSize) + "px" );
-            _this.display.trigger( "controlupdate", {type:"volume", value:data});
-         });
-         this.volumeBar.display.bind("updatevalue", function( event, data ) {
-            _this.volumeUpdate.css( "width", (data * _this.volumeBar.trackSize) + "px" );
-            _this.volume = data;
-         });
+         this.volumeBar = controlBar.find( settings.ids.volumeBar ).mediaslider( settings.ids.volumeHandle, settings.volumeVertical, settings.volumeVertical );
+         if( this.volumeBar ) {
+            this.volumeBar.display.bind("setvalue", function( event, data ) {
+               _this.setVolume( data );
+               _this.display.trigger( "controlupdate", {
+                  type:"volume",
+                  value:data
+               });
+            });
+            this.volumeBar.display.bind("updatevalue", function( event, data ) {
+               _this.setVolume( data );
+               _this.volume = data;
+            });
+         }
          
          // Setup the mute button.
          this.mute = controlBar.find(settings.ids.mute).medialink( settings, function( event, target ) {
@@ -141,17 +187,26 @@
          this.setMute = function( state ) {
             this.prevVolume = (this.volumeBar.value > 0) ? this.volumeBar.value : this.prevVolume;
             this.volumeBar.updateValue( state ? 0 : this.prevVolume );
-            this.display.trigger( "controlupdate", {type:"mute", value:state});            
-         }; 
-         
+            this.display.trigger( "controlupdate", {
+               type:"mute",
+               value:state
+            });
+         };
+
+         this.setProgress = function( percent ) {
+            if( this.seekProgress ) {
+               this.seekProgress.css( "width", (percent * (this.seekBar.trackSize + this.seekBar.handleSize)) + "px" );
+            }
+         };
+
          this.onResize = function( deltaX, deltaY ) {
             if( this.allowResize ) {
                if( this.seekBar ) {
                   this.seekBar.onResize( deltaX, deltaY );
                }
-               this.seekProgress.css( "width", (this.percentLoaded * this.seekBar.trackSize) + "px" );
+               this.setProgress( this.percentLoaded );
             }
-         };         
+         };
          
          // Handle the media events...
          this.onMediaUpdate = function( data ) {
@@ -170,23 +225,25 @@
                   break;
                case "progress":
                   this.percentLoaded = data.percentLoaded;
-                  this.seekProgress.css( "width", (this.percentLoaded * this.seekBar.trackSize) + "px" );
+                  this.setProgress( this.percentLoaded );
                   break;
                case "meta":
                case "update":
                   this.timeUpdate( data.currentTime, data.totalTime );
-                  this.volumeBar.updateValue( data.volume );   
+                  if( this.volumeBar ) {
+                     this.volumeBar.updateValue( data.volume );
+                  }
                   break;
                default:
                   break;
-            }           
+            }
          };
          
          // Call to reset all controls...
          this.reset = function() {
             this.totalTime.text( this.formatTime( 0 ).time );
             if( this.seekBar ) {
-               this.seekBar.updateValue(0);  
+               this.seekBar.updateValue(0);
             }
          };
          
@@ -196,10 +253,10 @@
             if( tTime && !this.seekBar.dragging ) {
                this.seekBar.updateValue( cTime / tTime );
             }
-         };            
+         };
          
-          // Reset the time values.
-         this.timeUpdate( 0, 0 ); 
+         // Reset the time values.
+         this.timeUpdate( 0, 0 );
       })( this, settings );
    };
 })(jQuery);

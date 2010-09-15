@@ -38,7 +38,7 @@
 
    // Set up our defaults for this component.
    jQuery.media.defaults = jQuery.extend( jQuery.media.defaults, {
-      flashplayer:"./flash/mediafront.swf",
+      flashPlayer:"./flash/mediafront.swf",
       skin:"default",
       config:"nocontrols"
    });    
@@ -50,6 +50,7 @@
          var _this = this;
          this.player = null;
          this.videoFile = null;
+         this.preview = '';
          this.ready = false;
          
          // Translate the messages.
@@ -63,18 +64,19 @@
             "mediaMeta":"meta"        
          };
          
-         this.createMedia = function( videoFile ) {
+         this.createMedia = function( videoFile, preview ) {
             this.videoFile = videoFile;
+            this.preview = preview;
             this.ready = false;
             var playerId = (settings.id + "_media");            
             var rand = Math.floor(Math.random() * 1000000); 
-            var flashplayer = settings.flashplayer + "?rand=" + rand;
+            var flashPlayer = settings.flashPlayer + "?rand=" + rand;
             var flashvars = {
                config:settings.config,
                id:settings.id,
                file:videoFile.path,
                skin:settings.skin,
-               autostart:settings.autostart
+               autostart:(settings.autostart || !settings.autoLoad)
             };
             if( videoFile.stream ) {
                flashvars.stream = videoFile.stream;
@@ -84,16 +86,17 @@
             }
             jQuery.media.utils.insertFlash( 
                this.display, 
-               flashplayer, 
+               flashPlayer,
                playerId, 
                this.display.width(), 
                this.display.height(),
                flashvars,
+               settings.wmode,               
                function( obj ) {
                   _this.player = obj; 
                   _this.loadPlayer();  
                }
-            );
+               );
          };
          
          this.loadMedia = function( videoFile ) {
@@ -104,7 +107,9 @@
                this.player.loadMedia( videoFile.path, videoFile.stream ); 
                
                // Let them know the player is ready.          
-               onUpdate( {type:"playerready"} );                 
+               onUpdate( {
+                  type:"playerready"
+               } );
             } 
          };      
 
@@ -115,12 +120,16 @@
          
          this.loadPlayer = function() {
             if( this.ready && this.player ) {
-               onUpdate( {type:"playerready"} );
+               onUpdate( {
+                  type:"playerready"
+               } );
             }         
          };
          
          this.onMediaUpdate = function( eventType ) {
-            onUpdate( {type:this.translate[eventType]} ); 
+            onUpdate( {
+               type:this.translate[eventType]
+               } );
          };         
          
          this.playMedia = function() {
@@ -163,7 +172,9 @@
             return this.player.getMediaBytesTotal();
          };  
 
-         this.hasControls = function() { return true; };         
+         this.hasControls = function() {
+            return true;
+         };
          
          this.showControls = function(show) {
             this.player.showPlugin("controlBar", show);
@@ -175,24 +186,30 @@
                config:"config",
                id:"mediafront_player",
                file:this.videoFile.path,
+               image:this.preview,
                skin:settings.skin
             };
             if( this.videoFile.stream ) {
                flashVars.stream = this.videoFile.stream;
             }                    
             return jQuery.media.utils.getFlash( 
-               settings.flashplayer,
+               settings.flashPlayer,
                "mediafront_player", 
                settings.embedWidth, 
-               settings.embedHeight, 
-               flashVars );
+               settings.embedHeight,
+               flashVars,
+               settings.wmode );
          };         
          
          // Not implemented yet...
          this.setQuality = function( quality ) {};         
-         this.getQuality = function() { return ""; };
+         this.getQuality = function() {
+            return "";
+         };
          this.setSize = function( newWidth, newHeight ) {};           
-         this.getMediaLink = function() { return "This video currently does not have a link."; };       
+         this.getMediaLink = function() {
+            return "This video currently does not have a link.";
+         };
       })( this, settings, onUpdate );
    };
 })(jQuery);         

@@ -42,15 +42,17 @@
    }); 
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      busy:".mediabusy",
-      preview:".mediapreview",
-      play:".mediaplay",
-      media:".mediadisplay",
-      control:".mediacontrol"                 
+      busy:"#mediabusy",
+      preview:"#mediapreview",
+      play:"#mediaplay",
+      media:"#mediadisplay",
+      control:"#mediacontrol"                 
    });    
    
    jQuery.fn.minplayer = function( settings ) {
-      if( this.length === 0 ) { return null; }
+      if( this.length === 0 ) {
+         return null;
+      }
       return new (function( player, settings ) {
          // Get the settings.
          settings = jQuery.media.utils.getSettings(settings);
@@ -58,6 +60,9 @@
          // Save the jQuery display.
          this.display = player;
          var _this = this;
+
+         // If the player should auto load or not.
+         this.autoLoad = settings.autoLoad;
 
          // Our attached controller.
          this.controller = null;
@@ -73,38 +78,30 @@
          
          // Store the play overlay.
          this.play = player.find( settings.ids.play );
+         // Toggle the play/pause state if they click on the play button.
          this.play.bind("click", function() {
-            _this.showPlay(false);
-            if( _this.media && _this.media.playerReady ) {
-               _this.media.player.playMedia();
-            }
+            _this.togglePlayPause();
          });
          this.playImg = this.play.find("img");
          this.playWidth = this.playImg.width();
-         this.playHeight = this.playImg.height();         
+         this.playHeight = this.playImg.height();
          
          // Store the preview image.
-         this.preview = player.find( settings.ids.preview ).mediaimage();
-         
-         // Register for the even when it loads.
-         if( this.preview ) {
-            this.preview.display.bind("imageLoaded", function() {
-               _this.onPreviewLoaded();      
-            });
-         }
+         this.preview = null;
          
          // The internal player controls.
          this.usePlayerControls = false;
-         this.busyVisible = true;
+         this.busyFlags = 0;
          this.playVisible = false;
          this.previewVisible = false;
          this.controllerVisible = true;
          this.hasMedia = false;
+         this.playing = false;         
          
          // Cache the width and height.
          this.width = this.display.width();
          this.height = this.display.height();
-         
+      
          // Hide or show an element.
          this.showElement = function( element, show, tween ) {
             if( element && !this.usePlayerControls ) {
@@ -122,9 +119,14 @@
             this.showElement( this.play, show, tween );
          };
 
-         this.showBusy = function( show, tween ) {
-            this.busyVisible = show;
-            this.showElement( this.busy, show, tween );
+         this.showBusy = function( id, show, tween ) {
+            if( show ) {
+               this.busyFlags |= (1 << id);
+            }
+            else {
+               this.busyFlags &= ~(1 << id);
+            }
+            this.showElement( this.busy, (this.busyFlags > 0), tween );
          }; 
          
          this.showPreview = function( show, tween ) {
@@ -167,7 +169,7 @@
                // If there are files in the queue but no current media file.
                else if( (this.media.playQueue.length > 0) && !this.media.mediaFile ) {
                   // They interacted with the player.  Always autoload at this point on.
-                  settings.autoLoad = true;
+                  this.autoLoad = true;
                   
                   // Then play the next file in the queue.
                   this.playNext();
@@ -189,10 +191,11 @@
          
          // Handle when the preview image loads.
          this.onPreviewLoaded = function() {
-            // If we don't have any media, then we will assume that they 
-            // just want an image viewer.  Trigger a complete event after the timeout
-            // interval.
-            /* Doesn't quite work... need to investigate further.
+            this.previewVisible = true;
+         // If we don't have any media, then we will assume that they
+         // just want an image viewer.  Trigger a complete event after the timeout
+         // interval.
+         /* Doesn't quite work... need to investigate further.
             if( !this.hasMedia ) {
                setTimeout( function() {
                   _this.display.trigger("mediaupdate", {type:"complete"});
@@ -205,24 +208,27 @@
          this.onMediaUpdate = function( data ) {
             switch( data.type ) {
                case "paused":
+                  this.playing = false;
                   this.showPlay(true);
-                  this.showBusy(false);
+                  this.showBusy(1, false);
                   break;
                case "playing":
+                  this.playing = true;
                   this.showPlay(false);
-                  this.showBusy(false);
+                  this.showBusy(1, false);
                   this.showPreview((this.media.mediaFile.type == "audio"));
                   break;
                case "initialize":
+                  this.playing = false;
                   this.showPlay(true);
-                  this.showBusy(true);
+                  this.showBusy(1, this.autoLoad);
                   this.showPreview(true);
                   break;
                case "buffering":
                   this.showPlay(true);
-                  this.showBusy(true);
+                  this.showBusy(1, true);
                   this.showPreview((this.media.mediaFile.type == "audio"));
-                  break;
+                  break;                 
             }
             
             // Update our controller.
@@ -239,9 +245,6 @@
             if( settings.template && settings.template.onMediaUpdate ) {
                settings.template.onMediaUpdate( data );
             }
-            
-            // Now pass on this event for all that care.
-            this.display.trigger( "mediaupdate", data );  
          };
          
          // Allow mulitple controllers to control this media.
@@ -264,14 +267,14 @@
          if( this.media ) {
             this.media.display.bind( "mediaupdate", function( event, data ) {
                _this.onMediaUpdate( data );            
-            });  
+            });
          }
          
          // Add the control bar to the media.
          this.controller = this.addController( this.display.find( settings.ids.control ).mediacontrol( settings ), false ); 
          
          // Now add any queued controllers...
-         if( jQuery.media.controllers && jQuery.media.controllers[settings.id] ) {
+         if( jQuery.media.controllers[settings.id] ) {
             var controllers = jQuery.media.controllers[settings.id];
             var i = controllers.length;
             while(i--) {
@@ -294,26 +297,31 @@
                }           
                
                // Resize the busy symbol.
-               var busyMLeft = Math.ceil((this.width - this.busyWidth)/2);
-               var busyMTop = Math.ceil((this.height - this.busyHeight)/2);
-               this.busy.css({width:this.width, height:this.height});
+               this.busy.css({
+                  width:this.width,
+                  height:this.height
+                  });
                this.busyImg.css({
-                  marginLeft:busyMLeft + "px",
-                  marginTop:busyMTop + "px"
+                  marginLeft:((this.width - this.busyWidth)/2) + "px", 
+                  marginTop:((this.height - this.busyHeight)/2) + "px" 
                });
 
                // Resize the play symbol.
-               var playMLeft = Math.ceil((this.width - this.playWidth)/2);
-               var playMTop = Math.ceil((this.height - this.playHeight)/2);
-               this.play.css({width:this.width, height:this.height});
+               this.play.css({
+                  width:this.width,
+                  height:this.height
+                  });
                this.playImg.css({
-                  marginLeft:playMLeft + "px",
-                  marginTop:playMTop + "px"
-               });
+                  marginLeft:((this.width - this.playWidth)/2) + "px", 
+                  marginTop:((this.height - this.playHeight)/2) + "px" 
+               });            
                
                // Resize the media.
                if( this.media ) {
-                  this.media.display.css({width:this.width, height:this.height});
+                  this.media.display.css({
+                     width:this.width,
+                     height:this.height
+                     });
                   this.media.setSize( this.width, this.height );
                }
             }
@@ -334,7 +342,7 @@
                   }
                }
                else {
-                  this.showBusy( this.busyVisible );
+                  this.showBusy( 1, ((this.busyFlags & 0x2) == 0x2) );
                   this.showPlay( this.playVisible );
                   this.showPreview( this.previewVisible );
                   this.showController( this.controllerVisible );
@@ -347,7 +355,10 @@
          if( this.media ) {
             this.display.prepend('<div class="medialogo"></div>');
             this.logo = this.display.find(".medialogo").mediaimage( settings.link );
-            this.logo.display.css({position:"absolute", zIndex:10000});
+            this.logo.display.css({
+               position:"absolute",
+               zIndex:490
+            });
             this.logo.width = settings.logoWidth;
             this.logo.height = settings.logoHeight;
             this.logo.loadImage( settings.logo );
@@ -360,7 +371,10 @@
                var mediaLeft = parseInt(this.media.display.css("marginLeft"), 0);
                var marginTop = (settings.logopos=="se" || settings.logopos=="sw") ? (mediaTop + this.height - this.logo.height - settings.logoy) : mediaTop + settings.logoy;
                var marginLeft = (settings.logopos=="ne" || settings.logopos=="se") ? (mediaLeft + this.width - this.logo.width - settings.logox) : mediaLeft + settings.logox;
-               this.logo.display.css({marginTop:marginTop,marginLeft:marginLeft});
+               this.logo.display.css({
+                  marginTop:marginTop,
+                  marginLeft:marginLeft
+               });
             }            
          };
 
@@ -377,25 +391,64 @@
          // Reset to previous state...
          this.reset = function() {
             this.hasMedia = false;
+            this.playing = false;
             if( this.controller ) {
                this.controller.reset();   
             }
             if( this.activeController ) {
                this.activeController.reset();   
             }
-            this.showPlay(false);
-            this.showPreview(false);
-            this.showBusy(true);
+
+            this.showBusy(1, this.autoLoad);
             
             if( this.media ) {
                this.media.reset();
             }
          };
          
+         // Toggle the play/pause state.
+         this.togglePlayPause = function() {
+            if( this.media ) {
+               if( this.media.playerReady ) {
+                  if( this.playing ) {
+                     this.showPlay(true);
+                     this.media.player.pauseMedia();
+                  }
+                  else {
+                     this.showPlay(false);
+                     this.media.player.playMedia();
+                  }
+               }
+               else if( (this.media.playQueue.length > 0) && !this.media.mediaFile ) {
+                  // They interacted with the player.  Always autoload at this point on.
+                  this.autoLoad = true;
+
+                  // Then play the next file in the queue.
+                  this.playNext();
+               }
+            }
+         };
+         
          // Loads an image...
          this.loadImage = function( image ) {
+            this.preview = player.find( settings.ids.preview ).mediaimage();
+
             if( this.preview ) {
+               // Set the size of the preview.
+               this.preview.resize( this.width, this.height );
+
+               // Bind to the image loaded event.
+               this.preview.display.bind("imageLoaded", function() {
+                  _this.onPreviewLoaded();
+               });
+
+               // Load the image.
                this.preview.loadImage( image );
+
+               // Now set the preview image in the media player.
+               if( this.media ) {
+                  this.media.preview = image;
+               }
             }
          };
          
@@ -409,7 +462,7 @@
          // Expose the public load functions from the media display.
          this.loadFiles = function( files ) { 
             this.reset();
-            if( this.media && this.media.loadFiles( files ) && settings.autoLoad ) {
+            if( this.media && this.media.loadFiles( files ) && this.autoLoad ) {
                this.media.playNext();
             }
          };

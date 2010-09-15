@@ -41,19 +41,34 @@
    });    
 
    jQuery.media.ids = jQuery.extend( jQuery.media.ids, {
-      loading:".mediaplayerloading",
-      player:".mediaplayer",
-      menu:".mediamenu",
-      titleBar:".mediatitlebar",
-      node:".medianode",
-      playlist:".mediaplaylist"   
+      loading:"#mediaplayerloading",
+      player:"#mediaplayer",
+      menu:"#mediamenu",
+      titleBar:"#mediatitlebar",
+      node:"#medianode",
+      playlist:"#mediaplaylist"   
    });   
    
    // Initialize our players, playlists, and controllers.   
-   jQuery.media.players = {};        
+   jQuery.media.players = {};
+   jQuery.media.loadCallbacks = {};
    jQuery.media.playlists = {}; 
    jQuery.media.controllers = {};   
    
+   // Use this function to trigger when the player has finished registering and loaded.
+   jQuery.media.onLoaded = function( playerId, callback ) {
+      var player = jQuery.media.players[playerId];
+      if( player && player.display && player.loaded ) {
+         callback( player );
+      }
+      else {
+         if( !jQuery.media.loadCallbacks[playerId] ) {
+            jQuery.media.loadCallbacks[playerId] = [];
+         }
+         jQuery.media.loadCallbacks[playerId].push( callback );
+      }
+   };
+
    // To add a new controller to any existing or future-included players.
    jQuery.media.addController = function( playerId, fromPlayer ) {
       // Check to make sure the fromPlayer has a controller.
@@ -94,7 +109,9 @@
    
    // The main entry point into the player. 
    jQuery.fn.mediaplayer = function( settings ) {
-      if( this.length === 0 ) { return null; }
+      if( this.length === 0 ) {
+         return null;
+      }
       // Return the media Media Player
       return new (function( player, settings ) {         
          // Get the settings.
@@ -111,15 +128,41 @@
          // Save the jQuery display.                                        
          this.display = this.dialog.find( settings.ids.player );
          var _this = this;          
-         
+
+         // Fix a really strange issue where if any of the parent elements are invisible
+         // when this player's template is initializing, it would crash due to the issue
+         // with calling the position() function on an invisible object.  This seems to fix
+         // that issue.
+         var invisibleParents = [];
+
+         // Now check the visibility of the parents, and add the offenders to the array.
+         jQuery.media.utils.checkVisibility( this.display, invisibleParents );
+
          // Add this player to the players object.
-         jQuery.media.players[settings.id] = this;                  
+         jQuery.media.players[settings.id] = this;
+
+         // Variable to keep track if this player has finished loading.
+         this.loaded = false;
          
          // Set the template object.
          settings.template = jQuery.media.templates[settings.template]( this, settings );
          
          // Get all of the setting overrides used in this template.
-         settings = jQuery.extend( settings, settings.template.getSettings() );       
+         if( settings.template.getSettings ) {
+            settings = jQuery.extend( settings, settings.template.getSettings() );
+         }
+         
+         // Add some keyboard event handlers.
+         $(window).keypress( function( event ) {
+            switch( event.keyCode ) {
+               case 0:   /* SpaceBar */
+                  _this.onSpaceBar();
+                  break;
+               case 27:  /* ESC Key */
+                  _this.onEscKey();
+                  break;
+            }
+         });
          
          // First get the communication protocol.
          if( jQuery.media[settings.protocol] ) {
@@ -157,29 +200,53 @@
          // Hide or Show the menu.
          this.showMenu = function( show ) {
             if( settings.template.onMenu ) {
-              this.menuOn = show;
-              settings.template.onMenu( this.menuOn, true );   
+               this.menuOn = show;
+               settings.template.onMenu( this.menuOn );
             }         
          };
          
-         // Setup the title bar.
-         this.titleBar = this.dialog.find( settings.ids.titleBar ).mediatitlebar( settings );
-         if( this.titleBar ) {
+         // Called when the user presses the ESC key.
+         this.onEscKey = function() {
+            // If they are in full screen mode, then escape when they press the ESC key.
+            if( this.fullScreen ) {
+               this.fullScreen = false;
+               if( this.node && this.node.player ) {
+                  this.node.player.fullScreen( this.fullScreen );
+               }              
+            }            
+         };
+         
+         // When they press the space bar, we will toggle the player play/pause state.
+         this.onSpaceBar = function() {
+            if( this.fullScreen && this.node && this.node.player ) {            
+               this.node.player.togglePlayPause();
+            }
+         };
+
+         // Adds the media player events to a given element.
+         this.addPlayerEvents = function( element ) {
             // Trigger on the menu.
-            this.titleBar.display.bind("menu", function(event) {
+            element.display.bind("menu", function(event) {
                _this.showMenu( !_this.menuOn );
             });
-            
-            this.titleBar.display.bind("maximize", function( event ) {
-               _this.maximize( !_this.maxOn );          
+
+            element.display.bind("maximize", function( event ) {
+               _this.maximize( !_this.maxOn );
             });
-            
-            this.titleBar.display.bind("fullscreen", function( event ) {
-               _this.fullScreen = !_this.fullScreen;   
+
+            element.display.bind("fullscreen", function( event ) {
+               _this.fullScreen = !_this.fullScreen;
                if( _this.node && _this.node.player ) {
                   _this.node.player.fullScreen( _this.fullScreen );
                }
             });
+         };
+
+         // Setup the title bar.
+         this.titleBar = this.dialog.find( settings.ids.titleBar ).mediatitlebar( settings );
+         if( this.titleBar ) {
+            // Add the player events to the titlebar.
+            this.addPlayerEvents( this.titleBar );
          
             // If they have jQuery UI, make this draggable.
             if( settings.draggable && this.dialog.draggable ) {
@@ -200,16 +267,19 @@
                });            
             }
          }         
-         
+
          // Get the node and register for events.
          this.node = this.display.find( settings.ids.node ).medianode( this.server, settings );
-         if( this.node ) {            
+         if( this.node ) {
+            // Add the player events to the node.
+            this.addPlayerEvents( this.node );
+
             this.node.display.bind( "nodeload", function( event, data ) {
                _this.onNodeLoad( data );
             });
             
-            if( this.node.player ) {
-               this.node.player.display.bind( "mediaupdate", function( event, data ) {
+            if( this.node.player && this.node.player.media ) {
+               this.node.player.media.display.bind( "mediaupdate", function( event, data ) {
                   _this.onMediaUpdate( data );
                });
             }            
@@ -224,10 +294,10 @@
          }
          
          // Called when the media updates.
-         this.onMediaUpdate = function( data ) { 
+         this.onMediaUpdate = function( data ) {
             // When the media completes, have the active playlist load the next item.
             if( settings.autoNext && this.activePlaylist && (data.type == "complete") ) {
-               this.activePlaylist.pager.loadNext( true );              
+               this.activePlaylist.loadNext();
             }                   
             
             // Set the media information in the menu.
@@ -309,7 +379,7 @@
          this.playlist = this.addPlaylist( this.display.find( settings.ids.playlist ).mediaplaylist( this.server, settings ) );
          
          // Now add any queued playlists...
-         if( jQuery.media.playlists && jQuery.media.playlists[settings.id] ) {
+         if( jQuery.media.playlists[settings.id] ) {
             var playlists = jQuery.media.playlists[settings.id];
             var i = playlists.length;
             while(i--) {
@@ -319,7 +389,7 @@
          
          // Allow the player to be resized.
          this.setSize = function( newWidth, newHeight ) {
-             // Only call onResize if the width or height changes.
+            // Only call onResize if the width or height changes.
             newWidth = newWidth ? newWidth : this.width;
             newHeight = newHeight ? newHeight : this.height;
             if( (newWidth != this.width) || (newHeight != this.height) ) {
@@ -331,7 +401,10 @@
                this.width = newWidth;
                this.height = newHeight;   
                
-               this.dialog.css({width:this.width, height:this.height});
+               this.dialog.css({
+                  width:this.width,
+                  height:this.height
+               });
                
                // Call the resize function.             
                this.onResize( deltaX, deltaY );
@@ -340,19 +413,36 @@
 
          // Load the content into the player.
          this.loadContent = function() {
+            var playlistLoaded = false;
+
             if( this.playlist ) {
-               this.playlist.loadPlaylist();
+               playlistLoaded = this.playlist.loadPlaylist();
             }
-            if( this.node ) {
+
+            // Don't load the node if there is a plalist loaded.
+            if( !playlistLoaded && this.node ) {
+               // Make sure to transfer any playlist settings over to the node.
+               if( this.node.player && this.node.player.media ) {
+                  this.node.player.media.settings.repeat = (settings.loop || settings.repeat);
+               }
+
                this.node.loadNode(); 
             }
          }; 
 
-         this.load = function() {            
+         this.initializeTemplate = function() {
             // Initialize our template.
             if( settings.template.initialize ) {
                settings.template.initialize( settings );
-            }        
+            }
+
+            // Now reset the visibility of the parents.
+            jQuery.media.utils.resetVisibility( invisibleParents );
+         };
+
+         this.load = function() {            
+            // Initialize our template.
+            this.initializeTemplate();
             
             // Resize the player.
             this.onResize( 0, 0 );
@@ -361,7 +451,20 @@
             this.dialog.css("position","relative");
             this.dialog.css("marginLeft",0);  
             this.dialog.css("overflow","visible");
-            
+
+            // Set our loaded flag to true.
+            this.loaded = true;
+            this.display.trigger( "playerLoaded", this );
+
+            // Call all of our queued onLoaded callback functions.
+            if( jQuery.media.loadCallbacks[settings.id] ) {
+               var callbacks = jQuery.media.loadCallbacks[settings.id];
+               var i = callbacks.length;
+               while(i--) {
+                  callbacks[i]( this );
+               }
+            }
+
             // Connect to the server.
             this.server.connect( function( result ) {
                _this.loadContent();

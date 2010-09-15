@@ -24,11 +24,20 @@
  *  THE SOFTWARE.
  */
 (function($) {
+   jQuery.media = jQuery.media ? jQuery.media : {};
+
    // Called when the YouTube player is ready.
    window.onDailymotionPlayerReady = function( playerId ) {
       playerId = playerId.replace("_media", "");      
       jQuery.media.players[playerId].node.player.media.player.onReady();   
    };
+
+   // Tell the media player how to determine if a file path is a YouTube media type.
+   jQuery.media.playerTypes = jQuery.extend( jQuery.media.playerTypes, {
+      "dailymotion":function( file ) {
+         return (file.search(/^http(s)?\:\/\/(www\.)?dailymotion\.com/i) === 0);      
+      }
+   });
 
    jQuery.fn.mediadailymotion = function( options, onUpdate ) {  
       return new (function( video, options, onUpdate ) {
@@ -40,24 +49,25 @@
          this.loaded = false;
          this.ready = false;
          
-         this.createMedia = function( videoFile ) {
+         this.createMedia = function( videoFile, preview ) {
             this.videoFile = videoFile;
             this.ready = false;
             var playerId = (options.id + "_media");
             var rand = Math.floor(Math.random() * 1000000);  
-            var flashplayer = 'http://www.dailymotion.com/swf/' + videoFile.path + '?rand=' + rand + '&amp;enablejsapi=1&amp;playerapiid=' + playerId;            
+            var flashPlayer = 'http://www.dailymotion.com/swf/' + videoFile.path + '?rand=' + rand + '&amp;enablejsapi=1&amp;playerapiid=' + playerId;
             jQuery.media.utils.insertFlash( 
                this.display, 
-               flashplayer, 
+               flashPlayer,
                playerId, 
                this.display.width(), 
                this.display.height(),
                {},
+               options.wmode,
                function( obj ) {
                   _this.player = obj;  
                   _this.loadPlayer(); 
                }
-            );
+               );
          };      
          
          this.loadMedia = function( videoFile ) {
@@ -67,7 +77,9 @@
                this.videoFile = videoFile;
                
                // Let them know the player is ready.          
-               onUpdate( {type:"playerready"} );               
+               onUpdate( {
+                  type:"playerready"
+               } );
                
                // Load our video.
                this.player.loadVideoById( this.videoFile.path, 0 );             
@@ -96,7 +108,9 @@
                this.player.addEventListener('onError', options.id + 'PlayerError');
                
                // Let them know the player is ready.          
-               onUpdate( {type:"playerready"} );                
+               onUpdate( {
+                  type:"playerready"
+               } );
                
                // Load our video.
                this.player.loadVideoById( this.videoFile.path, 0 );  
@@ -111,12 +125,16 @@
             // write some hacks to just make it work.
             
             if( !(!this.meta && playerState =="stopped") ) {
-               onUpdate( {type:playerState} ); 
+               onUpdate( {
+                  type:playerState
+               } );
             }
             
             if( !this.loaded && playerState == "buffering" ) {
                this.loaded = true;
-               onUpdate( {type:"paused"} ); 
+               onUpdate( {
+                  type:"paused"
+               } );
                if( options.autostart ) {
                   this.playMedia();
                }
@@ -127,7 +145,9 @@
                this.meta = true;
                
                // Update our meta data.
-               onUpdate( {type:"meta"} ); 
+               onUpdate( {
+                  type:"meta"
+               } );
             }            
          };
          
@@ -142,19 +162,29 @@
                errorText = "The video requested does not allow playback in an embedded player.";
             }
             console.log(errorText);
-            onUpdate( {type:"error", data:errorText} );            
+            onUpdate( {
+               type:"error",
+               data:errorText
+            } );
          };
          
          // Translates the player state for the  API player.
          this.getPlayerState = function( playerState ) {
             switch (playerState) {
-               case 5:  return 'ready';
-               case 3:  return 'buffering';
-               case 2:  return 'paused';
-               case 1:  return 'playing';
-               case 0:  return 'complete';
-               case -1: return 'stopped';
-               default: return 'unknown';
+               case 5:
+                  return 'ready';
+               case 3:
+                  return 'buffering';
+               case 2:
+                  return 'paused';
+               case 1:
+                  return 'playing';
+               case 0:
+                  return 'complete';
+               case -1:
+                  return 'stopped';
+               default:
+                  return 'unknown';
             }
             return 'unknown';
          };                  
@@ -164,7 +194,9 @@
          };           
          
          this.playMedia = function() {
-            onUpdate({type:"buffering"});
+            onUpdate({
+               type:"buffering"
+            });
             this.player.playVideo();
          };
          
@@ -177,7 +209,9 @@
          };
          
          this.seekMedia = function( pos ) {
-            onUpdate({type:"buffering"});
+            onUpdate({
+               type:"buffering"
+            });
             this.player.seekTo( pos, true );           
          };
          
@@ -213,10 +247,14 @@
             return this.player.getVideoUrl();   
          };  
          
-         this.hasControls = function() { return true; };
+         this.hasControls = function() {
+            return true;
+         };
          this.showControls = function(show) {};           
          this.setQuality = function( quality ) {};         
-         this.getQuality = function() { return ""; };           
+         this.getQuality = function() {
+            return "";
+         };
       })( this, options, onUpdate );
    };
 })(jQuery);  

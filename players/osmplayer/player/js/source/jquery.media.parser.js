@@ -36,10 +36,13 @@
                this.onLoaded = onLoaded;
                jQuery.ajax({
                   type: "GET",
-                  url: file,
-                  dataType: "xml",
+                  url:file,
+                  dataType:"xml",
                   success: function(xml) {
                      _this.parseXML( xml );
+                  },
+                  error: function( XMLHttpRequest, textStatus, errorThrown ) {
+                     console.log( "Error: " + textStatus );
                   }
                });               
             }; 
@@ -62,7 +65,10 @@
             
             // Parse XSPF contents.
             this.parseXSPF = function( xml ) {
-               var playlist = {total_rows:0, nodes:[]};
+               var playlist = {
+                  total_rows:0,
+                  nodes:[]
+               };
                var trackList = jQuery("playlist trackList track", xml);
                if( trackList.length > 0 ) {
                   trackList.each( function(index) {
@@ -73,10 +79,14 @@
                         description: $(this).find("annotation").text(),
                         mediafiles: {
                            images:{
-                              "image":{path:$(this).find("image").text()}
+                              "image":{
+                                 path:$(this).find("image").text()
+                                 }
                            },
                            media:{
-                              "media":{path:$(this).find("location").text()}
+                              "media":{
+                                 path:$(this).find("location").text()
+                                 }
                            }
                         }
                      });
@@ -87,7 +97,10 @@
 
             // Parse ASX contents.
             this.parseASX = function( xml ) {
-               var playlist = {total_rows:0, nodes:[]};
+               var playlist = {
+                  total_rows:0,
+                  nodes:[]
+               };
                var trackList = jQuery("asx entry", xml);         
                if( trackList.length > 0 ) {
                   trackList.each( function(index) {
@@ -97,10 +110,14 @@
                         title: $(this).find("title").text(),
                         mediafiles: {
                            images:{
-                              "image":{path:$(this).find("image").text()}
+                              "image":{
+                                 path:$(this).find("image").text()
+                                 }
                            },
                            media:{
-                              "media":{path:$(this).find("location").text()}
+                              "media":{
+                                 path:$(this).find("location").text()
+                                 }
                            }
                         }                        
                      });
@@ -111,7 +128,10 @@
 
             // Parse RSS contents.
             this.parseRSS = function( xml ) {
-               var playlist = {total_rows:0, nodes:[]};                            
+               var playlist = {
+                  total_rows:0,
+                  nodes:[]
+               };
                var channel = jQuery("rss channel", xml);         
                if( channel.length > 0 ) {
                   var youTube = (channel.find("generator").text() == "YouTube data API");
@@ -134,10 +154,14 @@
                   title: item.find("title").text(),
                   mediafiles: {
                      images:{
-                        "image":{path:item.find("image").text()}
+                        "image":{
+                           path:item.find("image").text()
+                           }
                      },
                      media:{
-                        "media":{path:item.find("location").text()}
+                        "media":{
+                           path:item.find("location").text()
+                           }
                      }
                   }                  
                };
@@ -151,10 +175,15 @@
                   title: item.find("title").text(),
                   mediafiles: {
                      images:{
-                        "image":{path:jQuery("img", description).eq(0).attr("src")}
+                        "image":{
+                           path:jQuery("img", description).eq(0).attr("src")
+                           }
                      },
                      media:{
-                        "media":{path:media, player:"youtube"}
+                        "media":{
+                           path:media,
+                           player:"youtube"
+                        }
                      }
                   }                                   
                };

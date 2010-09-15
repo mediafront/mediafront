@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 (function($) {
+   jQuery.media = jQuery.media ? jQuery.media : {}; 
+
    window.onVimeoReady = function( playerId ) {
       playerId = playerId.replace("_media", "");      
       jQuery.media.players[playerId].node.player.media.player.onReady();     
@@ -49,6 +51,13 @@
       jQuery.media.players[playerId].node.player.media.player.onPaused();   
    };
 
+   // Tell the media player how to determine if a file path is a YouTube media type.
+   jQuery.media.playerTypes = jQuery.extend( jQuery.media.playerTypes, {
+      "vimeo":function( file ) {
+         return (file.search(/^http(s)?\:\/\/(www\.)?vimeo\.com/i) === 0);      
+      }
+   });
+
    jQuery.fn.mediavimeo = function( options, onUpdate ) {  
       return new (function( video, options, onUpdate ) {
          this.display = video;
@@ -60,12 +69,12 @@
          this.bytesTotal = 0;
          this.currentVolume = 1;
          
-         this.createMedia = function( videoFile ) {
+         this.createMedia = function( videoFile, preview ) {
             this.videoFile = videoFile;
             this.ready = false;
             var playerId = (options.id + "_media");
             var flashvars = {
-               clip_id:videoFile.path,
+               clip_id:this.getId(videoFile.path),
                width:this.display.width(),
                height:this.display.height(),
                js_api:'1',
@@ -73,20 +82,26 @@
                js_swf_id:playerId
             };
             var rand = Math.floor(Math.random() * 1000000); 
-            var flashplayer = 'http://vimeo.com/moogaloop.swf?rand=' + rand;
+            var flashPlayer = 'http://vimeo.com/moogaloop.swf?rand=' + rand;
             jQuery.media.utils.insertFlash( 
                this.display, 
-               flashplayer, 
+               flashPlayer,
                playerId, 
                this.display.width(), 
                this.display.height(),
                flashvars,
+               options.wmode,
                function( obj ) {
                   _this.player = obj; 
                   _this.loadPlayer();  
                }
-            );
+               );
          };      
+         
+         this.getId = function( path ) {
+            var regex = /^http[s]?\:\/\/(www\.)?vimeo\.com\/([0-9]+)/i;
+            return (path.search(regex) == 0) ? path.replace(regex, "$2") : path;
+         };
          
          this.loadMedia = function( videoFile ) {
             this.bytesLoaded = 0;
@@ -110,14 +125,18 @@
                this.player.api_addEventListener('onPause', 'onVimeoPause');
                
                // Let them know the player is ready.          
-               onUpdate( {type:"playerready"} ); 
+               onUpdate( {
+                  type:"playerready"
+               } );
                
                this.playMedia();
             }         
          };
          
          this.onFinished = function() {
-            onUpdate( {type:"complete"} );
+            onUpdate( {
+               type:"complete"
+            } );
          };
 
          this.onLoading = function( data ) {
@@ -126,15 +145,21 @@
          };
          
          this.onPlaying = function() {
-            onUpdate( {type:"playing"} );
+            onUpdate( {
+               type:"playing"
+            } );
          };                 
 
          this.onPaused = function() {
-            onUpdate( {type:"paused"} );
+            onUpdate( {
+               type:"paused"
+            } );
          };                  
          
          this.playMedia = function() {
-            onUpdate({type:"buffering"});
+            onUpdate({
+               type:"buffering"
+            });
             this.player.api_play();
          };
          
@@ -179,12 +204,20 @@
          
          // Not implemented yet...
          this.setQuality = function( quality ) {};         
-         this.getQuality = function() { return ""; };
-         this.hasControls = function() { return true; };            
+         this.getQuality = function() {
+            return "";
+         };
+         this.hasControls = function() {
+            return true;
+         };
          this.showControls = function(show) {};           
          this.setSize = function( newWidth, newHeight ) {};         
-         this.getEmbedCode = function() { return "This video cannot be embedded."; };
-         this.getMediaLink = function() { return "This video currently does not have a link."; };                 
+         this.getEmbedCode = function() {
+            return "This video cannot be embedded.";
+         };
+         this.getMediaLink = function() {
+            return "This video currently does not have a link.";
+         };
       })( this, options, onUpdate );
    };
 })(jQuery);         
