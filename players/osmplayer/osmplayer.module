@@ -369,10 +369,12 @@ function osmplayer_player_settings_form( $preset ) {
      '#description' => t('Enter the quality for the media playback. <strong>This currently only works for YouTube content.</strong>'),
      '#options' => array(
        'default' => t('Default: Service selects resolution'),
-       'small' => t('Small: Less than 640x360'),
-       'medium' => t('Medium: Minimum of 640x360'),
-       'large' => t('Large: Minimum of 854x480'),
-       'hd720' => t('HD720: Minimum of 1280x720')
+       'small' => t('Small: Resolution less than 320x240'),
+       'medium' => t('Medium: Resolution no more than 640x360'),
+       'large' => t('Large: Resolution no more than 1024x576'),
+       'hd720' => t('HD720: Resolution no more than 1280x720'),
+       'hd1080' => t('HD1080: Resolution no more than 1920x1080'),
+       'highres' => t('High Resolution: Resolution greater than HD1080.')
      ),
      '#default_value' => $preset['settings']['quality']
    );   
