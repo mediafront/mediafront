@@ -334,7 +334,9 @@ function mediafront_get_playlist_from_view( $view, $args = null ) {
 
   // Iterate through our result and get our player nodes.
   foreach( $view->result as $node ) {
-    $playlist['nodes'][] = mediafront_get_node($node->nid, $args);
+    if( $node = mediafront_get_node($node->nid, $args) ) {
+      $playlist['nodes'][] = $node;
+    }
   }
 
   // Return the playlist.
@@ -497,7 +499,8 @@ function mediafront_get_media_file( $file ) {
  * Function that will add media to the $additions array
  */
 function mediafront_add_media( &$additions, $file ) {
-
+  $media_added = false;
+  
   // Only continue if the file exists.
   if( $file ) {
     // Convert the file to an object.
@@ -511,13 +514,17 @@ function mediafront_add_media( &$additions, $file ) {
           $files = is_array($media) ? $media : array($media);
           array_push( $files, $media_file );
           $additions["mediafiles"][$media_file->class][$media_file->mediaType] = $files;
+          $media_added = true;
         }
         else {
           $additions["mediafiles"][$media_file->class][$media_file->mediaType] = $media_file;
+          $media_added = true;
         }
       }
     }
   }
+
+  return $media_added;
 }
 
 /**
@@ -541,18 +548,20 @@ function _mediafront_get_field( $node, $field_name, $index = -1 ) {
  * Implements hook_playlist_node()
  */
 function mediafront_playlist_node( $node ) {
+  $media_added = false;
   $additions = array();
-  $additions['nid'] = $node->nid;
-  $additions['title'] = $node->title;
-  $additions['description'] = $node->body;
+  $field_additions = array();
+
 
   // If they provide the field_mediafront_media field.
   if( $field = _mediafront_get_field( $node, 'field_mediafront_media', 0 ) ) {
+    $media_added = true;
     $additions["mediafiles"]["media"]["media"] = $field['value'];
   }
 
   // If they provide the field_mediafront_image field.
   if( $field = _mediafront_get_field( $node, 'field_mediafront_image', 0 ) ) {
+    $media_added = true;
     $additions["mediafiles"]["images"]["image"] = $field['value'];
   }
 
@@ -564,7 +573,7 @@ function mediafront_playlist_node( $node ) {
 
       // This is a text field.
       if( isset($field[0]['value']) && is_string($field[0]['value']) ) {
-        $additions[$fieldname] = $field[0]['value'];
+        $field_additions[$fieldname] = $field[0]['value'];
       }
 
       // This is a file field.
@@ -594,7 +603,7 @@ function mediafront_playlist_node( $node ) {
             $file['mediaType'] = $media_field ? $media_field->media_type : '';
 
             // Add this media to our struct.
-            mediafront_add_media( $additions, $file );
+            $media_added |= mediafront_add_media( $additions, $file );
           }
 
           // If the media field is defined.
@@ -608,7 +617,7 @@ function mediafront_playlist_node( $node ) {
               $file['path'] = image_style_url( $media_field->node_preset, $file['uri'] );
               $file['class'] = 'images';
               $file['mediaType'] = 'preview';
-              mediafront_add_media( $additions, $file );
+              $media_added |= mediafront_add_media( $additions, $file );
             }
 
             // This is a thumbnail image.
@@ -616,11 +625,23 @@ function mediafront_playlist_node( $node ) {
               $file['path'] = image_style_url( $media_field->thumb_preset, $file['uri'] );
               $file['class'] = 'images';
               $file['mediaType'] = 'thumbnail';
-              mediafront_add_media( $additions, $file );
+              $media_added |= mediafront_add_media( $additions, $file );
             }
           }
         }
       }
+    }
+  }
+
+  // Only if media was added should we add the node info.
+  if( $media_added ) {
+    $additions['nid'] = $node->nid;
+    $additions['title'] = $node->title;
+    $additions['description'] = $node->body;
+
+    // Now add the CCK fields.
+    foreach( $field_additions as $field => $value ) {
+      $additions[$field] = $value;
     }
   }
 
