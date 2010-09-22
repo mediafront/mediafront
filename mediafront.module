@@ -354,7 +354,9 @@ function mediafront_get_playlist_from_view( $view, $args = null ) {
 
   // Iterate through our result and get our player nodes.
   foreach( $view->result as $node ) {
-    $playlist['nodes'][] = mediafront_get_node($node->nid, $args);
+    if( $node = mediafront_get_node($node->nid, $args) ) {
+      $playlist['nodes'][] = $node;
+    }
   }
 
   // Return the playlist.
