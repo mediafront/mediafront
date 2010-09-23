@@ -4,17 +4,7 @@
  * Provides CCK integration for the mediafront module
  */
 
-/**
- * Implementation of hook_field_info().
- */
-function mediafront_field_info() {
-  return array(
-    'mediafront' => array(
-      'label' => t('Media Player'),
-      'description' => t('Add a media player to this content.'),
-    ),
-  );
-}
+
 
 /**
  * Implementation of hook_field_settings().
