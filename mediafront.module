@@ -691,15 +691,13 @@ function mediafront_playlist_node( $node ) {
   }
 
   // Only if media was added should we add the node info.
-  if( $media_added ) {
-    $additions['nid'] = $node->nid;
-    $additions['title'] = $node->title;
-    $additions['description'] = $node->body;
+  $additions['nid'] = $node->nid;
+  $additions['title'] = $node->title;
+  $additions['description'] = $node->body;
 
-    // Now add the CCK fields.
-    foreach( $field_additions as $field => $value ) {
-      $additions[$field] = $value;
-    }
+  // Now add the CCK fields.
+  foreach( $field_additions as $field => $value ) {
+    $additions[$field] = $value;
   }
 
   // Return our additions...
