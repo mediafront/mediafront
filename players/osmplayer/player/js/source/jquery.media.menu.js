@@ -94,31 +94,33 @@
          this.links = this.display.find("ul li");
          this.links.each( function() {
             var link = $(this).find("a");
-            var linkId = link.attr("href");
-            var contents = _this.display.find(linkId);
-            contents.hide();
-            _this.contents[linkId] = contents; 
-            
-            link.bind("mouseenter", $(this), function( event ) {
-               settings.template.onMenuOver( event.data );   
-            });
-            
-            link.bind("mouseleave", $(this), function( event ) {
-               settings.template.onMenuOut( event.data );   
-            });
-            
-            link.bind("click", {
-               id:linkId,
-               obj:$(this)
-               }, function( event ) {
-               event.preventDefault(); 
-               _this.setMenuItem( event.data.obj, event.data.id );
-            });
-            
-            if( linkIndex === 0 ) {
-               _this.setMenuItem( $(this), linkId );   
+            if( link.length > 0 ) {
+              var linkId = link.attr("href");
+              var contents = _this.display.find(linkId);
+              contents.hide();
+              _this.contents[linkId] = contents;
+
+              link.bind("mouseenter", $(this), function( event ) {
+                 settings.template.onMenuOver( event.data );
+              });
+
+              link.bind("mouseleave", $(this), function( event ) {
+                 settings.template.onMenuOut( event.data );
+              });
+
+              link.bind("click", {
+                 id:linkId,
+                 obj:$(this)
+                 }, function( event ) {
+                 event.preventDefault();
+                 _this.setMenuItem( event.data.obj, event.data.id );
+              });
+
+              if( linkIndex === 0 ) {
+                 _this.setMenuItem( $(this), linkId );
+              }
+              linkIndex++;
             }
-            linkIndex++;
          });
         
          
