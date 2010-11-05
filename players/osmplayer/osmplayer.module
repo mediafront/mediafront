@@ -211,7 +211,7 @@ function osmplayer_clear_css() {
  */
 function osmplayer_get_css_dir() {
    // Now make sure that the osmplayer CSS directory exists.
-   $css_dir = getcwd() . '/' . file_directory_path() . '/' . 'css';
+   $css_dir = getcwd() . '/' . variable_get('file_public_path', conf_path() . '/files') . '/' . 'css';
    if( !is_dir($css_dir) ) { 
       mkdir($css_dir, 0775);
    }     
@@ -733,7 +733,7 @@ function osmplayer_add_css( $player, $preset ) {
 	   $cssadded[$preset] = TRUE;
    
 	   // Set the CSS directory of our OSMPlayer component, and then add the CSS files to the page..
-	   $files_dir = file_directory_path();
+	   $files_dir = variable_get('file_public_path', conf_path() . '/files');
 	   $css_dir = $files_dir . '/css/osmplayer';
 	   $player->template->setCSSDir( getcwd() . '/' . $css_dir );
 	   $css_files = $player->template->getCSSFiles();
