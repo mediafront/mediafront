@@ -351,4 +351,12 @@ function mediafront_update_6005() {
   }
   return $update;  
 }
+
+/**
+ * Update the menu system for the mediafront presets.
+ */
+function mediafront_update_6006() {
+  // Clear the menu cache.
+  menu_cache_clear();
+}
 ?>
