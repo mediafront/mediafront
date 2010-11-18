@@ -152,7 +152,12 @@ class OSMTemplate
    * Set the CSS directory for this media player.
    */
   public function setCSSDir( $dir ) {
-    $this->css_dir = $dir;
+    // We only want to set this if we are using themeroller since
+    // this directory can change to a cached directory when the
+    // themeroller file is created.
+    if( $this->settings['useThemeRoller'] ) {
+      $this->css_dir = $dir;
+    }
   }
 
   /**
@@ -348,9 +353,15 @@ class OSMTemplate
   public function getIds() {
     $ids = array();
 
-    // Iterate through all the id's and add the id.
-    foreach( $this->settings['ids'] as $index => $id ) {
-      $ids[$index] = $id[0] . $this->prefix . substr( $id, 1 );
+    // Only add the prefix if the template is using themeroller.
+    if( $this->settings['useThemeRoller'] ) {
+      // Iterate through all the id's and add the id.
+      foreach( $this->settings['ids'] as $index => $id ) {
+        $ids[$index] = $id[0] . $this->prefix . substr( $id, 1 );
+      }
+    }
+    else {
+      $ids = $this->settings['ids'];
     }
     
     // Return the id's with the prefix's in place.

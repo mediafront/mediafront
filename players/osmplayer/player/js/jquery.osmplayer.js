@@ -2567,7 +2567,7 @@
         this.width = newWidth ? newWidth : this.width;
         this.height = newHeight ? newHeight : this.height;
 
-        if( this.width && this.height ) {
+        if( (this.width > 0) && (this.height > 0) ) {
           // Set the position of the logo.
           this.setLogoPos();
 
@@ -5472,6 +5472,7 @@
          this.setTrackSize = function() {
             this.trackSize = vertical ? this.height : this.width;  
             this.trackSize -= (this.handleOffset + this.handleSize);
+            this.trackSize = (this.trackSize > 0) ? this.trackSize : 1;
          };
          
          this.setTrackSize();         
@@ -5500,12 +5501,11 @@
 
             this.handlePos = inverted ? (1-this.value) : this.value;
             this.handlePos *= this.trackSize;
-
             if( vertical ) {
                this.handle.css( "marginTop", this.handlePos );
             }
             else {
-               this.handle.css( "marginLeft", this.handlePos ); 
+               this.handle.css( "marginLeft", this.handlePos );
             }
          };
          
