@@ -452,7 +452,7 @@ function mediafront_array_to_object($array = array()) {
 function mediafront_get_media_filepath( $file ) {
   return (isset($file->url) ? $file->url :
     (isset($file->path) ? $file->path :
-    (!isset($file->filepath) ? '' :
+    (!isset($file->filename) ? '' :
     (preg_match('/^http(s)?\:\/\//', $file->uri) ? $file->uri :
     file_create_url($file->uri) ))));
 }
@@ -635,7 +635,6 @@ function mediafront_playlist_node( $node ) {
 
   $additions['nid'] = $node->nid;
   $additions['title'] = $node->title;
-  $additions['description'] = $node->body;
 
   // Now add the CCK fields.
   foreach( $field_additions as $field => $value ) {
