@@ -1991,7 +1991,6 @@
          
       // Handle the media events.
       this.onMediaUpdate = function( data ) {
-        console.log(data.type);
         switch( data.type ) {
           case "paused":
             this.playing = false;
