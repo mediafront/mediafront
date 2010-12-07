@@ -317,6 +317,12 @@ function osmplayer_player_settings_form( $preset ) {
      '#description' => t('Enter the height of the player.'),
      '#default_value' => $preset['settings']['height']
    );
+   $form['presentation']['zIndex'] = array(
+     '#type' => 'textfield',
+     '#title' => t('z-Index'),
+     '#description' => t('Enter the zIndex for the media player on the page.'),
+     '#default_value' => $preset['settings']['zIndex']
+   );
    $form['presentation']['embedWidth'] = array(
      '#type' => 'textfield',
      '#title' => t('Player Embedded Width'),
