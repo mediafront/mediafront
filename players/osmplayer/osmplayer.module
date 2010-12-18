@@ -16,7 +16,7 @@ function osmplayer_get_player($params) {
     $params['playlist'] = drupal_json_encode($params['playlistObj']);
   }
   else {
-    $showPlayer |= $params['playlist'];
+    $showPlayer |= isset($params['playlist']) && $params['playlist'];
   }
 
   // If they provide the node object, encode it as JSON.
@@ -25,7 +25,7 @@ function osmplayer_get_player($params) {
     $params['node'] = drupal_json_encode($params['nodeObj']);
   }
   else {
-    $showPlayer |= $params['node'];
+    $showPlayer |= isset($params['node']) && $params['node'];
   }
 
   // Show the player.
