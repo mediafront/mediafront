@@ -12,7 +12,7 @@ function osmplayer_get_player($params) {
 
   // If they provide the playlist object, encode it as JSON.
   if (isset($params['playlistObj']) && $params['playlistObj']) {
-    $showPlayer |= ($params['playlistObj']['total_rows'] > 0);
+    $showPlayer |= ( $params['playlistObj']['total_rows'] > 0);
     $params['playlist'] = mediafront_json_encode($params['playlistObj']);
   }
   else {
@@ -21,7 +21,7 @@ function osmplayer_get_player($params) {
 
   // If they provide the node object, encode it as JSON.
   if (isset($params['nodeObj']) && $params['nodeObj']) {
-    $showPlayer |= (count($params['nodeObj']['mediafiles']) > 0);
+    $showPlayer |= ( count($params['nodeObj']['mediafiles']) > 0);
     $params['node'] = mediafront_json_encode($params['nodeObj']);
   }
   else {
@@ -112,6 +112,32 @@ function osmplayer_player_info() {
   return $info;
 }
 
+function osmplayer_add_theme(&$themes, $template, $component, $path) {
+
+  // The template name.
+  $template = 'osmplayer_' . $template . '_' . $component;
+
+  // Get the template file.
+  $file = getcwd() . '/' . $path . '/' . $template . '.tpl.php';
+
+  // Check to make sure the file exists.
+  if (file_exists($file)) {
+
+    // Add this theme.
+    $themes[$template] = array(
+      'template' => $template,
+      'arguments' => array('params' => NULL),
+      'path' => $path
+    );
+
+    // Check for the preprocess function.
+    $preprocess = 'template_preprocess_osmplayer_' . $component;
+    if (function_exists($preprocess)) {
+      $themes[$template]['preprocess functions'] = array($preprocess);
+    }
+  }
+}
+
 /**
  * Implementation of hook_theme()
  */
@@ -122,76 +148,28 @@ function osmplayer_theme() {
   $path = osmplayer_get_path() . '/templates';
 
   foreach ($templates as $template) {
+    $template_path = ($path . '/' . $template);
+
     $themes['osmplayer_' . $template] = array(
       'template' => 'osmplayer_' . $template,
       'arguments' => array('params' => NULL),
-      'path' => ($path . '/' . $template),
+      'path' => $template_path,
       'preprocess functions' => array('template_preprocess_osmplayer')
     );
-    $themes['osmplayer_' . $template . '_titlebar'] = array(
-      'template' => 'osmplayer_' . $template . '_titlebar',
-      'arguments' => array('params' => NULL),
-      'path' => ($path . '/' . $template)
-    );
-    $themes['osmplayer_' . $template . '_menu'] = array(
-      'template' => 'osmplayer_' . $template . '_menu',
-      'arguments' => array('params' => NULL),
-      'path' => ($path . '/' . $template)
-    );
-    $themes['osmplayer_' . $template . '_controlbar'] = array(
-      'template' => 'osmplayer_' . $template . '_controlbar',
-      'arguments' => array('params' => NULL),
-      'path' => ($path . '/' . $template),
-      'preprocess functions' => array('template_preprocess_osmplayer_controlbar')
-    );
-    $themes['osmplayer_' . $template . '_node'] = array(
-      'template' => 'osmplayer_' . $template . '_node',
-      'arguments' => array('params' => NULL),
-      'path' => ($path . '/' . $template),
-      'preprocess functions' => array('template_preprocess_osmplayer_node')
-    );
-    $themes['osmplayer_' . $template . '_nodevoter'] = array(
-      'template' => 'osmplayer_' . $template . '_nodevoter',
-      'arguments' => array('params' => NULL),
-      'path' => ($path . '/' . $template)
-    );
-    $themes['osmplayer_' . $template . '_teaser'] = array(
-      'template' => 'osmplayer_' . $template . '_teaser',
-      'arguments' => array('params' => NULL),
-      'path' => ($path . '/' . $template),
-      'preprocess functions' => array('template_preprocess_osmplayer_teaser')
-    );
-    $themes['osmplayer_' . $template . '_teaservoter'] = array(
-      'template' => 'osmplayer_' . $template . '_teaservoter',
-      'arguments' => array('params' => NULL),
-      'path' => ($path . '/' . $template)
-    );
-    $themes['osmplayer_' . $template . '_playlist'] = array(
-      'template' => 'osmplayer_' . $template . '_playlist',
-      'arguments' => array('params' => NULL),
-      'path' => ($path . '/' . $template),
-      'preprocess functions' => array('template_preprocess_osmplayer_playlist')
-    );
-    $themes['osmplayer_' . $template . '_scrollbar'] = array(
-      'template' => 'osmplayer_' . $template . '_scrollbar',
-      'arguments' => array('params' => NULL),
-      'path' => ($path . '/' . $template)
-    );
-    $themes['osmplayer_' . $template . '_hscrollbar'] = array(
-      'template' => 'osmplayer_' . $template . '_hscrollbar',
-      'arguments' => array('params' => NULL),
-      'path' => ($path . '/' . $template)
-    );
-    $themes['osmplayer_' . $template . '_links'] = array(
-      'template' => 'osmplayer_' . $template . '_links',
-      'arguments' => array('params' => NULL),
-      'path' => ($path . '/' . $template)
-    );
-    $themes['osmplayer_' . $template . '_pager'] = array(
-      'template' => 'osmplayer_' . $template . '_pager',
-      'arguments' => array('params' => NULL),
-      'path' => ($path . '/' . $template)
-    );
+
+    // Add all of our player components, if they exist...
+    osmplayer_add_theme($themes, $template, 'titlebar', $template_path);
+    osmplayer_add_theme($themes, $template, 'menu', $template_path);
+    osmplayer_add_theme($themes, $template, 'controlbar', $template_path);
+    osmplayer_add_theme($themes, $template, 'node', $template_path);
+    osmplayer_add_theme($themes, $template, 'nodevoter', $template_path);
+    osmplayer_add_theme($themes, $template, 'teaser', $template_path);
+    osmplayer_add_theme($themes, $template, 'teaservoter', $template_path);
+    osmplayer_add_theme($themes, $template, 'playlist', $template_path);
+    osmplayer_add_theme($themes, $template, 'scrollbar', $template_path);
+    osmplayer_add_theme($themes, $template, 'hscrollbar', $template_path);
+    osmplayer_add_theme($themes, $template, 'links', $template_path);
+    osmplayer_add_theme($themes, $template, 'pager', $template_path);
   }
   return $themes;
 }
@@ -758,10 +736,20 @@ function osmplayer_add_css($player, $preset) {
   if (!isset($cssadded[$preset])) {
     $cssadded[$preset] = TRUE;
 
-    // Set the CSS directory of our OSMPlayer component, and then add the CSS files to the page..
-    $files_dir = file_directory_path();
-    $css_dir = $files_dir . '/css/osmplayer';
-    $player->template->setCSSDir(getcwd() . '/' . $css_dir);
+    if ($player->template->settings['useThemeRoller']) {
+      // If themeroller is enabled, then we will want to make sure
+      // to set the CSS directory of our cached directory instead of the
+      // default REAL path.
+      $files_dir = file_directory_path();
+      $css_dir = $files_dir . '/css/osmplayer';
+      $player->template->setCSSDir(getcwd() . '/' . $css_dir);
+    }
+    else {
+      // Otherwise, just get the path to the player folder.
+      $css_dir = osmplayer_get_path();
+    }
+
+    // Get the CSS files.
     $css_files = $player->template->getCSSFiles();
     drupal_add_css(($css_dir . '/' . $css_files['template']));
     if ($css_files['template_ie']) {
