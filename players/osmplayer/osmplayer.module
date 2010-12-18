@@ -8,7 +8,7 @@ require_once( drupal_get_path('module', 'osmplayer') . '/player/OSMPlayer.php' )
  */
 function osmplayer_get_player($params) {
   $template = (isset($params['template']) && $params['template']) ? $params['template'] : "default";
-  $showPlayer = $params['showWhenEmpty'];
+  $showPlayer = isset($params['showWhenEmpty']) ? $params['showWhenEmpty'] : TRUE;
 
   // If they provide the playlist object, encode it as JSON.
   if (isset($params['playlistObj']) && $params['playlistObj']) {
