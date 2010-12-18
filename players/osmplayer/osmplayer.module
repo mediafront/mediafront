@@ -8,18 +8,28 @@ require_once( drupal_get_path('module', 'osmplayer') . '/player/OSMPlayer.php' )
  */
 function osmplayer_get_player($params) {
   $template = (isset($params['template']) && $params['template']) ? $params['template'] : "default";
+  $showPlayer = $params['showWhenEmpty'];
 
   // If they provide the playlist object, encode it as JSON.
   if (isset($params['playlistObj']) && $params['playlistObj']) {
+    $showPlayer |= ($params['playlistObj']['total_rows'] > 0);
     $params['playlist'] = mediafront_json_encode($params['playlistObj']);
+  }
+  else {
+    $showPlayer |= $params['playlist'];
   }
 
   // If they provide the node object, encode it as JSON.
   if (isset($params['nodeObj']) && $params['nodeObj']) {
+    $showPlayer |= (count($params['nodeObj']['mediafiles']) > 0);
     $params['node'] = mediafront_json_encode($params['nodeObj']);
   }
+  else {
+    $showPlayer |= $params['node'];
+  }
 
-  return theme('osmplayer_' . $template, $params);
+  // Show the player.
+  return $showPlayer ? theme('osmplayer_' . $template, $params) : '';
 }
 
 /**
@@ -791,9 +801,6 @@ function template_preprocess_osmplayer(&$variables) {
 
     // Get the player prefix.
     $variables['params']['prefix'] = $player->getPrefix();
-
-    // Add a showPlayer variable when we should show the player.
-    $variables['params']['showPlayer'] = $variables['params']['showWhenEmpty'] || $variables['params']['playlist'] || $variables['params']['node'];
 
     // Now set up our templates within a template.
     $variables['titlebar'] = theme('osmplayer_' . $template . '_titlebar', $variables['params']);
