@@ -24,7 +24,7 @@ function tagging_service_service() {
       array(
          '#method'   => 'tag.addTag',
          '#callback' => 'tagging_service_add_tag',
-         '#access arguments' => 'allow remote tagging',      
+         '#access arguments' => array('allow remote tagging'),
          '#args'     => array(
            array(
              '#name'         => 'nid',

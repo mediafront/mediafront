@@ -26,7 +26,7 @@ function voting_service_service() {
     array(
       '#method'   => 'vote.getVote',
       '#callback' => 'voting_service_get_vote',
-      '#access arguments' => 'access content',     
+      '#access arguments' => array('access content'),
       '#key'      => FALSE,
       '#args'     => array(
         array(
@@ -49,7 +49,7 @@ function voting_service_service() {
     array(
       '#method'   => 'vote.getUserVote',
       '#callback' => 'voting_service_get_user_vote',
-      '#access arguments' => 'access content',     
+      '#access arguments' => array('access content'),
       '#key'      => FALSE,
       '#args'     => array(
         array(
@@ -73,7 +73,7 @@ function voting_service_service() {
     array(
       '#method'   => 'vote.setVote',
       '#callback' => 'voting_service_set_vote',
-      '#access arguments' => 'allow remote voting',     
+      '#access arguments' => array('allow remote voting'),
       '#args'     => array(
         array(
           '#name'         => 'content_type',
@@ -100,7 +100,7 @@ function voting_service_service() {
     array(
       '#method'   => 'vote.deleteVote',
       '#callback' => 'voting_service_delete_vote',
-      '#access arguments' => 'allow remote voting',     
+      '#access arguments' => array('allow remote voting'),
       '#args'     => array(
         array(
           '#name'         => 'content_type',
