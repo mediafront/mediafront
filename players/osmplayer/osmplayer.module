@@ -126,7 +126,7 @@ function osmplayer_add_theme(&$themes, $template, $component, $path) {
     // Add this theme.
     $themes[$template] = array(
       'template' => $template,
-      'variables' => array('params' => NULL),
+      'variables' => array('params' => NULL, 'templates' => NULL),
       'path' => $path
     );
 
@@ -152,7 +152,7 @@ function osmplayer_theme() {
 
     $themes['osmplayer_' . $template] = array(
       'template' => 'osmplayer_' . $template,
-      'variables' => array('params' => NULL),
+      'variables' => array('params' => NULL, 'templates' => NULL),
       'path' => $template_path,
       'preprocess functions' => array('template_preprocess_osmplayer')
     );
@@ -167,7 +167,6 @@ function osmplayer_theme() {
     osmplayer_add_theme($themes, $template, 'teaservoter', $template_path);
     osmplayer_add_theme($themes, $template, 'playlist', $template_path);
     osmplayer_add_theme($themes, $template, 'scrollbar', $template_path);
-    osmplayer_add_theme($themes, $template, 'hscrollbar', $template_path);
     osmplayer_add_theme($themes, $template, 'links', $template_path);
     osmplayer_add_theme($themes, $template, 'pager', $template_path);
   }
@@ -734,7 +733,10 @@ function osmplayer_add_css($player, $preset) {
   if (!isset($cssadded[$preset])) {
     $cssadded[$preset] = TRUE;
 
-    if ($player->template->settings['useThemeRoller']) {
+    // Get the CSS files.
+    $css_files = $player->template->getCSSFiles();
+
+    if ($player->template->settings['generateCSS']) {
       // If themeroller is enabled, then we will want to make sure
       // to set the CSS directory of our cached directory instead of the
       // default REAL path.
@@ -745,12 +747,16 @@ function osmplayer_add_css($player, $preset) {
     else {
       // Otherwise, just get the path to the player folder.
       $css_dir = osmplayer_get_path();
+
+      if(isset($css_files['theme'])) {
+        drupal_add_css(($css_dir . '/' . $css_files['theme']));
+      }
     }
 
-    // Get the CSS files.
-    $css_files = $player->template->getCSSFiles();
-    drupal_add_css(($css_dir . '/' . $css_files['template']));
-    if ($css_files['template_ie']) {
+    if (isset($css_files['template'])) {
+      drupal_add_css(($css_dir . '/' . $css_files['template']));
+    }
+    if (isset($css_files['template_ie']) && $css_files['template_ie']) {
       drupal_add_html_head('<!--[if IE]><link rel="stylesheet" type="text/css" href="' . ($css_dir . '/' . $css_files['template_ie']) . '" /><![endif]-->');
     }
   }
@@ -792,63 +798,16 @@ function template_preprocess_osmplayer(&$variables) {
     template_preprocess($variables, 'osmplayer_' . $variables['params']['template']);
 
     // Now set up our templates within a template.
-    $variables['titlebar'] = theme('osmplayer_' . $template . '_titlebar', array('params' => $variables['params']));
-    $variables['menu'] = theme('osmplayer_' . $template . '_menu', array('params' => $variables['params']));
-    $variables['node'] = theme('osmplayer_' . $template . '_node', array('params' => $variables['params']));
-    $variables['playlist'] = theme('osmplayer_' . $template . '_playlist', array('params' => $variables['params']));
+    $variables['templates']['teaservoter'] = theme('osmplayer_' . $variables['params']['template'] . '_teaservoter', array('params' => $variables['params'], 'templates' => $variables['templates']));
+    $variables['templates']['voter'] = theme('osmplayer_' . $variables['params']['template'] . '_nodevoter', array('params' => $variables['params'], 'templates' => $variables['templates']));
+    $variables['templates']['controlBar'] = theme('osmplayer_' . $variables['params']['template'] . '_controlbar', array('params' => $variables['params'], 'templates' => $variables['templates']));
+    $variables['templates']['titlebar'] = theme('osmplayer_' . $template . '_titlebar', array('params' => $variables['params'], 'templates' => $variables['templates']));
+    $variables['templates']['menu'] = theme('osmplayer_' . $template . '_menu', array('params' => $variables['params'], 'templates' => $variables['templates']));
+    $variables['templates']['node'] = theme('osmplayer_' . $template . '_node', array('params' => $variables['params'], 'templates' => $variables['templates']));
+    $variables['templates']['teaser'] = theme('osmplayer_' . $variables['params']['template'] . '_teaser', array('params' => $variables['params'], 'templates' => $variables['templates']));
+    $variables['templates']['scrollBar'] = theme('osmplayer_' . $variables['params']['template'] . '_scrollbar', array('params' => $variables['params'], 'templates' => $variables['templates']));
+    $variables['templates']['links'] = $variables['params']['links'] ? theme('osmplayer_' . $variables['params']['template'] . '_links', array('params' => $variables['params'], 'templates' => $variables['templates'])) : '';
+    $variables['templates']['pager'] = theme('osmplayer_' . $variables['params']['template'] . '_pager', array('params' => $variables['params'], 'templates' => $variables['templates']));
+    $variables['templates']['playlist'] = theme('osmplayer_' . $template . '_playlist', array('params' => $variables['params'], 'templates' => $variables['templates']));
   }
-}
-
-/**
- * The template preprocess function for the node.
- * 
- * @param $variables - The 
- * @return unknown_type
- */
-function template_preprocess_osmplayer_node(&$variables) {
-  template_preprocess($variables, 'osmplayer_' . $variables['params']['template'] . '_node');
-  $variables['controlBar'] = theme('osmplayer_' . $variables['params']['template'] . '_controlbar', array('params' => $variables['params']));
-}
-
-/**
- * The template preprocess function for the node.
- * 
- * @param $variables - The 
- * @return unknown_type
- */
-function template_preprocess_osmplayer_controlbar(&$variables) {
-  template_preprocess($variables, 'osmplayer_' . $variables['params']['template'] . '_controlbar');
-  $variables['voter'] = theme('osmplayer_' . $variables['params']['template'] . '_nodevoter', array('params' => $variables['params']));
-}
-
-/**
- * The template preprocess function for the node.
- * 
- * @param $variables - The 
- * @return unknown_type
- */
-function template_preprocess_osmplayer_teaser(&$variables) {
-  template_preprocess($variables, 'osmplayer_' . $variables['params']['template'] . '_teaser');
-  $variables['teaservoter'] = theme('osmplayer_' . $variables['params']['template'] . '_teaservoter', array('params' => $variables['params']));
-}
-
-/**
- * The template preprocess function for the node.
- * 
- * @param $variables - The 
- * @return unknown_type
- */
-function template_preprocess_osmplayer_playlist(&$variables) {
-  template_preprocess($variables, 'osmplayer_' . $variables['params']['template'] . '_playlist');
-  $variables['teaser'] = theme('osmplayer_' . $variables['params']['template'] . '_teaser', array('params' => $variables['params']));
-
-  if ($variables['params']['vertical']) {
-    $variables['scrollBar'] = theme('osmplayer_' . $variables['params']['template'] . '_scrollbar', array('params' => $variables['params']));
-  }
-  else {
-    $variables['scrollBar'] = theme('osmplayer_' . $variables['params']['template'] . '_hscrollbar', array('params' => $variables['params']));
-  }
-
-  $variables['links'] = $variables['params']['links'] ? theme('osmplayer_' . $variables['params']['template'] . '_links', $variables['params']) : '';
-  $variables['pager'] = theme('osmplayer_' . $variables['params']['template'] . '_pager', array('params' => $variables['params']));
 }
