@@ -749,11 +749,15 @@ function osmplayer_add_css($player, $preset) {
     else {
       // Otherwise, just get the path to the player folder.
       $css_dir = osmplayer_get_path();
-      drupal_add_css(($css_dir . '/' . $css_files['theme']));
+      if(isset($css_files['theme'])) {
+        drupal_add_css(($css_dir . '/' . $css_files['theme']));
+      }
     }
 
-    drupal_add_css(($css_dir . '/' . $css_files['template']));
-    if ($css_files['template_ie']) {
+    if (isset($css_files['template'])) {
+      drupal_add_css(($css_dir . '/' . $css_files['template']));
+    }
+    if (isset($css_files['template_ie']) && $css_files['template_ie']) {
       drupal_set_html_head('<!--[if IE]><link rel="stylesheet" type="text/css" href="' . ($css_dir . '/' . $css_files['template_ie']) . '" /><![endif]-->');
     }
   }
