@@ -10,16 +10,16 @@
           <div id="mediaplayer_menuClose"></div>
         </div>
         <div id="mediaplayer_embed" class="mediaplayer_info">
-          <form action="" id="mediaembedForm" name="mediaembedForm">
+          <div id="mediaembedForm" name="mediaembedForm">
             <label for="mediaembedCode">Embed</label>
             <input id="mediaembedCode" name="mediaembedCode" type="text" value="" readonly />
-          </form>
+          </div>
         </div>
         <div id="mediaplayer_link" class="mediaplayer_info">
-          <form action="" id="mediaelinkForm" name="mediaelinkForm">
+          <div id="mediaelinkForm" name="mediaelinkForm">
             <label for="mediaelinkCode">URL</label>
             <input id="mediaelinkCode" name="mediaelinkCode" type="text" value="" readonly />
-          </form>
+          </div>
         </div>
         <div id="mediaplayer_info" class="mediaplayer_info">
           <p>
