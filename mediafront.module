@@ -204,7 +204,7 @@ function mediafront_service() {
     array(
       '#method'   => 'mediafront.getPlaylist',
       '#callback' => 'mediafront_get_playlist',
-      '#access arguments' => 'access content',
+      '#access arguments' => array('access content'),
       '#key'      => FALSE,
       '#args'     => array(
         array(
@@ -233,7 +233,7 @@ function mediafront_service() {
     array(
       '#method'   => 'mediafront.getNode',
       '#callback' => 'mediafront_get_node',
-      '#access arguments' => 'access content',
+      '#access arguments' => array('access content'),
       '#key'      => FALSE,
       '#args'     => array(
         array(
@@ -387,8 +387,10 @@ function mediafront_array_replace_recursive( $toArray, $fromArray ) {
  */
 function mediafront_playlist_node_merge( $original, $additions ) {
   $merged = $original;
-  foreach( $additions as $field => $value ) {
-    $merged[$field] = isset($original[$field]) ? mediafront_array_replace_recursive( $original[$field], $value ) : $value;
+  if( count($additions) > 0 ) {
+    foreach( $additions as $field => $value ) {
+      $merged[$field] = isset($original[$field]) ? mediafront_array_replace_recursive( $original[$field], $value ) : $value;
+    }
   }
   return $merged;
 }
@@ -531,13 +533,24 @@ function mediafront_add_media( &$additions, $file ) {
  * Returns the field if it exists.
  */
 function _mediafront_get_field( $node, $field_name, $index = -1 ) {
+  $lang = $node->language;
+  //drupal_set_message("<pre>" . print_r($node, TRUE) . "</pre>" );
   if( isset($node->{$field_name}) &&
     is_array($node->{$field_name}) &&
-    isset($node->{$field_name}['und']) &&
-    is_array($node->{$field_name}['und']) &&
-    isset($node->{$field_name}['und'][0]) &&
-    is_array($node->{$field_name}['und'][0]) ) {
-    return ($index >= 0) ? $node->{$field_name}['und'][$index] : $node->{$field_name}['und'];
+    isset($node->{$field_name}[$lang]) &&
+    is_array($node->{$field_name}[$lang]) &&
+    isset($node->{$field_name}[$lang][0]) ) {
+    if( $index >= 0 ) {
+      $field = (array)$node->{$field_name}[$lang][$index];
+      return $field;
+    }
+    else {
+      $fields = array();
+      foreach( $node->{$field_name}[$lang] as $index => $field ) {
+        $fields[$index] = (array)$field;
+      }
+      return $fields;
+    }
   }
   else {
     return null;

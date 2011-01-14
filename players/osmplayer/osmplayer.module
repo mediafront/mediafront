@@ -21,7 +21,7 @@ function osmplayer_get_player($params) {
 
   // If they provide the node object, encode it as JSON.
   if (isset($params['nodeObj']) && $params['nodeObj']) {
-    $showPlayer |= ( count($params['nodeObj']['mediafiles']) > 0);
+    $showPlayer |= isset($params['nodeObj']['mediafiles']) && (count($params['nodeObj']['mediafiles']) > 0);
     $params['node'] = drupal_json_encode($params['nodeObj']);
   }
   else {
