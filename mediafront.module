@@ -201,7 +201,7 @@ function mediafront_service() {
     array(
       '#method'   => 'mediafront.getPlaylist',
       '#callback' => 'mediafront_get_playlist',
-      '#access arguments' => 'access content',
+      '#access arguments' => array('access content'),
       '#key'      => FALSE,
       '#args'     => array(
         array(
@@ -230,7 +230,7 @@ function mediafront_service() {
     array(
       '#method'   => 'mediafront.getNode',
       '#callback' => 'mediafront_get_node',
-      '#access arguments' => 'access content',
+      '#access arguments' => array('access content'),
       '#key'      => FALSE,
       '#args'     => array(
         array(
@@ -419,8 +419,10 @@ function mediafront_array_replace_recursive( $toArray, $fromArray ) {
  */
 function mediafront_playlist_node_merge( $original, $additions ) {
   $merged = $original;
-  foreach( $additions as $field => $value ) {
-    $merged[$field] = isset($original[$field]) ? mediafront_array_replace_recursive( $original[$field], $value ) : $value;
+  if( count($additions) > 0 ) {
+    foreach( $additions as $field => $value ) {
+      $merged[$field] = isset($original[$field]) ? mediafront_array_replace_recursive( $original[$field], $value ) : $value;
+    }
   }
   return $merged;
 }
