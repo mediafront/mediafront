@@ -411,6 +411,12 @@ function osmplayer_player_settings_form($preset) {
     '#description' => t('The amount of time ( in seconds ) to play the media track before incrementing the node counter.  Enter 0 to disable or -1 to increment only on media completion.'),
     '#default_value' => $preset['settings']['incrementTime']
   );
+  $form['media_settings']['timeout'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Image Only Timeout'),
+    '#description' => t('If there is only an image present in the node, this is the amount of time ( in seconds ) to wait before moving on to the next track.'),
+    '#default_value' => $preset['settings']['timeout']
+  );
 
   /*   * *********************** PLAYLIST SETTINGS ************************************ */
   $form['playlist_settings'] = array(
