@@ -300,11 +300,23 @@ function osmplayer_player_settings_form($preset) {
     '#description' => t('Enter the width of the player.'),
     '#default_value' => $preset['settings']['width']
   );
+  $form['presentation']['fluidWidth'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Fluid Width'),
+    '#description' => t('Check this field if you would like the width to be fluid. <strong>Note: Checking with will ignore the width setting above.</strong>'),
+    '#default_value' => $preset['settings']['fluidWidth']
+  );
   $form['presentation']['height'] = array(
     '#type' => 'textfield',
     '#title' => t('Player Height'),
     '#description' => t('Enter the height of the player.'),
     '#default_value' => $preset['settings']['height']
+  );
+  $form['presentation']['fluidHeight'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Fluid Height'),
+    '#description' => t('Check this field if you would like the height to be fluid. <strong>Note: Checking with will ignore the height setting above.</strong>'),
+    '#default_value' => $preset['settings']['fluidHeight']
   );
   $form['presentation']['zIndex'] = array(
     '#type' => 'textfield',
@@ -813,5 +825,11 @@ function template_preprocess_osmplayer(&$variables) {
     $variables['templates']['links'] = $variables['params']['links'] ? theme('osmplayer_' . $variables['params']['template'] . '_links', $variables['params'], $variables['templates']) : '';
     $variables['templates']['pager'] = theme('osmplayer_' . $variables['params']['template'] . '_pager', $variables['params'], $variables['templates']);
     $variables['templates']['playlist'] = theme('osmplayer_' . $template . '_playlist', $variables['params'], $variables['templates']);
+
+    // Determine the width and height.
+    $width = ($variables['params']['playlistOnly'] && $variables['params']['vertical']) ? '' : ('width:' . $variables['params']['width'] . 'px;');
+    $variables['width'] = $variables['params']['fluidWidth'] ? 'width:100%;' : $width;
+    $height = (($variables['params']['playlistOnly'] && !$variables['params']['vertical']) || $variables['params']['controllerOnly']) ? '' : ('height:' . $variables['params']['height'] . 'px;');
+    $variables['height'] = $variables['params']['fluidHeight'] ? 'height:100%;' : $height;
   }
 }
