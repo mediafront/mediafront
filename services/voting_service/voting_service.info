@@ -1,4 +1,3 @@
-; $Id$
 name = Voting Service
 description = Provides a voting service.
 package = "Services - services"

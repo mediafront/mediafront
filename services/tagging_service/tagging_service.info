@@ -1,4 +1,3 @@
-; $Id$
 name = Tagging Service
 description = Provides a service that allows you to tag content in the Drupal system.
 package = "Services - services"

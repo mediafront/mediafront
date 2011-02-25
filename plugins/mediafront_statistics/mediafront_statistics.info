@@ -1,4 +1,3 @@
-; $Id$
 name = MediaFront Statistics
 description = Provides media statistics to the MediaFront module such as play counter.
 package = "MediaFront : Plugins"

@@ -1,4 +1,3 @@
-; $Id$
 name = MediaFront S3
 description = Provides Amazon S3 support for the MediaFront module
 package = "MediaFront : Plugins"

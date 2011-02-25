@@ -1,4 +1,3 @@
-; $Id$
 name = MediaFront Tagging
 description = Provides media tagging support
 package = "MediaFront : Plugins"

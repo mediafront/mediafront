@@ -1,4 +1,3 @@
-; $Id$
 name = MediaFront User
 description = Adds a way to track what the user is listening to or watching.
 package = "MediaFront : Plugins"

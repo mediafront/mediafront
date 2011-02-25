@@ -1,4 +1,3 @@
-; $Id$
 name = MediaFront Embedded Media Field
 description = Provides support for the Embedded Media Field module
 package = "MediaFront : Plugins"

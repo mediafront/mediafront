@@ -1,4 +1,3 @@
-; $Id$
 name = Favorites Service
 description = Provides a node favorites service.
 package = "Services - services"
