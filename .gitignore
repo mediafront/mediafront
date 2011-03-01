@@ -1,2 +1,16 @@
 .DS_Store
-players/osmplayer/player/js/yuicompressor/*
+players/osmplayer/player/assets/
+players/osmplayer/player/flash/com/
+players/osmplayer/player/js/yuicompressor/
+players/osmplayer/player/css/
+players/osmplayer/player/flash/mediafront.fla
+players/osmplayer/player/flash/plugins/controlBar/controlBar.fla
+players/osmplayer/player/flash/plugins/mediaPlayer/mediaPlayer.fla
+players/osmplayer/player/flash/plugins/playLoader/playLoader.fla
+players/osmplayer/player/flash/skins/default/controlBar.as
+players/osmplayer/player/flash/skins/default/controlBar.fla
+players/osmplayer/player/flash/skins/default/mediaPlayer.as
+players/osmplayer/player/flash/skins/default/mediaPlayer.fla
+players/osmplayer/player/flash/skins/default/playLoader.as
+players/osmplayer/player/flash/skins/default/playLoader.fla
+players/osmplayer/player/nbproject/
