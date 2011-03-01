@@ -13,4 +13,6 @@ players/osmplayer/player/flash/skins/default/mediaPlayer.as
 players/osmplayer/player/flash/skins/default/mediaPlayer.fla
 players/osmplayer/player/flash/skins/default/playLoader.as
 players/osmplayer/player/flash/skins/default/playLoader.fla
+players/osmplayer/player/js/createJS*
+players/osmplayer/player/js/myfunctions.inc
 players/osmplayer/player/nbproject/
