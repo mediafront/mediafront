@@ -1,0 +1,3 @@
+[submodule "players/osmplayer/player"]
+	path = players/osmplayer/player
+	url = git@github.com:mediafront/osmplayer.git
