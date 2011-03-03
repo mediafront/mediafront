@@ -5,6 +5,7 @@ define('MEDIAFRONT_DEFAULT_HEIGHT', 350);
 // Require the filefield support file.
 require_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'mediafront') . '/includes/mediafront.field.inc';
 require_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'mediafront') . '/includes/mediafront.filefield.inc';
+require_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'mediafront') . '/includes/mediafront.preset.inc';
 
 /**
  * Implements hook_permission().
@@ -17,14 +18,14 @@ function mediafront_permission() {
     )
   );
 
-  return $perms;
+  return array_merge( $perms, mediafront_preset_permission());
 }
 
 /**
  * Implements hook_menu().
  */
 function mediafront_menu() {
-  
+
   $items['mediafront_getplaylist'] = array(
     'page callback' => 'mediafront_get_playlist_json',
     'type' => MENU_CALLBACK,
@@ -37,6 +38,9 @@ function mediafront_menu() {
     'page arguments' => array(1, 2),
     'access arguments' => array('access content')
   );
+
+  $items = array_merge( $items, mediafront_preset_menu() );
+
   return $items;
 }
 
@@ -100,30 +104,13 @@ function theme_mediafront_player( $variables ) {
 }
 
 /**
- * Implements hook_preset_info()
- */
-function mediafront_preset_info() {
-  return array(
-    'title' => t('MediaFront Presets'),
-    'description' => t('Manage the presets for the MediaFront module.'),
-    'permissions' => array(
-      'name' => 'administer mediafront presets',
-      'title' => t('Administer MediaFront Presets'),
-      'description' => t('Create and manage the presets for the MediaFront module.')
-    ),
-    'default_settings' => 'mediafront_get_default_settings',
-    'file' => drupal_get_path('module', 'mediafront') .'/includes/mediafront.preset.inc'
-  );
-}
-
-/**
  * Implements hook_views_api().
  *
  * This one is used as the base to reduce errors when updating.
  */
 function mediafront_views_api() {
   return array(
-    'api' => 3,
+    'api' => 2,
     'path' => drupal_get_path('module', 'mediafront') .'/views',
   );
 }
@@ -162,15 +149,6 @@ function mediafront_get_player_settings( $player ) {
     return $get_settings();
   }
   return array();
-}
-
-/**
- * Returns the default parameters.
- *
- * @param <array> The preset settings object.
- */
-function mediafront_get_default_settings( $preset ) {
-  return mediafront_get_settings( $preset['settings']['player'] );
 }
 
 /**
@@ -308,14 +286,7 @@ function mediafront_get_playlist( $playlist, $limit = 10, $page = 0, $args = arr
   $view->set_offset($page*$limit);
   $view->set_arguments($args);
   $view->get_total_rows = TRUE;
-
-  // Build the view first.
   $view->build();
-
-  // Now make sure we select ALL the fields.
-  $view->build_info['query']->fields($view->base_table);
-
-  // Now execute the view.
   $view->execute();
 
   // Return our playlist...
@@ -697,16 +668,17 @@ function mediafront_playlist_node( $node ) {
  */
 function mediafront_get_player() {
   $args = func_get_args();
-
-  // Get the first arguments.
   $params = $args[0];
-  $param_type = gettype($params);
 
-  // If they pass in a string, then this is a preset. Get the preset values.
-  if( module_exists('preset') && $param_type == 'string' ) {
-    $preset = preset_get( 'mediafront', $params );
-    $params = $preset ? (isset($args[1]) ? array_merge( $preset['settings'], $args[1] ) : $preset['settings']) : array();
+  // If they pass in a string, then this is a preset.
+  // get the preset values.
+  if( gettype($params) == 'string' ) {
+    $preset = mediafront_get_preset( $params );
+    $params = isset($args[1]) ? $preset['settings'] ? array_merge( $preset['settings'], $args[1] ) : $args[1] : $preset['settings'];
     $params['preset'] = $preset['name'];
+    $params['player'] = $preset['player'];
+    $params['connect'] = (isset($params['connect']) && $params['connect']) ? $params['connect'] : $preset['connect'];
+    $params['id'] = (isset($params['id']) && $params['id']) ? $params['id'] : 'mediafront_' . $preset['name'];
   }
 
   if( $params && is_array($params) ) {
@@ -714,10 +686,8 @@ function mediafront_get_player() {
     $getPlayer = $player . '_get_player';
     return function_exists($getPlayer) ? $getPlayer($params) : t('Player not available');
   }
-  else if( $param_type == 'string' ) {
-    return t('You need to install the <a href="http://www.drupal.org/project/preset">Preset</a> module to show this player.');
+  else {
+    return t('Player not available');
   }
-
-  return t('Player not available');
 }
 ?>
