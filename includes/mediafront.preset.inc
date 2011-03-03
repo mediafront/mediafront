@@ -633,7 +633,7 @@ function mediafront_preset_delete( $preset_name ) {
   db_query("DELETE FROM {mediafront_preset} WHERE name='%s'", $preset_name);
 
   // Rebuild Theme Registry
-  drupal_theme_rebuild();
+  drupal_rebuild_theme_registry();
 }
 
 /**
