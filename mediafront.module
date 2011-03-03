@@ -586,6 +586,19 @@ function _mediafront_get_field( $node, $field_name, $index = -1 ) {
   }
 }
 
+
+/**
+ * Implements hook_views_query_alter().
+ *
+ * This is a HACK until I can convince the views maintainers to take my patch found at
+ * http://drupal.org/node/857946
+ */
+function mediafront_views_query_alter( &$view, &$query ) {
+  if( !isset($query->fields) ) {
+    $query->add_field($query->base_table, $query->base_field);
+  }
+}
+
 /**
  * Implementation of hook_playlist_node()
  */
