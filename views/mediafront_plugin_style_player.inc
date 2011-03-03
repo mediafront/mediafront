@@ -30,7 +30,7 @@ class mediafront_plugin_style_player extends views_plugin_style {
    */
   function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
-    $presets = preset_get_presets('mediafront');
+    $presets = mediafront_preset_get_presets();
     $options = array();
     foreach( $presets as $preset ) {
       $options[$preset['name']] = $preset['name'];
