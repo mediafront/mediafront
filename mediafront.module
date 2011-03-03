@@ -17,7 +17,7 @@ function mediafront_perm() {
  * Implements hook_menu().
  */
 function mediafront_menu() {
-  
+
   $items['mediafront_getplaylist'] = array(
     'page callback' => 'mediafront_get_playlist_json',
     'type' => MENU_CALLBACK,
@@ -82,7 +82,7 @@ function theme_mediafront_player( $node, $preset ) {
   $params['disablePlaylist'] = true;
 
   // Return the player.
-  return mediafront_get_player( $preset, $params );
+  return mediafront_get_player($preset, $params);
 }
 
 /**
@@ -760,7 +760,7 @@ function mediafront_get_player() {
     $params['id'] = (isset($params['id']) && $params['id']) ? $params['id'] : 'mediafront_' . $preset['name'];
   }
 
-  if( $params ) {
+  if( $params && is_array($params) ) {
     $player = ($params && $params['player']) ? $params['player'] : 'osmplayer';
     $getPlayer = $player . '_get_player';
     return function_exists($getPlayer) ? $getPlayer($params) : t('Player not available');
