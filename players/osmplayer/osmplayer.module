@@ -212,13 +212,15 @@ function osmplayer_get_css_dir() {
 }
 
 /**
- * Implementation of hook_{module}_preset_set
+ * Implementation of hook_mediafront_preset_save
  */
-function osmplayer_mediafront_preset_set($preset) {
-  $preset['settings']['preset'] = $preset['name'];
+function osmplayer_mediafront_preset_save($preset) {
+  // We need to delete the temporary CSS files.
+  $settings = isset($preset['settings']) ? $preset['settings'] : array();
+  $settings['preset'] = $preset['name'];
 
   // Get the media player.
-  $player = osmplayer_get_player_object($preset['settings'], true);
+  $player = osmplayer_get_player_object($settings, true);
 
   if ($player) {
     // Now reset the CSS files.
