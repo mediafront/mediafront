@@ -61,36 +61,36 @@ function mediafront_preset_menu() {
   );
 
   $file = 'includes/mediafront.preset.inc';
-  $items[$presets_path . '/manage/%mediafront_preset'] = array(
+  $items[$presets_path . '/preset/%mediafront_preset'] = array(
     'title' => 'Edit MediaFront Preset',
     'title callback' => 'mediafront_preset_page_title',
-    'title arguments' => array(5),
+    'title arguments' => array(4),
     'file' => $file,
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('mediafront_preset_form', 5),
+    'page arguments' => array('mediafront_preset_form', 4),
     'access arguments' => array('administer mediafront presets')
   );
-  $items[$presets_path . '/manage/%mediafront_preset/edit'] = array(
+  $items[$presets_path . '/preset/%mediafront_preset/edit'] = array(
     'title' => 'Edit',
     'file' => $file,
-    'page arguments' => array(5),
+    'page arguments' => array(4),
     'access arguments' => array('administer mediafront presets'),
     'type' => MENU_DEFAULT_LOCAL_TASK,
   );
-  $items[$presets_path . '/manage/%mediafront_preset/delete'] = array(
+  $items[$presets_path . '/preset/%mediafront_preset/delete'] = array(
     'title' => 'Delete',
     'file' => $file,
-    'page arguments' => array('mediafront_preset_delete_confirm', 5),
+    'page arguments' => array('mediafront_preset_delete_confirm', 4),
     'access arguments' => array('administer mediafront presets'),
     'type' => MENU_CALLBACK
   );
-  $items[$presets_path . '/manage/%mediafront_preset/export'] = array(
+  $items[$presets_path . '/preset/%mediafront_preset/export'] = array(
     'title' => t('Export'),
     'file' => $file,
     'title callback' => 'mediafront_preset_page_title',
-    'title arguments' => array(5),
+    'title arguments' => array(4),
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('mediafront_preset_export_form', 5),
+    'page arguments' => array('mediafront_preset_export_form', 4),
     'access arguments' => array('administer mediafront presets'),
     'type' => MENU_CALLBACK
   ); 
@@ -112,13 +112,13 @@ function mediafront_presets_overview() {
         $row = array();
         $row[] = check_plain($preset['name']);
         $row[] = array('data' => filter_xss_admin($preset['description']), 'class' => 'description');
-        $row[] = array('data' => l(t('edit'), $presets_path . '/manage/'. $preset['name']));
+        $row[] = array('data' => l(t('edit'), $presets_path . '/preset/'. $preset['name']));
         
         if( !$preset['default'] ) {
-          $row[] = array('data' => l(t('delete'), $presets_path . '/manage/'. $preset['name'] .'/delete'));
+          $row[] = array('data' => l(t('delete'), $presets_path . '/preset/'. $preset['name'] .'/delete'));
         }
         
-        $row[] = array('data' => l(t('export'), $presets_path . '/manage/'. $preset['name'] .'/export'));
+        $row[] = array('data' => l(t('export'), $presets_path . '/preset/'. $preset['name'] .'/export'));
         $rows[] = $row;
     }
     return theme('table', array('header' => $header, 'rows' => $rows));
@@ -142,8 +142,8 @@ function mediafront_preset_form($form, &$form_state, $preset) {
    $params = $preset['settings'] ? array_merge( $preset['settings'], $params ) : $params;
 
    $form['preview']['player'] = array(
-      '#type' => 'markup',
-      '#value' => mediafront_get_player($params)
+      '#type' => 'item',
+      '#markup' => mediafront_get_player($params)
    );
 
    // Get all of the settings for this player.
@@ -211,23 +211,25 @@ function mediafront_preset_form($form, &$form_state, $preset) {
       }
    }
 
-   $form['settings']['connect']['iscontroller'] = array(
-      '#type' => 'select',
-      '#multiple' => TRUE,
-      '#title' => t('Make this preset the Control Bar for'),
-      '#description' => t('Select which preset you would like to control using this preset.'),
-      '#default_value' => $preset['connect']['iscontroller'],
-      '#options' => $presets
-   );
+   if (isset($preset['connect']) && $preset['connect'] ) {
+     $form['settings']['connect']['iscontroller'] = array(
+        '#type' => 'select',
+        '#multiple' => TRUE,
+        '#title' => t('Make this preset the Control Bar for'),
+        '#description' => t('Select which preset you would like to control using this preset.'),
+        '#default_value' => $preset['connect']['iscontroller'],
+        '#options' => $presets
+     );
 
-   $form['settings']['connect']['isplaylist'] = array(
-      '#type' => 'select',
-      '#multiple' => TRUE,
-      '#title' => t('Make this preset the Playlist for'),
-      '#description' => t('Select which preset you would like to play this playlist.'),
-      '#default_value' => $preset['connect']['isplaylist'],
-      '#options' => $presets
-   );
+     $form['settings']['connect']['isplaylist'] = array(
+        '#type' => 'select',
+        '#multiple' => TRUE,
+        '#title' => t('Make this preset the Playlist for'),
+        '#description' => t('Select which preset you would like to play this playlist.'),
+        '#default_value' => $preset['connect']['isplaylist'],
+        '#options' => $presets
+     );
+   }
    
    $form['submit'] = array(
       '#type' => 'submit',
@@ -308,8 +310,8 @@ function mediafront_preset_submit($form, &$form_state) {
   $preset['description'] = $form_state['values']['description'];
   $preset['player'] = $form_state['values']['player'];
   $preset['connect'] = array(
-     'iscontroller' => $form_state['values']['iscontroller'],
-     'isplaylist' => $form_state['values']['isplaylist']
+     'iscontroller' => isset($form_state['values']['iscontroller']) ? $form_state['values']['iscontroller'] : array(),
+     'isplaylist' => isset($form_state['values']['isplaylist']) ? $form_state['values']['isplaylist'] : array()
   );
   
   // Now set the player settings that are only different from the defaults.  
@@ -317,7 +319,7 @@ function mediafront_preset_submit($form, &$form_state) {
 
   // Save this preset.
   mediafront_preset_save( $preset );
-  $form_state['redirect'] = mediafront_get_presets_path() . '/manage/' . $preset['name'];
+  $form_state['redirect'] = mediafront_get_presets_path() . '/preset/' . $preset['name'];
 }
 
 /**
@@ -325,7 +327,7 @@ function mediafront_preset_submit($form, &$form_state) {
  */
 function mediafront_preset_delete_submit($form, &$form_state) {
   $preset['name'] = $form_state['values']['name'];
-  $form_state['redirect'] = mediafront_get_presets_path() . '/manage/' . $preset['name'] . '/delete';
+  $form_state['redirect'] = mediafront_get_presets_path() . '/preset/' . $preset['name'] . '/delete';
 }
 
 /**
@@ -419,7 +421,7 @@ function mediafront_create_preset_submit($form, &$form_state) {
   $preset = $form_state['values'];
   $preset['name'] = strtolower( $preset['name'] );
   mediafront_preset_save($preset);
-  $form_state['redirect'] = mediafront_get_presets_path() . '/manage/' . $preset['name'];
+  $form_state['redirect'] = mediafront_get_presets_path() . '/preset/' . $preset['name'];
 }
 
 /**
@@ -475,7 +477,7 @@ function mediafront_preset_import_validate($form, &$form_state) {
 function mediafront_preset_import_submit($form, &$form_state) {
   $preset = $form_state['preset'];
   mediafront_preset_save( $preset );
-  $form_state['redirect'] = mediafront_get_presets_path() . '/manage/' . $preset['name'];
+  $form_state['redirect'] = mediafront_get_presets_path() . '/preset/' . $preset['name'];
 }
 
 /**
@@ -542,9 +544,6 @@ function mediafront_preset_save( $preset ) {
     $preset['settings'] = mediafront_get_settings( $preset['player'], $preset['settings'] );
     $player_save( $preset );
   }
-
-  // Rebuild Theme Registry
-  drupal_rebuild_theme_registry();
 }
 
 /**

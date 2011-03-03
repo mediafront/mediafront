@@ -112,23 +112,38 @@ function mediafront_update_7002() {
   return $update;
 }
 
-// Convert all of the Preset module's presets to mediafront_presets.
+/**
+ * Migrate the Preset module presets to the MediaFront module.
+ */
 function mediafront_update_7003() {
+  $ret = array();
   require_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'mediafront') . '/includes/mediafront.preset.inc';
   $presets = preset_get_presets('mediafront');
   foreach( $presets as $preset ) {
-    $mpreset = new stdClass();
-    $mpreset->name = $preset->name;
-    $mpreset->description = $preset->description;
-    $mpreset->player = $preset->settings->player;
-    unset($preset->settings->player);
-    $mpreset->connect = $preset->settings->connect;
-    unset($preset->settings->connect);
-    $mpreset->settings = $preset->settings;
-    mediafront_preset_save($mpreset);
+    $mpreset = array();
+    $mpreset['name'] = $preset['name'];
+    $mpreset['description'] = $preset['description'];
+    if( $preset['settings']['player'] ) {
+      $mpreset['player'] = $preset['settings']['player'];
+      unset($preset['settings']['player']);
+    }
+    else {
+      $mpreset['player'] = 'osmplayer';
+    }
+    if( $preset['settings']['connect'] ) {
+      $mpreset['connect'] = $preset['settings']['connect'];
+      unset($preset['settings']['connect']);
+    }
+    $mpreset['settings'] = $preset['settings'];
+    mediafront_preset_save( $mpreset );
   }
+  return $ret;
+}
 
-  // Now disable the Preset module.
+/**
+ * Disable the Preset module since it isn't needed anymore.
+ */
+function mediafront_update_7004() {
   module_disable(array('preset'));
 }
 ?>

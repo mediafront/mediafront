@@ -2,7 +2,6 @@ name = MediaFront
 description = A front end media solution for Drupal.
 package = MediaFront
 core = 7.x
-dependencies[] = preset
 files[] = mediafront.module
 files[] = mediafront.install
 files[] = mediafront.admin.inc
