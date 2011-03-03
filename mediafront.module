@@ -104,6 +104,20 @@ function theme_mediafront_player( $variables ) {
 }
 
 /**
+ * Implementation of hook_features_api()
+ * 
+ */
+function mediafront_features_api() {
+  return array(
+    'mediafront' => array(
+      'name' => t('MediaFront Presets'),
+      'default_hook' => 'mediafront_default_presets',
+      'file' => drupal_get_path('module', 'mediafront') .'/includes/mediafront.features.inc',
+    ),
+  );
+}
+
+/**
  * Implements hook_views_api().
  *
  * This one is used as the base to reduce errors when updating.

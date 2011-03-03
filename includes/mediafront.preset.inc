@@ -650,6 +650,7 @@ function mediafront_preset_delete( $preset_name ) {
  * Checks to see if another preset is already taken.
  */
 function mediafront_preset_name_exists( $preset_name ) {
+
   // Get the default presets.
   $default_presets = mediafront_preset_get_default_presets();
   
