@@ -137,6 +137,10 @@ function mediafront_update_7003() {
     $mpreset['settings'] = $preset['settings'];
     mediafront_preset_save( $mpreset );
   }
+
+  // Clear the menu cache.
+  menu_cache_clear();
+  
   return $ret;
 }
 
