@@ -563,6 +563,7 @@ function mediafront_preset_save( $preset ) {
   // Tell the player about this preset save.
   $player_save = $preset['player'] . '_mediafront_preset_save';
   if( function_exists( $player_save ) ) {
+    $preset['settings'] = isset($preset['settings']) ? $preset['settings'] : array();
     $preset['settings'] = mediafront_get_settings( $preset['player'], $preset['settings'] );
     $player_save( $preset );
   }
