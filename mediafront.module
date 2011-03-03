@@ -168,12 +168,18 @@ function mediafront_get_player_settings( $player ) {
 /**
  * Returns ALL the player settings for the given player provided settings to override.
  */
-function mediafront_get_settings( $player, $override = array() ) {
+function mediafront_get_settings( $player, $overrides = array() ) {
   static $defaults = array();
-  if( !isset($defaults[$player]) ) {
-    $defaults[$player] = array_merge( mediafront_get_player_params($player), mediafront_get_player_settings($player) );
+
+  // Get the default settings.
+  $settings = isset($defaults[$player]) ? $defaults[$player] : array();
+  if( !$settings ) {
+    $settings = array_merge( mediafront_get_player_params($player), mediafront_get_player_settings($player) );
+    $defaults[$player] = $settings;
   }
-  return $override ? array_merge( $defaults[$player], $override ) : $defaults[$player];
+
+  // Return the settings.
+  return $overrides ? array_merge($settings, $overrides) : $settings;
 }
 
 /**
