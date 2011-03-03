@@ -300,7 +300,6 @@ function mediafront_get_playlist( $playlist, $limit = 10, $page = 0, $args = arr
   $view->set_offset($page*$limit);
   $view->set_arguments($args);
   $view->get_total_rows = TRUE;
-  $view->build();
   $view->execute();
 
   // Return our playlist...
