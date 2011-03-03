@@ -186,10 +186,14 @@ function mediafront_preset_form(&$form_state, $preset) {
       '#collapsible' => true,
       '#collapsed' => true
    );
-   $form['settings']['preset']['pid'] = array(
-      '#type' => 'value',
-      '#value' => $preset['pid'],
-   );   
+
+   if( isset($preset['pid']) ) {
+     $form['settings']['preset']['pid'] = array(
+        '#type' => 'value',
+        '#value' => $preset['pid'],
+     );
+   }
+   
    $form['settings']['preset']['name'] = array(
       '#type' => 'value',
       '#value' => $preset['name'],
@@ -211,7 +215,8 @@ function mediafront_preset_form(&$form_state, $preset) {
       '#title' => t('Player Settings'),      
       '#weight' => -8,
       '#collapsible' => true,
-      '#collapsed' => true
+      '#collapsed' => true,
+      '#tree' => TRUE,
    );
    
    // Now add the player settings form to this fieldset.
@@ -279,47 +284,22 @@ function mediafront_preset_validate($form, &$form_state) {
 }
 
 /**
- * Parses a setting from a serialized object.
+ * Flatten the settings array.
+ *
+ * @param <type> $array
+ * @param <type> $return
+ * @return <type>
  */
-function mediafront_preset_parse_param( $value, $type ) {
-  switch( $type ) {
-    case 'integer':
-      return (integer)$value;
-      break;
-    case 'float':
-      return (float)$value;
-      break;
-    case 'boolean':
-      $value = (!$value || $value === "false" || $value === "0") ? false : $value;
-      return (boolean)$value;
-      break;
-    default:
-      return $value;
-      break;
-  }
-}
-
-/**
- * Returns only the settings that are different from the defaults.
- */
-function mediafront_preset_get_unique_settings( $player, $params ) {
-  $unique_values = array();
-  
-  if( $defaults = mediafront_get_settings($player) ) {
-    // Iterate through all the defaults and add the unique values.
-    foreach( $defaults as $key => $value ) {
-      if( isset($params[$key]) ) {
-        // Only set the setting if it was provided and is different than the default.
-        $param = mediafront_preset_parse_param( $params[$key], getType($value) );
-        if( $param != $value ) {
-          // Set the necessary setting...
-          $unique_values[$key] = $param;
-        }
-      }
+function mediafront_preset_array_flatten($array,$return=array()) {
+  foreach( $array as $key => $value ) {
+    if( is_array($value) ) {
+      $return = mediafront_preset_array_flatten($value, $return);
+    }
+    else {
+      $return[$key] = $value;
     }
   }
-
-  return $unique_values;
+  return $return;
 }
 
 /**
@@ -327,7 +307,9 @@ function mediafront_preset_get_unique_settings( $player, $params ) {
  */
 function mediafront_preset_submit($form, &$form_state) {
   $preset = array();
-  $preset['pid'] = $form_state['values']['pid'];
+  if( isset($form_state['values']['pid']) ) {
+    $preset['pid'] = $form_state['values']['pid'];
+  }
   $preset['name'] = $form_state['values']['name'];
   $preset['description'] = $form_state['values']['description'];
   $preset['player'] = $form_state['values']['player'];
@@ -337,7 +319,7 @@ function mediafront_preset_submit($form, &$form_state) {
   );
   
   // Now set the player settings that are only different from the defaults.  
-  $preset['settings'] = mediafront_preset_get_unique_settings( $preset['player'], $form_state['values'] );
+  $preset['settings'] = mediafront_get_settings( $preset['player'], mediafront_preset_array_flatten($form_state['values']['player_settings']) );
 
   // Save this preset.
   mediafront_preset_save( $preset );
@@ -596,7 +578,6 @@ function mediafront_preset_get_presets() {
     $preset = (array)$preset;
     $preset['connect'] = $preset['connect'] ? unserialize( $preset['connect'] ) : array();
     $preset['settings'] = $preset['settings'] ? unserialize( $preset['settings'] ): array();
-    $preset['default'] = false;
     $presets[$preset['pid']] = $preset;
     $normal_presets[$preset['name']] = $preset['pid'];
   }
@@ -604,9 +585,6 @@ function mediafront_preset_get_presets() {
   // Now allow other modules to add their default presets.
   foreach (mediafront_preset_get_default_presets() as $preset) {
     if (!empty($preset['name']) && !isset($normal_presets[$preset['name']])) {
-      // Add this preset to the list.
-      $preset['pid'] = $preset['name'];
-      $preset['default'] = true;
       $presets[$preset['name']] = $preset;
     }
   }
@@ -631,18 +609,16 @@ function mediafront_get_preset( $preset_name ) {
   if( $preset ) {
     $preset['settings'] = $preset['settings'] ? unserialize( $preset['settings'] ) : array();
     $preset['connect'] = $preset['connect'] ? unserialize( $preset['connect'] ) : array();
-    $preset['default'] = false;
   }
+  else {
+    // Get all of the default presets.
+    $default_presets = mediafront_preset_get_default_presets();
 
-  // Get all of the default presets.
-  $default_presets = mediafront_preset_get_default_presets();
-
-  // Check to see if this preset exists.
-  if (isset($default_presets[$preset_name])) {
-    // Make this our preset
-    $preset = $default_presets[$preset_name];
-    $preset['pid'] = $preset_name;
-    $preset['default'] = true;
+    // Check to see if this preset exists.
+    if (isset($default_presets[$preset_name])) {
+      // Make this our preset
+      $preset = $default_presets[$preset_name];
+    }
   }
 
   // Return the preset.
