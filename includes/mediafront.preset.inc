@@ -113,11 +113,7 @@ function mediafront_presets_overview() {
         $row[] = check_plain($preset['name']);
         $row[] = array('data' => filter_xss_admin($preset['description']), 'class' => 'description');
         $row[] = array('data' => l(t('edit'), $presets_path . '/preset/'. $preset['name']));
-        
-        if( !isset($preset['default']) ) {
-          $row[] = array('data' => l(t('delete'), $presets_path . '/preset/'. $preset['name'] .'/delete'));
-        }
-        
+        $row[] = array('data' => is_numeric($preset['pid']) ? l(t('delete'), $presets_path . '/preset/'. $preset['name'] .'/delete') : '');
         $row[] = array('data' => l(t('export'), $presets_path . '/preset/'. $preset['name'] .'/export'));
         $rows[] = $row;
     }
