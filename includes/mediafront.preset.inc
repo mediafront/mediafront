@@ -114,7 +114,7 @@ function mediafront_presets_overview() {
         $row[] = array('data' => filter_xss_admin($preset['description']), 'class' => 'description');
         $row[] = array('data' => l(t('edit'), $presets_path . '/preset/'. $preset['name']));
         
-        if( !$preset['default'] ) {
+        if( !isset($preset['default']) ) {
           $row[] = array('data' => l(t('delete'), $presets_path . '/preset/'. $preset['name'] .'/delete'));
         }
         
