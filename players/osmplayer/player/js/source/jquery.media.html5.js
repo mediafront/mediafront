@@ -33,8 +33,10 @@
       this.bytesTotal = 0;
       this.mediaType = "";
       this.loaded = false;
+      this.mediaFile = null;
          
       this.getPlayer = function( mediaFile, preview ) {
+        this.mediaFile = mediaFile;
         var playerId = options.id + '_' + this.mediaType;
         var html = '<' + this.mediaType + ' style="position:absolute" id="' + playerId + '"';
         html += (this.mediaType == "video") ? ' width="100%" height="100%"' : '';
@@ -128,6 +130,7 @@
 
       // Load new media into the HTML5 player.
       this.loadMedia = function( mediaFile ) {
+        this.mediaFile = mediaFile;
         this.createMedia( mediaFile );
       };
          
@@ -202,12 +205,12 @@
         var flashVars = {
           config:"config",
           id:"mediafront_player",
-          file:this.videoFile.path,
+          file:this.mediaFile.path,
           image:this.preview,
           skin:settings.skin
         };
-        if( this.videoFile.stream ) {
-          flashVars.stream = this.videoFile.stream;
+        if( this.mediaFile.stream ) {
+          flashVars.stream = this.mediaFile.stream;
         }
         return jQuery.media.utils.getFlash(
           settings.flashPlayer,
