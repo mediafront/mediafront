@@ -659,7 +659,10 @@ function osmplayer_player_settings_form($preset) {
     '#description' => t('Select if you would like to see the debug statements from the Media Player.'),
     '#default_value' => $preset['settings']['debug']
   );
-
+  
+/**
+ * Turn this off until Services for Drupal 7 has been hashed out...
+ * 
   // If they have services module, then we need to get all the available API Keys.
   $hasServices = module_exists('services');
   $apiKeys = array();
@@ -679,7 +682,9 @@ function osmplayer_player_settings_form($preset) {
       '#options' => $apiKeys
     );
   }
-
+ * 
+ */
+  
   $form['misc']['protocol'] = array(
     '#type' => 'select',
     '#title' => t('Communication Protocol'),
