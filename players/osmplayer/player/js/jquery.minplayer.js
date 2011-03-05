@@ -1074,18 +1074,18 @@
           id:"mediafront_player",
           file:this.mediaFile.path,
           image:this.preview,
-          skin:settings.skin
+          skin:options.skin
         };
         if( this.mediaFile.stream ) {
           flashVars.stream = this.mediaFile.stream;
         }
         return jQuery.media.utils.getFlash(
-          settings.flashPlayer,
+          options.flashPlayer,
           "mediafront_player",
-          settings.embedWidth,
-          settings.embedHeight,
+          options.embedWidth,
+          options.embedHeight,
           flashVars,
-          settings.wmode );
+          options.wmode );
       };
       this.getMediaLink = function() {
         return "This media currently does not have a link.";
