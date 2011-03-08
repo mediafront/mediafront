@@ -76,14 +76,14 @@ function osmplayer_get_player_object($settings = null, $force = false) {
         $osmplayers[$preset]->template->setCSSDir(osmplayer_get_css_dir());
 
         // Now add our playlist connections.
-        if (isset($settings['connect']) && $settings['connect']['isplaylist']) {
+        if (isset($settings['connect']) && isset($settings['connect']['isplaylist'])) {
           foreach ($settings['connect']['isplaylist'] as $toPlayer) {
             $osmplayers[$preset]->addPlaylistTo('mediafront_' . $toPlayer);
           }
         }
 
         // Now add our controller connections.
-        if (isset($settings['connect']) && $settings['connect']['iscontroller']) {
+        if (isset($settings['connect']) && isset($settings['connect']['iscontroller'])) {
           foreach ($settings['connect']['iscontroller'] as $toPlayer) {
             $osmplayers[$preset]->addControllerTo('mediafront_' . $toPlayer);
           }
