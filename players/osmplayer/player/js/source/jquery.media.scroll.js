@@ -63,13 +63,13 @@
       // users to use the scroll bar.
       if( this.spanMode || (settings.scrollMode == "auto") ) {
         // Add our event callbacks.
-        this.listMask.bind( 'mouseenter', function( event ) {
+        this.listMask.unbind("mouseenter").bind( 'mouseenter', function( event ) {
           _this.onMouseOver( event );
         });
-        this.listMask.bind( 'mouseleave', function( event ) {
+        this.listMask.unbind("mouseleave").bind( 'mouseleave', function( event ) {
           _this.onMouseOut( event );
         });
-        this.listMask.bind( 'mousemove', function( event ) {
+        this.listMask.unbind("mousemove").bind( 'mousemove', function( event ) {
           _this.onMouseMove( event );
         });
       }
@@ -122,12 +122,12 @@
          
       if( this.scrollBar ) {
         // Handle the update value event.
-        this.scrollBar.display.bind("updatevalue", function( event, data ) {
+        this.scrollBar.display.unbind("updatevalue").bind("updatevalue", function( event, data ) {
           _this.setScrollPos( data * _this.bottomPos, false );
         });
             
         // Handle the set value event.
-        this.scrollBar.display.bind("setvalue", function( event, data ) {
+        this.scrollBar.display.unbind("setvalue").bind("setvalue", function( event, data ) {
           _this.setScrollPos( data * _this.bottomPos, true );
         });
       }
@@ -221,7 +221,7 @@
       // Called when the mouse moves within the scroll region.
       this.onMouseMove = function( event ) {
         this.mousePos = event[ this.pagePos ] - this.getOffset();
-            
+
         // If the scroll type is span, then just move the list
         // up and down according to the listSize/regionSize ratio.
         if( this.shouldScroll && this.spanMode ) {
@@ -307,7 +307,7 @@
             
         // Now set the list position.
         this.listPos = _listPos;
-
+        
         // Set the position of the scroll bar.
         if( this.scrollBar ) {
           var newPos = this.bottomPos ? (this.listPos / this.bottomPos) : 0;
