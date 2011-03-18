@@ -569,7 +569,6 @@ function mediafront_playlist_node( $node ) {
   $additions = array();
   $field_additions = array();
 
-
   // If they provide the field_mediafront_media field.
   if( $field = _mediafront_get_field( $node, 'field_mediafront_media', 0 ) ) {
     $media_added = true;
@@ -594,7 +593,7 @@ function mediafront_playlist_node( $node ) {
       }
 
       // This is a file field.
-      if( isset($field[0]['filename']) ) {
+      if( isset($field[0]['fid']) || isset($field[0]['filename']) ) {
 
         // Get the media type for this field.
         $media_field = mediafront_filefield_get( 'node', $node->type, $fieldname );
@@ -604,6 +603,11 @@ function mediafront_playlist_node( $node ) {
 
           // Iterate through the file field instances.
           foreach( $field as $index => $instance ) {
+
+            // Check to see if we need to load the media.
+            if( module_exists('media') && $instance['fid'] && !isset($instance['filename']) && !isset($instance['data']) ) {
+              $instance['data'] = (array)media_load($instance['fid']);
+            }
 
             // If this instance has a data struct...
             if( isset($instance['data']) && $instance['data'] ) {
