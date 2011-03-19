@@ -37,7 +37,7 @@
     link:"http://www.mediafront.org",
     file:"",
     image:"",
-    timeout:4,
+    timeout:8,
     autoLoad:true
   });
 
@@ -185,6 +185,9 @@
         if( settings.template.onFullScreen ) {
           settings.template.onFullScreen( full );
         }
+
+        // Refresh the preview image.
+        this.preview.refresh();
       };
          
       // Handle when the preview image loads.
@@ -194,6 +197,7 @@
          
       // Handle the media events.
       this.onMediaUpdate = function( data ) {
+        console.log(data.type); 
         switch( data.type ) {
           case "paused":
             this.playing = false;

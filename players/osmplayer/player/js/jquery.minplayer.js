@@ -37,7 +37,7 @@
     link:"http://www.mediafront.org",
     file:"",
     image:"",
-    timeout:4,
+    timeout:8,
     autoLoad:true
   });
 
@@ -185,6 +185,9 @@
         if( settings.template.onFullScreen ) {
           settings.template.onFullScreen( full );
         }
+
+        // Refresh the preview image.
+        this.preview.refresh();
       };
          
       // Handle when the preview image loads.
@@ -1159,8 +1162,7 @@
       };
     })( this, options, onUpdate );
   };
-         
-/**
+         /**
  *  Copyright (c) 2010 Alethia Inc,
  *  http://www.alethia-inc.com
  *  Developed by Travis Tidwell | travist at alethia-inc.com 
@@ -1948,11 +1950,7 @@
       // Handle the media events...
       this.onMediaUpdate = function( data ) {
         switch( data.type ) {
-          case "nomedia":
-            this.display.hide();
-            break;
           case "reset":
-            this.display.show();
             this.reset();
             break;
           case "paused":
