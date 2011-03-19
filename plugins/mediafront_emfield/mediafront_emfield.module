@@ -3,7 +3,7 @@
  * Implementation of hook_playlist_node
  */
 function mediafront_emfield_playlist_node( $node, $args ) {
-   $additions = array();   
+   $additions = array();
    foreach( $node as $fieldname => $field ) {
       if( strpos( $fieldname, 'field_' ) === 0 ) {
          if( $field[0]["data"] && $field[0]["data"]["thumbnail"] ) {
