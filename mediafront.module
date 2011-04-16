@@ -600,8 +600,10 @@ function _mediafront_get_field( $node, $field_name, $index = -1 ) {
  * http://drupal.org/node/857946
  */
 function mediafront_views_query_alter( &$view, &$query ) {
-  if( !isset($query->fields) ) {
-    $query->add_field($query->base_table, $query->base_field);
+  if( $view->style_plugin->definition['handler'] == 'mediafront_plugin_style_player' ) {
+    if( !isset($query->fields) || !in_array('nid', array_keys($query->fields)) ) {
+      $query->add_field($query->base_table, 'nid');
+    }
   }
 }
 
