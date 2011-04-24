@@ -42,62 +42,63 @@ function osmplayer_get_path() {
 /**
  * Returns the OSMPlayer object.
  */
-function osmplayer_get_player_object($settings = null, $force = false) {
+function osmplayer_get_player_object($settings = null) {
   global $base_url, $user;
-  static $osmplayers = array();
+  static $instance = 0;
+  
+  $player = null;
   if ($settings['preset']) {
     $preset = $settings['preset'];
-    if ($force || !isset($osmplayers[$preset])) {
-      if ($settings) {
-        // Create the OSMPlayer object with these settings.
-        $playerPath = osmplayer_get_path();
-        $settings['id'] = 'mediafront_' . $preset;
-        $settings['prefix'] = $settings['id'] . '_';
-        $settings['baseURL'] = $base_url;
-        $settings['gateway'] = $base_url . '/services/xmlrpc';
+    if ($settings) {
+      // Create the OSMPlayer object with these settings.
+      $playerPath = osmplayer_get_path();
+      $settings['id'] = 'mediafront_' . $preset;
+      $settings['prefix'] = $settings['id'] . '_';
+      $settings['baseURL'] = $base_url;
+      $settings['gateway'] = $base_url . '/services/xmlrpc';
 
-        if (isset($settings['flashPlayer'])) {
-          $settings['flashPlayer'] = $base_url . '/' . $playerPath . '/' . $settings['flashPlayer'];
-        }
-        if (isset($settings['logo'])) {
-          $logoPath = ($settings['logo'] == 'logo.png') ? ($playerPath . '/') : '';
-          $settings['logo'] = $base_url . '/' . $logoPath . $settings['logo'];
-        }
+      if (isset($settings['flashPlayer'])) {
+        $settings['flashPlayer'] = $base_url . '/' . $playerPath . '/' . $settings['flashPlayer'];
+      }
+      if (isset($settings['logo'])) {
+        $logoPath = ($settings['logo'] == 'logo.png') ? ($playerPath . '/') : '';
+        $settings['logo'] = $base_url . '/' . $logoPath . $settings['logo'];
+      }
 
-        // Create the OSMPlayer object with these settings.
-        $osmplayers[$preset] = new OSMPlayer($settings);
+      // Create the OSMPlayer object with these settings.
+      $player = new OSMPlayer($settings);
+      $player->setId($player->getId() . '_' . $instance++);
 
-        // Set the session id for the player.
-        if (isset($user->sid)) {
-          $osmplayers[$preset]->setSessionId($user->sid);
-        }
+      // Set the session id for the player.
+      if (isset($user->sid)) {
+        $player->setSessionId($user->sid);
+      }
 
-        // Set the CSS directory of our OSMPlayer component.
-        $osmplayers[$preset]->template->setCSSDir(osmplayer_get_css_dir());
+      // Set the CSS directory of our OSMPlayer component.
+      $player->template->setCSSDir(osmplayer_get_css_dir());
 
-        // Now add our playlist connections.
-        if (isset($settings['connect']) && isset($settings['connect']['isplaylist'])) {
-          foreach ($settings['connect']['isplaylist'] as $toPlayer) {
-            $osmplayers[$preset]->addPlaylistTo('mediafront_' . $toPlayer);
-          }
-        }
-
-        // Now add our controller connections.
-        if (isset($settings['connect']) && isset($settings['connect']['iscontroller'])) {
-          foreach ($settings['connect']['iscontroller'] as $toPlayer) {
-            $osmplayers[$preset]->addControllerTo('mediafront_' . $toPlayer);
-          }
+      // Now add our playlist connections.
+      if (isset($settings['connect']) && isset($settings['connect']['isplaylist'])) {
+        foreach ($settings['connect']['isplaylist'] as $toPlayer) {
+          $player->addPlaylistTo('mediafront_' . $toPlayer);
         }
       }
-      else {
-        drupal_set_message('Initializing OSMPlayer without settings!', 'error');
+
+      // Now add our controller connections.
+      if (isset($settings['connect']) && isset($settings['connect']['iscontroller'])) {
+        foreach ($settings['connect']['iscontroller'] as $toPlayer) {
+          $player->addControllerTo('mediafront_' . $toPlayer);
+        }
       }
+    }
+    else {
+      drupal_set_message('Initializing OSMPlayer without settings!', 'error');
     }
   }
   else {
     drupal_set_message('No preset defined to declare the OSMPlayer object!', 'error');
   }
-  return $osmplayers[$preset];
+  return $player;
 }
 
 /**
@@ -220,7 +221,7 @@ function osmplayer_mediafront_preset_save($preset) {
   $settings['preset'] = $preset['name'];
 
   // Get the media player.
-  $player = osmplayer_get_player_object($settings, true);
+  $player = osmplayer_get_player_object($settings);
 
   if ($player) {
     // Now reset the CSS files.
