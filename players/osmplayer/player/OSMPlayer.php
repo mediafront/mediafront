@@ -57,9 +57,6 @@ class OSMPlayer {
 
   // To store the player parameters.
   private $playerParams = null;
-  
-  // An instance variable.
-  private static $instance = 0;
 
   /**
    * Constructor.
