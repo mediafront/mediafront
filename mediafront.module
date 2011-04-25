@@ -115,7 +115,9 @@ function theme_mediafront_field( $variables ) {
   $entity = $variables['entity'];
   $preset = $variables['preset'];
   $params['nodeObj'] = (array)$entity;
-  $params['node'] = $entity->nid;
+  if( isset($entity->nid) ) {
+    $params['node'] = $entity->nid;
+  }
   $params['disablePlaylist'] = true;
   return mediafront_get_player($preset, $params);
 }
