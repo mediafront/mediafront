@@ -94,7 +94,9 @@ function theme_mediafront_player( $node, $preset ) {
  */
 function theme_mediafront_field( $node, $preset ) {
   $params['nodeObj'] = (array)$node;
-  $params['node'] = $node->nid;
+  if( isset($node->nid) ) {
+    $params['node'] = $node->nid;
+  }
   $params['disablePlaylist'] = true;
   return mediafront_get_player($preset, $params);
 }
