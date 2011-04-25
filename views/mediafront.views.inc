@@ -32,3 +32,18 @@ function mediafront_views_plugins() {
   );
   return $plugins;
 }
+
+/**
+ * Implementation of hook_views_data()
+ */
+function mediafront_views_data() {
+  $data['views']['mediafront_player'] = array(
+    'title' => t('Media Player'),
+    'help' => t('Add a media player field to this view.'),
+    'field' => array(
+      'handler' => 'mediafront_handler_field_player',
+      'click sortable' => FALSE,
+    ),
+  );
+  return $data;
+}

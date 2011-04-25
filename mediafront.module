@@ -67,6 +67,11 @@ function mediafront_theme() {
     'arguments' => array('entity' => NULL, 'preset' => NULL)
   );
 
+  $theme['mediafront_field'] = array(
+    'render element' => 'element',
+    'arguments' => array('entity' => NULL, 'preset' => NULL)
+  );
+
   return $theme;
 }
 
@@ -100,6 +105,18 @@ function theme_mediafront_player( $variables ) {
   $params['disablePlaylist'] = true;
 
   // Return the player.
+  return mediafront_get_player($preset, $params);
+}
+
+/**
+ * Implement the theme for a view field media player.
+ */
+function theme_mediafront_field( $variables ) {
+  $entity = $variables['entity'];
+  $preset = $variables['preset'];
+  $params['nodeObj'] = (array)$entity;
+  $params['node'] = $entity->nid;
+  $params['disablePlaylist'] = true;
   return mediafront_get_player($preset, $params);
 }
 
