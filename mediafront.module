@@ -632,7 +632,7 @@ function mediafront_playlist_node( $node ) {
   $field_additions = array();
 
   // Iterate through the files.
-  if( $node->files && is_array($node->files) ) {
+  if( isset($node->files) && $node->files && is_array($node->files) ) {
     foreach( $node->files as $fid => $file ) {
       $media_added |= mediafront_add_media( $additions, $file );
     }
