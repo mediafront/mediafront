@@ -98,7 +98,7 @@ package com.mediafront.display.media {
 
     public function playMedia():void {
       try {
-        if (media&&loadedFile.loaded) {
+        if (media && loadedFile.loaded) {
           media.playMedia();
         }
       } catch (e:Error) {
@@ -107,7 +107,7 @@ package com.mediafront.display.media {
     }
     public function pauseMedia():void {
       try {
-        if (media&&loadedFile.loaded) {
+        if (media && loadedFile.loaded) {
           media.pauseMedia();
         }
       } catch (e:Error) {
@@ -116,7 +116,7 @@ package com.mediafront.display.media {
     }
     public function seekMedia( pos:Number ):void {
       try {
-        if (media&&loadedFile.loaded) {
+        if (media && loadedFile.loaded) {
           media.seekMedia( pos );
         }
       } catch (e:Error) {

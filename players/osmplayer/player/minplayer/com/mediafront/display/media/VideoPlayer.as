@@ -96,6 +96,9 @@ package com.mediafront.display.media {
           return;
         }
       }
+      else {
+        Utils.debug("loadFile ERROR: stream is not ready!", debug);
+      }
     }
 
     public function seekMedia( pos:Number ):void {
@@ -107,6 +110,9 @@ package com.mediafront.display.media {
           Utils.debug(error.toString());
           return;
         }
+      }
+      else {
+        Utils.debug("seekMedia ERROR: stream is not ready!", debug);
       }
     }
 
@@ -121,6 +127,9 @@ package com.mediafront.display.media {
           return;
         }
       }
+      else {
+        Utils.debug("pauseMedia ERROR: stream is not ready!", debug);
+      }
     }
 
     public function playMedia( setPos:Number = -1 ):void {
@@ -133,6 +142,9 @@ package com.mediafront.display.media {
           Utils.debug(error.toString());
           return;
         }
+      }
+      else {
+        Utils.debug("playMedia ERROR: stream is not ready!", debug);
       }
     }
 
@@ -164,9 +176,12 @@ package com.mediafront.display.media {
     }
 
     public function setVolume(vol:Number):void {
-      if (sound&&stream) {
+      if (sound && stream) {
         sound.volume=vol;
         stream.soundTransform=sound;
+      }
+      else {
+        Utils.debug("setVolume ERROR: stream is not ready!", debug);
       }
     }
 

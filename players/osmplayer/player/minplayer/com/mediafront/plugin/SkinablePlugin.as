@@ -1,4 +1,4 @@
-﻿/**
+/**
  *  Copyright (c) 2010 Alethia Inc,
  *  http://www.alethia-inc.com
  *  Developed by Travis Tidwell | travist at alethia-inc.com
@@ -46,8 +46,9 @@ package com.mediafront.plugin {
     public override function loadSkin( _skinName:String ):void {
       var skinURL:String="";
       info.skin=info.skin.replace('%skin',settings.skin);
-      skinURL+=info.skin.match(/^http(s)?\:\/\//)?'':settings.baseURL+"/";
+      skinURL+=info.skin.match(/^http(s)?\:\/\//) ? '' : settings.baseURL+"/";
       skinURL+=info.skin;
+      Utils.debug("Loading Skin: " + skinURL, settings.debug);
       super.loadSkin( skinURL );
     }
 

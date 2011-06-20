@@ -107,14 +107,16 @@ package com.mediafront.plugin {
     }
 
     private function loadSWF():void {
-      _swfLoader = new Loader();
-      _swfLoader.contentLoaderInfo.addEventListener( Event.COMPLETE, pluginLoaded );
-      _swfLoader.contentLoaderInfo.addEventListener( IOErrorEvent.IO_ERROR, errorHandler );
+      if( _baseURL ) {
+        _swfLoader = new Loader();
+        _swfLoader.contentLoaderInfo.addEventListener( Event.COMPLETE, pluginLoaded );
+        _swfLoader.contentLoaderInfo.addEventListener( IOErrorEvent.IO_ERROR, errorHandler );
 
-      var pluginURL:String="";
-      pluginURL+=info.path.match(/^http(s)?\:\/\//)?'':_baseURL+"/";
-      pluginURL+=info.path;
-      _swfLoader.load( new URLRequest( pluginURL ) );
+        var pluginURL:String="";
+        pluginURL+=info.path.match(/^http(s)?\:\/\//)?'':_baseURL+"/";
+        pluginURL+=info.path;
+        _swfLoader.load( new URLRequest( pluginURL ) );
+      }
     }
 
     // Typical error handler.
