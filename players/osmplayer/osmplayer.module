@@ -67,7 +67,8 @@ function osmplayer_get_player_object($settings = null) {
 
       // Create the OSMPlayer object with these settings.
       $player = new OSMPlayer($settings);
-      $player->setId($player->getId() . '_' . $instance++);
+      $player->setId(($instance > 0) ? $player->getId() . '_' . $instance : $player->getId());
+      $instance++;
 
       // Set the session id for the player.
       if (isset($user->sid)) {
