@@ -740,7 +740,7 @@ function osmplayer_get_templates() {
 }
 
 function osmplayer_get_skins() {
-  return osmplayer_get_directories('player' . '/' . 'flash' . '/' . 'skins');
+  return osmplayer_get_directories('player' . '/' . 'minplayer' . '/' . 'skins');
 }
 
 /**
