@@ -22,9 +22,6 @@ volumeTween.stop();
 // The ControlBar object.
 var controlBar = null;
 
-//Hides the menuButton on the controlBar.
-//menuButton.visible = false;
-
 function initialize( _controlBar:* )
 {
   // Store the controlbar object.
@@ -50,11 +47,6 @@ function initialize( _controlBar:* )
   this.addEventListener( MouseEvent.MOUSE_OUT, onControlOut );
   mouseTimer.reset();
   mouseTimer.start();
-
-  // Add an event handler when they click on the menu.
-  menu.addEventListener( MouseEvent.CLICK, onMenu );
-  menu.buttonMode = true;
-  menu.mouseChildren = false;
 
   // Set the size.
   setSize( controlBar.stage.stageWidth );
@@ -91,11 +83,6 @@ function onVolumeTimer( event:TimerEvent )
     volumeTimer.reset();
     volumeTimer.start();
   }
-}
-
-function onMenu( event:MouseEvent )
-{
-  ExternalInterface.call( "onFlashPlayerMenu", controlBar.getSettings().id );
 }
 
 function showControls()
@@ -143,7 +130,6 @@ function setSize( newWidth:Number )
   mute.x = newWidth - (bgWidth - mute.x);
   duration.x = newWidth - (bgWidth - duration.x);
   volumeBar.x = newWidth - (bgWidth - volumeBar.x);
-  menu.x = newWidth - (bgWidth - menu.x);
   seekBar.track.width = newWidth - (bgWidth - seekBar.track.width);
   seekBar.fullness.width = newWidth - (bgWidth - seekBar.fullness.width);
   seekBar.progress.width = newWidth - (bgWidth - seekBar.progress.width);
