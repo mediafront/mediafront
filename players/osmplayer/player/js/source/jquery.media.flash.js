@@ -38,11 +38,6 @@
     }
   };
 
-  window.onFlashPlayerMenu = function( id ) {
-    var player = jQuery.media.players[id];
-    player.showMenu( !player.menuOn );
-  }
-
   // Set up our defaults for this component.
   jQuery.media.defaults = jQuery.extend( jQuery.media.defaults, {
     flashPlayer:"./flash/mediafront.swf",

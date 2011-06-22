@@ -946,11 +946,6 @@
     }
   };
 
-  window.onFlashPlayerMenu = function( id ) {
-    var player = jQuery.media.players[id];
-    player.showMenu( !player.menuOn );
-  }
-
   // Set up our defaults for this component.
   jQuery.media.defaults = jQuery.extend( jQuery.media.defaults, {
     flashPlayer:"./flash/mediafront.swf",
@@ -1473,7 +1468,7 @@
          /**
  *  Copyright (c) 2010 Alethia Inc,
  *  http://www.alethia-inc.com
- *  Developed by Travis Tidwell | travist at alethia-inc.com 
+ *  Developed by Travis Tidwell | travist at alethia-inc.com
  *
  *  License:  GPL version 3.
  *
@@ -1483,7 +1478,7 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *  
+ *
  *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
 
@@ -1497,7 +1492,7 @@
  */
 
   
-   
+
   // Set up our defaults for this component.
   jQuery.media.defaults = jQuery.extend( jQuery.media.defaults, {
     logo:"logo.png",
@@ -1519,7 +1514,7 @@
     play:"#mediaplay",
     media:"#mediadisplay"
   });
-   
+
   jQuery.fn.minplayer = function( settings ) {
     if( this.length === 0 ) {
       return null;
@@ -1527,7 +1522,7 @@
     return new (function( player, settings ) {
       // Get the settings.
       settings = jQuery.media.utils.getSettings(settings);
-         
+
       // Save the jQuery display.
       this.display = player;
       var _this = this;
@@ -1540,7 +1535,7 @@
       this.busyImg = this.busy.find("img");
       this.busyWidth = this.busyImg.width();
       this.busyHeight = this.busyImg.height();
-         
+
       // Store the play overlay.
       this.play = player.find( settings.ids.play );
       // Toggle the play/pause state if they click on the play button.
@@ -1550,7 +1545,7 @@
       this.playImg = this.play.find("img");
       this.playWidth = this.playImg.width();
       this.playHeight = this.playImg.height();
-         
+
       // Store the preview image.
       this.preview = player.find( settings.ids.preview ).mediaimage();
       if( this.preview ) {
@@ -1562,7 +1557,7 @@
           _this.onPreviewLoaded();
         });
       }
-         
+
       // The internal player controls.
       this.usePlayerControls = false;
       this.busyFlags = 0;
@@ -1572,11 +1567,11 @@
       this.playing = false;
       this.hasMedia = false;
       this.timeoutId = 0;
-         
+
       // Cache the width and height.
       this.width = this.display.width();
       this.height = this.display.height();
-      
+
       // Hide or show an element.
       this.showElement = function( element, show, tween ) {
         if( element && !this.usePlayerControls ) {
@@ -1588,7 +1583,7 @@
           }
         }
       };
-         
+
       this.showPlay = function( show, tween ) {
         show &= this.hasMedia;
         this.playVisible = show;
@@ -1597,7 +1592,7 @@
 
       this.showBusy = function( id, show, tween ) {
         show &= this.hasMedia;
-        
+
         if( show ) {
           this.busyFlags |= (1 << id);
         }
@@ -1609,7 +1604,7 @@
         this.busyVisible = (this.busyFlags > 0);
         this.showElement( this.busy, this.busyVisible, tween );
       };
-         
+
       this.showPreview = function( show, tween ) {
         this.previewVisible = show;
         if( this.preview ) {
@@ -1644,7 +1639,7 @@
           else if( (this.media.playQueue.length > 0) && !this.media.mediaFile ) {
             // They interacted with the player.  Always autoload at this point on.
             this.autoLoad = true;
-                  
+
             // Then play the next file in the queue.
             this.playNext();
           }
@@ -1655,7 +1650,7 @@
           }
         }
       };
-         
+
       // Handle the full screen event requests.
       this.fullScreen = function( full ) {
         if( settings.template.onFullScreen ) {
@@ -1665,12 +1660,12 @@
         // Refresh the preview image.
         this.preview.refresh();
       };
-         
+
       // Handle when the preview image loads.
       this.onPreviewLoaded = function() {
         this.previewVisible = true;
       };
-         
+
       // Handle the media events.
       this.onMediaUpdate = function( data ) {
         switch( data.type ) {
@@ -1744,7 +1739,7 @@
           this.logo.loadImage( settings.logo );
         }
       }
-      
+
       // Sets the logo position.
       this.setLogoPos = function() {
         if( this.logo ) {
@@ -1763,7 +1758,7 @@
           }
           this.logo.display.css(logocss);
         }
-      };      
+      };
 
       // Reset to previous state...
       this.reset = function() {
@@ -1777,7 +1772,7 @@
           this.media.reset();
         }
       };
-         
+
       // Toggle the play/pause state.
       this.togglePlayPause = function() {
         if( this.media ) {
@@ -1800,7 +1795,7 @@
           }
         }
       };
-         
+
       // Loads an image...
       this.loadImage = function( image ) {
         if( this.preview ) {
@@ -1818,7 +1813,7 @@
         if( this.preview ) {
           this.preview.refresh();
         }
-        
+
         if( this.media ) {
           this.media.onResize();
         }
@@ -1830,7 +1825,7 @@
           this.preview.clear();
         }
       };
-         
+
       // Expose the public load functions from the media display.
       this.loadFiles = function( files ) {
         this.reset();
@@ -1848,7 +1843,7 @@
         }
         return this.hasMedia;
       };
-         
+
       // Play the next file.
       this.playNext = function() {
         if( this.media ) {
@@ -1870,7 +1865,7 @@
           this.media.showControls( show );
         }
       };
-         
+
       // Loads a single media file.
       this.loadMedia = function( file ) {
         this.reset();
@@ -1878,12 +1873,12 @@
           this.media.loadMedia( file );
         }
       };
-         
+
       // If they provide a file, then load it.
       if( settings.file ) {
         this.loadMedia( settings.file );
       }
-         
+
       // If they provide the image, then load it.
       if( settings.image ) {
         this.loadImage( settings.image );
