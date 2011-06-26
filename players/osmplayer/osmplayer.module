@@ -463,7 +463,7 @@ function osmplayer_player_settings_form($preset) {
   $form['playlist_settings']['scrollSettings']['scrollMode'] = array(
     '#type' => 'select',
     '#title' => t('Scroll Mode'),
-    '#options' => array('auto' => 'Auto Scroll', 'mouse' => 'Mouse Scroll', 'hover' => 'Hover Scroll', 'span' => 'Span Scroll', 'none' => 'ScrollBar Only'),
+    '#options' => array('auto' => 'Auto Scroll', 'mouse' => 'Mouse Scroll', 'hover' => 'Hover Scroll', 'span' => 'Span Scroll', 'none' => 'No Scroll'),
     '#description' => t('Specify how you would like the playlist to scroll.
       <ul>
         <li><strong>Auto Scroll</strong> - <em>Make the playlist scroll follow the mouse movements</em></li>
