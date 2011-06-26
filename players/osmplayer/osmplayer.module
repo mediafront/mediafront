@@ -732,15 +732,15 @@ function osmplayer_get_directories($player_path) {
 }
 
 function osmplayer_get_themes() {
-  return osmplayer_get_directories('player' . '/' . 'jquery-ui' . '/' . 'css');
+  return osmplayer_get_directories('player/jquery-ui/css');
 }
 
 function osmplayer_get_templates() {
-  return osmplayer_get_directories('player' . '/' . 'templates');
+  return osmplayer_get_directories('player/templates');
 }
 
 function osmplayer_get_skins() {
-  return osmplayer_get_directories('player' . '/' . 'minplayer' . '/' . 'skins');
+  return osmplayer_get_directories('player/minplayer/skins');
 }
 
 /**
