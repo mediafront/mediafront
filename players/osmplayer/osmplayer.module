@@ -674,7 +674,7 @@ function osmplayer_player_settings_form($preset) {
     '#description' => t('Select if you would like to see the debug statements from the Media Player.'),
     '#default_value' => $preset['settings']['debug']
   );
-
+/*
   // If they have services module, then we need to get all the available API Keys.
   $hasServices = module_exists('services');
   $apiKeys = array();
@@ -706,7 +706,7 @@ function osmplayer_player_settings_form($preset) {
       'rpc' => 'Services ( requires the Services Module )'
     )
   );
-
+*/
   return $form;
 }
 

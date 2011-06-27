@@ -780,6 +780,7 @@ function mediafront_get_player() {
     $params = isset($args[1]) ? $preset['settings'] ? array_merge( $preset['settings'], $args[1] ) : $args[1] : $preset['settings'];
     $params['preset'] = $preset['name'];
     $params['player'] = $preset['player'];
+    $params['protocol'] = 'json';
     $params['connect'] = (isset($params['connect']) && $params['connect']) ? $params['connect'] : $preset['connect'];
     $params['id'] = (isset($params['id']) && $params['id']) ? $params['id'] : 'mediafront_' . $preset['name'];
   }
