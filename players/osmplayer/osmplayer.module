@@ -697,8 +697,6 @@ function osmplayer_player_settings_form($preset) {
       '#options' => $apiKeys
     );
   }
- * 
- */
   
   $form['misc']['protocol'] = array(
     '#type' => 'select',
@@ -711,7 +709,8 @@ function osmplayer_player_settings_form($preset) {
       'rpc' => 'Services ( requires the Services Module )'
     )
   );
-
+ * 
+ */
   return $form;
 }
 
