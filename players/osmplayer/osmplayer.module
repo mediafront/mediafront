@@ -325,7 +325,7 @@ function osmplayer_player_settings_form($preset) {
     '#title' => t('Initialize FullScreen'),
     '#description' => t('Check this field if you would like the media player to initialize in full screen mode.  This is good for modal windows.'),
     '#default_value' => $preset['settings']['fullscreen']
-  );  
+  );   
   $form['presentation']['zIndex'] = array(
     '#type' => 'textfield',
     '#title' => t('z-Index'),
@@ -674,7 +674,10 @@ function osmplayer_player_settings_form($preset) {
     '#description' => t('Select if you would like to see the debug statements from the Media Player.'),
     '#default_value' => $preset['settings']['debug']
   );
-/*
+  
+/**
+ * Turn this off until Services for Drupal 7 has been hashed out...
+ * 
   // If they have services module, then we need to get all the available API Keys.
   $hasServices = module_exists('services');
   $apiKeys = array();
@@ -694,7 +697,7 @@ function osmplayer_player_settings_form($preset) {
       '#options' => $apiKeys
     );
   }
-
+  
   $form['misc']['protocol'] = array(
     '#type' => 'select',
     '#title' => t('Communication Protocol'),
@@ -706,7 +709,8 @@ function osmplayer_player_settings_form($preset) {
       'rpc' => 'Services ( requires the Services Module )'
     )
   );
-*/
+ * 
+ */
   return $form;
 }
 
