@@ -464,7 +464,8 @@ function mediafront_block_configure($delta = '') {
   if ($delta == 'mediaplayer') {
     $form['mediafront'] = array(
       '#type' => 'fieldset',
-      '#title' => 'MediaFront Settings'
+      '#title' => 'MediaFront Settings',
+      '#description' => 'This is a special media player block that will allow you to place a media player preset within any block region on your website.  In addition, you can link to any view within that page to act as the playlist for this media player.'
     );
     
     $form['mediafront']['mediafront_block_preset'] = mediafront_preset_select_form(array('mediafront_preset', variable_get('mediafront_block_preset', ''))); 
@@ -480,7 +481,7 @@ function mediafront_block_configure($delta = '') {
     $form['mediafront']['mediafront_block_playlist'] = array(
       '#type' => 'select',
       '#title' => 'Link to View',
-      '#description' => 'Select the view you would like to link to this media player.  This view must be on the same page as this player to be linked, and must include the Content Id (node Id) within the fields of the view display to work as expected.',
+      '#description' => 'Select the view you would like to link to this media player.  This view must be on the same page as this player to be linked, and must include a visible Content Id (node Id) within the fields of the view display to work as expected.',
       '#options' => $options,
       '#default_value' => variable_get('mediafront_block_playlist', '')
     );
