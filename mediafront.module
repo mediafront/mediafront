@@ -468,7 +468,7 @@ function mediafront_block_configure($delta = '') {
       '#description' => 'This is a special media player block that will allow you to place a media player preset within any block region on your website.  In addition, you can link to any view within that page to act as the playlist for this media player.'
     );
     
-    $form['mediafront']['mediafront_block_preset'] = mediafront_preset_select_form(array('mediafront_preset', variable_get('mediafront_block_preset', ''))); 
+    $form['mediafront']['mediafront_block_preset'] = mediafront_preset_select_form(array('mediafront_preset' => variable_get('mediafront_block_preset', ''))); 
     
     // Get a list of all views
     $views = views_get_enabled_views();
