@@ -643,7 +643,7 @@ function mediafront_is_media( $mimetype, $extension ) {
   if( in_array(substr($mimetype, 0, 5), array('video', 'audio')) ) {
     return true;
   }
-  $media = in_array( $extension, array('swf', 'mov', 'mp4', 'mp3', 'm4v', 'flv', 'f4v', 'ogg', 'oga', 'ogv', '3g2', 'wav', 'aif', 'm4a', 'aac', 'wma'));
+  $media = in_array( $extension, array('swf', 'mov', 'mp4', 'mp3', 'm4v', 'flv', 'f4v', 'ogg', 'oga', 'ogv', '3g2', 'wav', 'aif', 'm4a', 'aac', 'wma', 'webm'));
   return $media;
 }
 
