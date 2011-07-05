@@ -426,6 +426,130 @@ function mediafront_invoke_node( $node, $args ) {
 }
 
 /**
+ * Define the preset form selection.
+ */
+function mediafront_preset_select_form($default, $key = 'mediafront_preset') {
+  $presets = mediafront_preset_get_presets();
+  $options = array();
+  foreach( $presets as $preset ) {
+    $options[$preset['name']] = $preset['name'];
+  }
+  return array(
+    '#type' => 'select',
+    '#title' => t('MediaFront Presets'),
+    '#options' => $options,
+    '#default_value' => isset($default[$key]) ? $default[$key] : '',
+  );
+}
+
+/**
+ * Implementation of hook_block_info
+ */
+function mediafront_block_info() {
+  
+  // Define the media player block.
+  $blocks['mediaplayer'] = array(
+    'info' => t('Media Player')
+  );
+  
+  // Return the blocks.
+  return $blocks;
+}
+
+/**
+ * Implementation of hook_block_configure
+ */
+function mediafront_block_configure($delta = '') {
+  $form = array();
+  if ($delta == 'mediaplayer') {
+    $form['mediafront'] = array(
+      '#type' => 'fieldset',
+      '#title' => 'MediaFront Settings'
+    );
+    
+    $form['mediafront']['mediafront_block_preset'] = mediafront_preset_select_form(array('mediafront_preset', variable_get('mediafront_block_preset', ''))); 
+    
+    // Get a list of all views
+    $views = views_get_enabled_views();
+    $options = array('' => 'none');
+    foreach ($views as $view) {
+      $options[$view->name] = $view->name;
+    }
+
+    // Link this block to a view display.
+    $form['mediafront']['mediafront_block_playlist'] = array(
+      '#type' => 'select',
+      '#title' => 'Link to View',
+      '#description' => 'Select the view you would like to link to this media player.  This view must be on the page to be linked, and must include the Content Id (node Id) within the fields of the view display to work as expected.',
+      '#options' => $options,
+      '#default_value' => variable_get('mediafront_block_playlist', '')
+    );
+  }
+  return $form;
+}
+
+/**
+ * Implementation of hook_block_save
+ */
+function mediafront_block_save($delta = '', $edit = array()) {
+  if ($delta == 'mediaplayer') {
+    variable_set('mediafront_block_preset', $edit['mediafront_block_preset']);
+    variable_set('mediafront_block_playlist', $edit['mediafront_block_playlist']);
+  }
+}
+
+/**
+ * Implementation of hook_block_view
+ */
+function mediafront_block_view($delta = '') {
+  $block = array();
+  if ($delta == 'mediaplayer') {
+    $block['subject'] = t('Media Player');
+    $block['content'] = mediafront_block_content();
+  }
+  return $block;
+}
+
+/**
+ * Content for the media player block.
+ */
+function mediafront_block_content() {
+  $preset = variable_get('mediafront_block_preset', '');
+  return $preset ? mediafront_get_player($preset) : '';
+}
+
+/**
+ * Views pre-render
+ */
+function mediafront_views_pre_render($view) {
+  
+  // Check ot make sure this is the block playlist.
+  if (variable_get('mediafront_block_playlist', '') == $view->name) {
+
+    // Get the preset for this view.
+    $preset = variable_get('mediafront_block_preset', '');
+    
+    // Iterate through our results, and add the node objects to the page.
+    $playlist = array();
+    foreach ($view->result as $result) {
+      $playlist[$result->nid] = mediafront_get_node( $result->nid );
+    }
+
+    // The JS file.
+    $js = 'jQuery.media = jQuery.media ? jQuery.media : {};';
+    $js .= 'jQuery.media.nodes = jQuery.media.nodes ? jQuery.media.nodes : {};';
+    $js .= 'jQuery.extend(jQuery.media.nodes, ' . drupal_json_encode($playlist) . ');';
+    $js .= 'jQuery.media.playerId = "mediafront_' . $preset . '";';
+    
+    // Add this javascript to the main page.
+    drupal_add_js($js, 'inline');
+    
+    // Add the playlist javascript.
+    drupal_add_js(drupal_get_path('module', 'mediafront') . '/js/mediafront.js');    
+  }  
+}
+
+/**
  * Gets the extension of a file provided the path of that file.
  */
 function mediafront_get_extension( $file ) {

@@ -37,24 +37,12 @@ class mediafront_handler_field_player extends views_handler_field {
       }
     }
 
-    $presets = mediafront_preset_get_presets();
-    $options = array();
-    foreach( $presets as $preset ) {
-      $options[$preset['name']] = $preset['name'];
-    }
-
     $form['mediafront'] = array(
       '#type' => 'fieldset',
       '#title' => t('Media Player Settings')
     );
 
-    $form['mediafront']['preset'] = array(
-      '#type' => 'select',
-      '#title' => t('MediaFront Preset'),
-      '#options' => $options,
-      '#default_value' => $this->options['preset'],
-      '#description' => t('Select which preset you would like to use for this field.'),
-    );
+    $form['mediafront']['preset'] = mediafront_preset_select_form($this->options, 'preset');
 
     $form['mediafront']['mediawrapper'] = array(
       '#type' => 'fieldset',
