@@ -480,7 +480,7 @@ function mediafront_block_configure($delta = '') {
     $form['mediafront']['mediafront_block_playlist'] = array(
       '#type' => 'select',
       '#title' => 'Link to View',
-      '#description' => 'Select the view you would like to link to this media player.  This view must be on the page to be linked, and must include the Content Id (node Id) within the fields of the view display to work as expected.',
+      '#description' => 'Select the view you would like to link to this media player.  This view must be on the same page as this player to be linked, and must include the Content Id (node Id) within the fields of the view display to work as expected.',
       '#options' => $options,
       '#default_value' => variable_get('mediafront_block_playlist', '')
     );

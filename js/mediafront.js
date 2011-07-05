@@ -1,6 +1,7 @@
 (function($) {
   $(function() {
     
+    // Add the media object.
     jQuery.media = jQuery.media ? jQuery.media : {};
 
     // Connecting the media blocks to the player.
@@ -45,8 +46,11 @@
       jQuery.media.loadNode(firstMedia);
     });
 
+    // Iterate through all of the nid fields.
     $(".views-field-nid").each(function(index) {
-      var nid = $(this).find("span").text();
+      
+      // Get the nid value.
+      var nid = $(this).hide().find("span").text();
       if( !firstMedia ) {
         firstMedia = jQuery.media.nodes[nid];
       }
@@ -54,6 +58,7 @@
       // Store the media in an array.
       media.push(jQuery.media.nodes[nid]);
 
+      // Alter the parent handler so that this becomes a link to the main player.
       $(this).parent().css("cursor", "pointer").bind('click', {
         nid:nid,
         index:index
