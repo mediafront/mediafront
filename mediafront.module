@@ -530,16 +530,21 @@ function mediafront_views_pre_render($view) {
     // Get the preset for this view.
     $preset = variable_get('mediafront_block_preset', '');
     
+    // Initialize our javascript.
+    $js = 'jQuery.media = jQuery.media ? jQuery.media : {};';
+    $js .= 'jQuery.media.nodes = jQuery.media.nodes ? jQuery.media.nodes : [];';
+    
     // Iterate through our results, and add the node objects to the page.
-    $playlist = array();
     foreach ($view->result as $result) {
-      $playlist[$result->nid] = mediafront_get_node( $result->nid );
+      $node = isset($result->_field_data) && isset($result->_field_data['nid']) && isset($result->_field_data['nid']['entity']) ? $result->_field_data['nid']['entity'] : node_load($result->nid);
+      $js .= 'jQuery.media.nodes.push(' . drupal_json_encode(mediafront_invoke_node($node, NULL)) . ');';
     }
 
+    // Get the class of the first field.
+    $class = 'views-field-' . drupal_clean_css_identifier(array_shift(array_keys($view->field)));
+    
     // The JS file.
-    $js = 'jQuery.media = jQuery.media ? jQuery.media : {};';
-    $js .= 'jQuery.media.nodes = jQuery.media.nodes ? jQuery.media.nodes : {};';
-    $js .= 'jQuery.extend(jQuery.media.nodes, ' . drupal_json_encode($playlist) . ');';
+    $js .= 'jQuery.media.fieldClass = "' . $class . '";';
     $js .= 'jQuery.media.playerId = "mediafront_' . $preset . '";';
     
     // Add this javascript to the main page.

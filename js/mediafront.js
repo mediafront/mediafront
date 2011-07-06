@@ -6,20 +6,18 @@
 
     // Connecting the media blocks to the player.
     var mediaIndex = 0;
-    var media = [];
-    var firstMedia = null;
     var mediaplayer = null;
 
     // Get the previous media node.
     jQuery.media.prevMedia = function() {
-      mediaIndex = (mediaIndex > 0) ? (mediaIndex - 1) : (media.length - 1);
-      return media[mediaIndex];
+      mediaIndex = (mediaIndex > 0) ? (mediaIndex - 1) : (jQuery.media.nodes.length - 1);
+      return jQuery.media.nodes[mediaIndex];
     };
 
     // Get the next media node.
     jQuery.media.nextMedia = function() {
-      mediaIndex = (mediaIndex < (media.length - 1)) ? (mediaIndex + 1) : 0;
-      return media[mediaIndex];
+      mediaIndex = (mediaIndex < (jQuery.media.nodes.length - 1)) ? (mediaIndex + 1) : 0;
+      return jQuery.media.nodes[mediaIndex];
     };
 
     // Loads a node by checking to see if it is a full object or not.
@@ -43,29 +41,16 @@
       });
       
       // Load the first media.
-      jQuery.media.loadNode(firstMedia);
+      jQuery.media.loadNode(jQuery.media.nodes[0]);
     });
 
     // Iterate through all of the nid fields.
-    $(".views-field-nid").each(function(index) {
-      
-      // Get the nid value.
-      var nid = $(this).hide().find("span").text();
-      if( !firstMedia ) {
-        firstMedia = jQuery.media.nodes[nid];
-      }
-
-      // Store the media in an array.
-      media.push(jQuery.media.nodes[nid]);
-
+    $("." + jQuery.media.fieldClass).each(function(index) {
       // Alter the parent handler so that this becomes a link to the main player.
-      $(this).parent().css("cursor", "pointer").bind('click', {
-        nid:nid,
-        index:index
-      }, function( event, data ) {
+      $(this).parent().css("cursor", "pointer").bind('click', function( event ) {
         event.preventDefault();
         mediaIndex = index;
-        jQuery.media.loadNode( jQuery.media.nodes[event.data.nid] );
+        jQuery.media.loadNode( jQuery.media.nodes[mediaIndex] );
       });
     });
 
