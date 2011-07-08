@@ -773,7 +773,7 @@ function mediafront_playlist_node( $node ) {
                   $matches = array();
                   preg_match('/img.*src\=\"(.*)\"/U', $markup, $matches);
                   if (isset($matches[1])) {
-                    $preview = str_replace('square_thumbnail', 'large', $matches[1]);
+                    $preview = $matches[1];
                   }
                 }
               }
@@ -829,7 +829,8 @@ function mediafront_playlist_node( $node ) {
 
   // If no images exist, then add the preview...
   if ($preview && (!isset($additions["mediafiles"]) || !isset($additions["mediafiles"]["images"]))) {
-    $additions["mediafiles"]["images"]["image"] = $preview;
+    $additions["mediafiles"]["images"]["thumbnail"] = $preview;
+    $additions["mediafiles"]["images"]["preview"] = str_replace('square_thumbnail', 'large', $preview);
   }  
   
   // Now add the CCK fields.
