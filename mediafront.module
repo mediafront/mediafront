@@ -731,9 +731,6 @@ function mediafront_playlist_node( $node ) {
     $media_added = true;
     $additions["mediafiles"]["images"]["image"] = $field['value'];
   }
-
-  // Check to see if the media module exists.
-  $media_exists = module_exists('media');
   
   // Now look for any CCK fields.
   foreach( $node as $fieldname => $field ) {
@@ -759,7 +756,7 @@ function mediafront_playlist_node( $node ) {
           foreach( $field as $index => $instance ) {
 
             // Check to see if we need to load the media.
-            if ($media_exists && $instance['fid'] && !isset($instance['filename']) && !isset($instance['data'])) {
+            if ($instance['fid'] && !isset($instance['filename']) && !isset($instance['data'])) {
               $media = file_load($instance['fid']);
               $instance['data'] = (array)$media;
             }
@@ -767,13 +764,16 @@ function mediafront_playlist_node( $node ) {
             // Check to see if there is a preview.
             if (isset($instance['fid'])) {
               $media = isset($instance['data']) ? $instance['data'] : $instance;
-              $preview = media_get_thumbnail_preview((object)$media);
-              if ($preview) {
-                $markup = drupal_render($preview);
-                $matches = array();
-                preg_match('/img.*src\=\"(.*)\"/U', $markup, $matches);
-                if (isset($matches[1])) {
-                  $additions["mediafiles"]["images"]["image"] = $matches[1];
+              if ($media['type'] != 'image') {
+                $preview = media_get_thumbnail_preview((object)$media);
+                if ($preview) {
+                  $preview['#file'] = (object)$preview['#file'];
+                  $markup = drupal_render($preview);
+                  $matches = array();
+                  preg_match('/img.*src\=\"(.*)\"/U', $markup, $matches);
+                  if (isset($matches[1])) {
+                    $preview = $matches[1];
+                  }
                 }
               }
             }
