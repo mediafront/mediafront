@@ -760,18 +760,18 @@ function mediafront_playlist_node( $node ) {
 
             // Check to see if we need to load the media.
             if ($media_exists && $instance['fid'] && !isset($instance['filename']) && !isset($instance['data'])) {
-              $media = media_load($instance['fid']);
+              $media = file_load($instance['fid']);
               $instance['data'] = (array)$media;
             }
             
             // Check to see if there is a preview.
             if (isset($instance['fid'])) {
               $media = isset($instance['data']) ? $instance['data'] : $instance;
-              $preview = field_view_field('media', (object)$media, 'file', 'media_preview');
+              $preview = media_get_thumbnail_preview((object)$media);
               if ($preview) {
                 $markup = drupal_render($preview);
                 $matches = array();
-                preg_match('/img.*src\=\"(.*)\"/', $markup, $matches);
+                preg_match('/img.*src\=\"(.*)\"/U', $markup, $matches);
                 if (isset($matches[1])) {
                   $additions["mediafiles"]["images"]["image"] = $matches[1];
                 }
