@@ -718,6 +718,7 @@ function mediafront_views_query_alter( &$view, &$query ) {
 function mediafront_playlist_node( $node ) {
   $media_added = false;
   $additions = array();
+  $preview = '';
   $field_additions = array();
 
   // If they provide the field_mediafront_media field.
@@ -772,7 +773,7 @@ function mediafront_playlist_node( $node ) {
                   $matches = array();
                   preg_match('/img.*src\=\"(.*)\"/U', $markup, $matches);
                   if (isset($matches[1])) {
-                    $preview = $matches[1];
+                    $preview = str_replace('square_thumbnail', 'large', $matches[1]);
                   }
                 }
               }
@@ -826,6 +827,11 @@ function mediafront_playlist_node( $node ) {
   $additions['nid'] = $node->nid;
   $additions['title'] = $node->title;
 
+  // If no images exist, then add the preview...
+  if ($preview && (!isset($additions["mediafiles"]) || !isset($additions["mediafiles"]["images"]))) {
+    $additions["mediafiles"]["images"]["image"] = $preview;
+  }  
+  
   // Now add the CCK fields.
   foreach( $field_additions as $field => $value ) {
     $additions[$field] = $value;
