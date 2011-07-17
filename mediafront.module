@@ -765,7 +765,7 @@ function mediafront_playlist_node( $node ) {
             // Check to see if there is a preview.
             if (isset($instance['fid'])) {
               $media = isset($instance['data']) ? $instance['data'] : $instance;
-              if ($media['type'] != 'image') {
+              if (isset($media['type']) && ($media['type'] != 'image')) {
                 $preview = media_get_thumbnail_preview((object)$media);
                 if ($preview) {
                   $preview['#file'] = (object)$preview['#file'];
