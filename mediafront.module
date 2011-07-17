@@ -733,6 +733,9 @@ function mediafront_playlist_node( $node ) {
     $additions["mediafiles"]["images"]["image"] = $field['value'];
   }
   
+  // Use the media module.
+  $media_module = module_exists('media');
+  
   // Now look for any CCK fields.
   foreach( $node as $fieldname => $field ) {
 
@@ -763,7 +766,7 @@ function mediafront_playlist_node( $node ) {
             }
             
             // Check to see if there is a preview.
-            if (isset($instance['fid'])) {
+            if ($media_module && isset($instance['fid'])) {
               $media = isset($instance['data']) ? $instance['data'] : $instance;
               if (isset($media['type']) && ($media['type'] != 'image')) {
                 $preview = media_get_thumbnail_preview((object)$media);
