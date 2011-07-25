@@ -96,6 +96,13 @@ function mediafront_field_formatter_view($entity_type, $entity, $field, $instanc
 }
 
 /**
+ * Implements hook_field_is_empty
+ */
+function mediafront_field_is_empty($item, $field) {
+  return FALSE;
+}
+
+/**
  * Implements hook_field_prepare_view()
  */
 function mediafront_field_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items)
