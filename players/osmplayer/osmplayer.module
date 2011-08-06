@@ -234,11 +234,9 @@ function osmplayer_mediafront_preset_save($preset) {
  * Get all the necessary paths needed by the media player
  */
 function osmplayer_get_player_paths() {
-  global $base_url;
   static $paths;
   if (!$paths) {
     $paths['playerPath'] = osmplayer_get_path();
-    $paths['playerURL'] = $base_url . '/' . $paths['playerPath'];
   }
   return $paths;
 }

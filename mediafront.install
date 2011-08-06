@@ -367,4 +367,21 @@ function mediafront_update_6007() {
   // Clear the menu cache.
   menu_cache_clear();
 }
+
+/**
+ * Remove all cached CSS files and clean up the paths in the mediafront presets.
+ */
+function mediafront_update_6008() {
+  require_once getcwd() . '/' . drupal_get_path('module', 'mediafront') . '/players/osmplayer/player/OSMPlayer.php';
+  require_once getcwd() . '/' . drupal_get_path('module', 'mediafront') . '/includes/mediafront.preset.inc';
+  osmplayer_clear_css();
+  $presets = mediafront_preset_get_presets();
+  $player = new OSMPlayer();
+  $paths = $player->getPaths();
+  foreach( $presets as $preset ) {
+    $preset['settings']['playerPath'] = $paths['playerPath'];
+    unset($preset['settings']['playerURL']);
+    mediafront_preset_save( $preset );
+  } 
+}
 ?>
