@@ -118,7 +118,7 @@ function mediafront_update_7002() {
 function mediafront_update_7003() {
   $ret = array();
   require_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'mediafront') . '/includes/mediafront.preset.inc';
-  $presets = preset_get_presets('mediafront');
+  $presets = mediafront_preset_get_presets();
   foreach( $presets as $preset ) {
     $mpreset = array();
     $mpreset['name'] = $preset['name'];
@@ -149,5 +149,28 @@ function mediafront_update_7003() {
  */
 function mediafront_update_7004() {
   module_disable(array('preset'));
+}
+
+/**
+ * Clear out all cached css files.
+ */
+function mediafront_update_7005() {
+  osmplayer_clear_css();
+}
+
+/**
+ * Change all the playerPath to be correct and delete the playerURL.
+ */
+function mediafront_update_7006() {
+  require_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'mediafront') . '/players/osmplayer/player/OSMPlayer.php';
+  require_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'mediafront') . '/includes/mediafront.preset.inc';
+  $presets = mediafront_preset_get_presets();
+  $player = new OSMPlayer();
+  $paths = $player->getPaths();
+  foreach( $presets as $preset ) {
+    $preset['settings']['playerPath'] = $paths['playerPath'];
+    unset($preset['settings']['playerURL']);
+    mediafront_preset_save( $preset );
+  }  
 }
 ?>
