@@ -166,11 +166,18 @@ function mediafront_update_7006() {
   require_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'mediafront') . '/includes/mediafront.preset.inc';
   $presets = mediafront_preset_get_presets();
   $player = new OSMPlayer();
-  $paths = $player->getPaths();
+  $path = $player->getPlayerPath();
   foreach( $presets as $preset ) {
-    $preset['settings']['playerPath'] = $paths['playerPath'];
+    $preset['settings']['playerPath'] = $path;
     unset($preset['settings']['playerURL']);
     mediafront_preset_save( $preset );
   }  
+}
+
+/**
+ * Fix any CSS anomolies.
+ */
+function mediafront_update_7007() {
+  mediafront_update_7006();
 }
 ?>
