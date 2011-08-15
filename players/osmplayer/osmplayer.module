@@ -231,17 +231,6 @@ function osmplayer_mediafront_preset_save($preset) {
 }
 
 /**
- * Get all the necessary paths needed by the media player
- */
-function osmplayer_get_player_paths() {
-  static $paths;
-  if (!$paths) {
-    $paths['playerPath'] = osmplayer_get_path();
-  }
-  return $paths;
-}
-
-/**
  * Implementation of hook_get_player_settings
  * 
  * These are the settings that the module implements...
