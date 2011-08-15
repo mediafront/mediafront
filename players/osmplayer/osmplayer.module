@@ -740,8 +740,9 @@ function osmplayer_get_skins() {
 function osmplayer_add_js($player) {
   // Add the javascript files.
   $js_files = $player->getJSFiles();
+  $playerPath = ltrim($player->getPlayerPath(), '/');
   foreach ($js_files as $js_file) {
-    drupal_add_js($player->getPlayerPath() . $js_file);
+    drupal_add_js($playerPath . $js_file);
   }
 
   // Add the JavaScript for this player.
