@@ -377,11 +377,18 @@ function mediafront_update_6008() {
   osmplayer_clear_css();
   $presets = mediafront_preset_get_presets();
   $player = new OSMPlayer();
-  $paths = $player->getPaths();
+  $path = $player->getPlayerPath();
   foreach( $presets as $preset ) {
-    $preset['settings']['playerPath'] = $paths['playerPath'];
+    $preset['settings']['playerPath'] = $path;
     unset($preset['settings']['playerURL']);
     mediafront_preset_save( $preset );
   } 
+}
+
+/**
+ * Fix any bad css paths.
+ */
+function mediafront_update_6009() {
+  mediafront_update_6008();
 }
 ?>

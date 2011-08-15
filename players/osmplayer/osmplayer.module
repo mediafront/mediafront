@@ -247,7 +247,7 @@ function osmplayer_get_player_paths() {
  * These are the settings that the module implements...
  */
 function osmplayer_get_player_settings() {
-  return OSMPlayer::getPlayerSettings(osmplayer_get_player_paths());
+  return OSMPlayer::getPlayerSettings();
 }
 
 /**
@@ -257,7 +257,7 @@ function osmplayer_get_player_settings() {
  */
 function osmplayer_get_player_params() {
   $hasServices = module_exists('services') && module_exists('xmlrpc_server');
-  $params = OSMPlayer::getPlayerParams(osmplayer_get_player_paths());
+  $params = OSMPlayer::getPlayerParams();
   $params['protocol'] = $hasServices ? "auto" : "json";
   return $params;
 }
@@ -749,13 +749,10 @@ function osmplayer_get_skins() {
  * Helper function to add all the osmplayer javascript files.
  */
 function osmplayer_add_js($player) {
-  // Cache the player path.
-  $paths = osmplayer_get_player_paths();
-
   // Add the javascript files.
   $js_files = $player->getJSFiles();
   foreach ($js_files as $js_file) {
-    drupal_add_js($paths['playerPath'] . '/' . $js_file);
+    drupal_add_js($player->getPlayerPath() . $js_file);
   }
 
   // Add the JavaScript for this player.
