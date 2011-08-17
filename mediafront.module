@@ -485,6 +485,14 @@ function mediafront_block_configure($delta = '') {
       '#options' => $options,
       '#default_value' => variable_get('mediafront_block_playlist', '')
     );
+    
+    // Link this block to a view display.
+    $form['mediafront']['mediafront_block_playlist_exclude'] = array(
+      '#type' => 'textarea',
+      '#title' => 'Exclude View Display',
+      '#description' => 'Provide any displays you would like to exclude from the selected view above.',
+      '#default_value' => implode("\n", variable_get('mediafront_block_playlist_exclude', array()))
+    );     
   }
   return $form;
 }
@@ -496,6 +504,9 @@ function mediafront_block_save($delta = '', $edit = array()) {
   if ($delta == 'mediaplayer') {
     variable_set('mediafront_block_preset', $edit['mediafront_block_preset']);
     variable_set('mediafront_block_playlist', $edit['mediafront_block_playlist']);
+    $exclude = preg_split("/[\r\n]+/", $edit['mediafront_block_playlist_exclude']);
+    $exclude = array_map(create_function('$item', 'return trim($item);'), array_filter($exclude));
+    variable_set('mediafront_block_playlist_exclude', $exclude);    
   }
 }
 
@@ -524,8 +535,9 @@ function mediafront_block_content() {
  */
 function mediafront_views_pre_render($view) {
   
-  // Check ot make sure this is the block playlist.
-  if (variable_get('mediafront_block_playlist', '') == $view->name) {
+  // Check to make sure this is the block playlist.
+  $exclude = variable_get('mediafront_block_playlist_exclude', array());
+  if ((variable_get('mediafront_block_playlist', '') == $view->name) && !in_array($view->current_display, $exclude)) {
 
     // Get the preset for this view.
     $preset = variable_get('mediafront_block_preset', '');
@@ -541,7 +553,9 @@ function mediafront_views_pre_render($view) {
     }
 
     // Get the class of the first field.
-    $class = 'views-field-' . drupal_clean_css_identifier(array_shift(array_keys($view->field)));
+    $fields = array_keys($view->field);
+    $id = in_array('title', $fields) ? 'title' : (in_array('nid', $fields) ? 'nid' : array_shift($fields));
+    $class = 'views-field-' . drupal_clean_css_identifier($id);    
     
     // The JS file.
     $js .= 'jQuery.media.fieldClass = "' . $class . '";';
