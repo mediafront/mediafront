@@ -605,7 +605,7 @@ function mediafront_block_content() {
  */
 function mediafront_views_pre_render($view) {
   
-  // Check ot make sure this is the block playlist.
+  // Check to make sure this is the block playlist.
   $exclude = variable_get('mediafront_block_playlist_exclude', array());
   if ((variable_get('mediafront_block_playlist', '') == $view->name) && !in_array($view->current_display, $exclude)) {
 
