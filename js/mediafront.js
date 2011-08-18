@@ -26,6 +26,16 @@
         mediaplayer.node.setNode(node);
       }
     };
+    
+    // Load the next media.
+    jQuery.media.loadNext = function() {
+      jQuery.media.loadNode(jQuery.media.nextMedia());
+    };
+    
+    // Load the previous media.
+    jQuery.media.loadPrev = function() {
+      jQuery.media.loadNode(jQuery.media.prevMedia());
+    };
 
     // Register for media complete events, and load the next media on completion.
     jQuery.media.onLoaded(jQuery.media.playerId, function( player ) {
@@ -36,7 +46,7 @@
       // Bind the media update for when one media completes.
       player.node.player.display.bind( "mediaupdate", function( event, data ) {
         if( data.type == 'complete' && jQuery.media.hasMedia ) {
-          jQuery.media.loadNode(jQuery.media.nextMedia());
+          jQuery.media.loadNext();
         }
       });
       
@@ -57,13 +67,13 @@
     // Handle when a user clicks on the next button.
     $("#mediaplayer_next").click(function(event) {
       event.preventDefault();
-      jQuery.media.loadNode(jQuery.media.nextMedia());
+      jQuery.media.loadNext();
     });
 
     // Handle when a user clicks on the previous button.
     $("#mediaplayer_prev").click(function(event) {
       event.preventDefault();
-      jQuery.media.loadNode(jQuery.media.prevMedia());
+      jQuery.media.loadPrev();
     });   
   });
 })(jQuery);
