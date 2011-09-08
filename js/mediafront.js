@@ -1,8 +1,8 @@
 (function($) {
   $(function() {
-    
+
     // Add the media object.
-    jQuery.media = jQuery.media ? jQuery.media : {};
+    jQuery.media = jQuery.media || {};
 
     // Connecting the media blocks to the player.
     var mediaIndex = 0;
@@ -27,22 +27,26 @@
       }
     };
 
-    // Register for media complete events, and load the next media on completion.
-    jQuery.media.onLoaded(jQuery.media.playerId, function( player ) {
-      
-      // Set the mediaplayer.
-      mediaplayer = player;
-      
-      // Bind the media update for when one media completes.
-      player.node.player.display.bind( "mediaupdate", function( event, data ) {
-        if( data.type == 'complete' && jQuery.media.hasMedia ) {
-          jQuery.media.loadNode(jQuery.media.nextMedia());
-        }
+    // Only call this if the code is available.
+    if (jQuery.media.onLoaded) {
+
+      // Register for media complete events, and load the next media on completion.
+      jQuery.media.onLoaded(jQuery.media.playerId, function( player ) {
+
+        // Set the mediaplayer.
+        mediaplayer = player;
+
+        // Bind the media update for when one media completes.
+        player.node.player.display.bind( "mediaupdate", function( event, data ) {
+          if( data.type == 'complete' && jQuery.media.hasMedia ) {
+            jQuery.media.loadNode(jQuery.media.nextMedia());
+          }
+        });
+
+        // Load the first media.
+        jQuery.media.loadNode(jQuery.media.nodes[0]);
       });
-      
-      // Load the first media.
-      jQuery.media.loadNode(jQuery.media.nodes[0]);
-    });
+    }
 
     // Iterate through all of the nid fields.
     $("." + jQuery.media.fieldClass).each(function(index) {
@@ -64,6 +68,6 @@
     $("#mediaplayer_prev").click(function(event) {
       event.preventDefault();
       jQuery.media.loadNode(jQuery.media.prevMedia());
-    });   
+    });
   });
-})(jQuery);
+}(jQuery));
