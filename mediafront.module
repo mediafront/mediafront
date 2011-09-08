@@ -651,7 +651,7 @@ function mediafront_get_media_file( $file ) {
   }
   else if( mediafront_is_media( $file->filemime, $media_file->extension ) ) {
     $media_file->class = "media";
-    $media_file->mediaType = isset($file->mediaType) ? $file->mediaType : "media";
+    $media_file->mediaType = (isset($file->mediaType) && $file->mediaType) ? $file->mediaType : "media";
   }
   else {
     $media_file->class = "";
