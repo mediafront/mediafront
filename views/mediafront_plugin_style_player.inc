@@ -15,10 +15,10 @@
  * a style plugin for the MediaFront module.
  */
 class mediafront_plugin_style_player extends views_plugin_style {
-   
+
   /**
    * Set the default options.
-   */   
+   */
   function option_definition() {
     $options = parent::option_definition();
     $options['mediafront_preset'] = array('default' => '');
@@ -32,7 +32,7 @@ class mediafront_plugin_style_player extends views_plugin_style {
     parent::options_form($form, $form_state);
     $form['mediafront_preset'] = mediafront_preset_select_form($this->options);
   }
-  
+
   /**
    * Renders the media player.
    */
@@ -46,5 +46,5 @@ class mediafront_plugin_style_player extends views_plugin_style {
 
     // Now render the media player for this view.
     return theme($this->theme_functions(), array( 'view' => $this->view, 'preset' => $this->options['mediafront_preset'] ));
-  }  
+  }
 }

@@ -1,5 +1,5 @@
 <?php
-// $Id: 
+// $Id:
 /**
  * @file mediafront.views.inc
  * Built in plugins for Views output handling.
@@ -28,7 +28,7 @@ function mediafront_views_plugins() {
         'type' => 'normal',
         'even empty' => TRUE,
       )
-    )    
+    )
   );
   return $plugins;
 }

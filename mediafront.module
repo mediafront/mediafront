@@ -1,4 +1,4 @@
-<?php 
+<?php
 define('MEDIAFRONT_DEFAULT_WIDTH', 500);
 define('MEDIAFRONT_DEFAULT_HEIGHT', 350);
 
@@ -48,7 +48,7 @@ function mediafront_menu() {
  * Implements hook_theme().
  */
 function mediafront_theme() {
-  
+
   $theme = array();
 
   // Create a basic theme function for showing the media player.
@@ -95,7 +95,7 @@ function theme_mediafront_player( $variables ) {
   $entity = $variables['entity'];
   $preset = $variables['preset'];
 
-  // Get the node for this player in JSON format.  
+  // Get the node for this player in JSON format.
   $params['nodeObj'] = mediafront_invoke_node( $entity, array() );
 
   // Also set the nodeId for those who cannot just use the object.
@@ -124,7 +124,7 @@ function theme_mediafront_field( $variables ) {
 
 /**
  * Implementation of hook_features_api()
- * 
+ *
  */
 function mediafront_features_api() {
   return array(
@@ -342,8 +342,22 @@ function mediafront_get_playlist_from_view( $view, $args = null ) {
   $playlist['total_rows'] = $view->total_rows ? $view->total_rows : ($view->query->pager ? $view->query->pager->get_total_items() : 0);
 
   // Iterate through our result and get our player nodes.
-  foreach( $view->result as $node ) {
-    if( $node = mediafront_get_node($node->nid, $args) ) {
+  if ($view->base_table == 'node') {
+    foreach( $view->result as $node ) {
+      if( $node = mediafront_get_node($node->nid, $args) ) {
+        $playlist['nodes'][] = $node;
+      }
+    }
+  }
+  else if ($view->base_table == 'file_managed') {
+    foreach ($view->result as $file) {
+      $media = file_load($file->fid);
+      $node = array('title' => $media->filename);
+      mediafront_add_media($node, $media);
+      if ($preview = mediafront_get_media_preview($media)) {
+        $node["mediafiles"]["images"]["thumbnail"] = $preview;
+        $node["mediafiles"]["images"]["preview"] = str_replace('square_thumbnail', 'large', $preview);
+      }
       $playlist['nodes'][] = $node;
     }
   }
@@ -389,7 +403,7 @@ function mediafront_array_replace_recursive( $toArray, $fromArray ) {
 
   // Return the joined array
   return $toArray;
-} 
+}
 
 /**
  * Merge the node additions.
@@ -446,12 +460,12 @@ function mediafront_preset_select_form($default, $key = 'mediafront_preset') {
  * Implementation of hook_block_info
  */
 function mediafront_block_info() {
-  
+
   // Define the media player block.
   $blocks['mediaplayer'] = array(
     'info' => t('Media Player')
   );
-  
+
   // Return the blocks.
   return $blocks;
 }
@@ -467,9 +481,9 @@ function mediafront_block_configure($delta = '') {
       '#title' => 'MediaFront Settings',
       '#description' => 'This is a special media player block that will allow you to place a media player preset within any block region on your website.  In addition, you can link to any view within that page to act as the playlist for this media player.'
     );
-    
-    $form['mediafront']['mediafront_block_preset'] = mediafront_preset_select_form(array('mediafront_preset' => variable_get('mediafront_block_preset', ''))); 
-    
+
+    $form['mediafront']['mediafront_block_preset'] = mediafront_preset_select_form(array('mediafront_preset' => variable_get('mediafront_block_preset', '')));
+
     // Get a list of all views
     $views = views_get_enabled_views();
     $options = array('' => 'none');
@@ -485,14 +499,14 @@ function mediafront_block_configure($delta = '') {
       '#options' => $options,
       '#default_value' => variable_get('mediafront_block_playlist', '')
     );
-    
+
     // Link this block to a view display.
     $form['mediafront']['mediafront_block_playlist_exclude'] = array(
       '#type' => 'textarea',
       '#title' => 'Exclude View Display',
       '#description' => 'Provide any displays you would like to exclude from the selected view above.',
       '#default_value' => implode("\n", variable_get('mediafront_block_playlist_exclude', array()))
-    );     
+    );
   }
   return $form;
 }
@@ -506,7 +520,7 @@ function mediafront_block_save($delta = '', $edit = array()) {
     variable_set('mediafront_block_playlist', $edit['mediafront_block_playlist']);
     $exclude = preg_split("/[\r\n]+/", $edit['mediafront_block_playlist_exclude']);
     $exclude = array_map(create_function('$item', 'return trim($item);'), array_filter($exclude));
-    variable_set('mediafront_block_playlist_exclude', $exclude);    
+    variable_set('mediafront_block_playlist_exclude', $exclude);
   }
 }
 
@@ -534,18 +548,18 @@ function mediafront_block_content() {
  * Views pre-render
  */
 function mediafront_views_pre_render($view) {
-  
+
   // Check to make sure this is the block playlist.
   $exclude = variable_get('mediafront_block_playlist_exclude', array());
   if ((variable_get('mediafront_block_playlist', '') == $view->name) && !in_array($view->current_display, $exclude)) {
 
     // Get the preset for this view.
     $preset = variable_get('mediafront_block_preset', '');
-    
+
     // Initialize our javascript.
     $js = 'jQuery.media = jQuery.media ? jQuery.media : {};';
     $js .= 'jQuery.media.nodes = jQuery.media.nodes ? jQuery.media.nodes : [];';
-    
+
     // Iterate through our results, and add the node objects to the page.
     foreach ($view->result as $result) {
       $node = isset($result->_field_data) && isset($result->_field_data['nid']) && isset($result->_field_data['nid']['entity']) ? $result->_field_data['nid']['entity'] : node_load($result->nid);
@@ -555,18 +569,18 @@ function mediafront_views_pre_render($view) {
     // Get the class of the first field.
     $fields = array_keys($view->field);
     $id = in_array('title', $fields) ? 'title' : (in_array('nid', $fields) ? 'nid' : array_shift($fields));
-    $class = 'views-field-' . drupal_clean_css_identifier($id);    
-    
+    $class = 'views-field-' . drupal_clean_css_identifier($id);
+
     // The JS file.
     $js .= 'jQuery.media.fieldClass = "' . $class . '";';
     $js .= 'jQuery.media.playerId = "mediafront_' . $preset . '";';
-    
+
     // Add this javascript to the main page.
     drupal_add_js($js, 'inline');
-    
+
     // Add the playlist javascript.
-    drupal_add_js(drupal_get_path('module', 'mediafront') . '/js/mediafront.js');    
-  }  
+    drupal_add_js(drupal_get_path('module', 'mediafront') . '/js/mediafront.js');
+  }
 }
 
 /**
@@ -637,7 +651,7 @@ function mediafront_get_media_file( $file ) {
   }
   else if( mediafront_is_media( $file->filemime, $media_file->extension ) ) {
     $media_file->class = "media";
-    $media_file->mediaType = $file->mediaType ? $file->mediaType : "media";
+    $media_file->mediaType = isset($file->mediaType) ? $file->mediaType : "media";
   }
   else {
     $media_file->class = "";
@@ -658,7 +672,7 @@ function mediafront_get_media_file( $file ) {
  */
 function mediafront_add_media( &$additions, $file ) {
   $media_added = false;
-  
+
   // Only continue if the file exists.
   if( $file ) {
     // Convert the file to an object.
@@ -719,11 +733,33 @@ function _mediafront_get_field( $node, $field_name, $index = -1 ) {
  * http://drupal.org/node/857946
  */
 function mediafront_views_query_alter( &$view, &$query ) {
-  if( $view->style_plugin->definition['handler'] == 'mediafront_plugin_style_player' ) {
-    if( !isset($query->fields) || !in_array('nid', array_keys($query->fields)) ) {
-      $query->add_field($query->base_table, 'nid');
+  if( ($view->style_plugin->definition['handler'] == 'mediafront_plugin_style_player')) {
+    if( !isset($query->fields) || !in_array($view->base_field, array_keys($query->fields)) ) {
+      $query->add_field($query->base_table, $view->base_field);
     }
   }
+}
+
+/**
+ * Returns the image path for a media object.
+ *
+ * @return array
+ */
+function mediafront_get_media_preview($media) {
+  $media = (object)$media;
+  if (isset($media->type) && ($media->type != 'image') && mediafront_is_media($media->type, mediafront_get_extension($media->filename))) {
+    $preview = media_get_thumbnail_preview((object)$media);
+    if ($preview) {
+      $preview['#file'] = (object)$preview['#file'];
+      $markup = drupal_render($preview);
+      $matches = array();
+      preg_match('/img.*src\=\"(.*)\"/U', $markup, $matches);
+      if (isset($matches[1]) && mediafront_is_image('', mediafront_get_extension($matches[1]))) {
+        return $matches[1];
+      }
+    }
+  }
+  return '';
 }
 
 /**
@@ -746,10 +782,10 @@ function mediafront_playlist_node( $node ) {
     $media_added = true;
     $additions["mediafiles"]["images"]["image"] = $field['value'];
   }
-  
+
   // Use the media module.
   $media_module = module_exists('media');
-  
+
   // Now look for any CCK fields.
   foreach( $node as $fieldname => $field ) {
 
@@ -778,22 +814,11 @@ function mediafront_playlist_node( $node ) {
               $media = file_load($instance['fid']);
               $instance['data'] = (array)$media;
             }
-            
+
             // Check to see if there is a preview.
             if ($media_module && isset($instance['fid'])) {
               $media = isset($instance['data']) ? $instance['data'] : $instance;
-              if (isset($media['type']) && ($media['type'] != 'image') && mediafront_is_media($media['type'], mediafront_get_extension($media['filename']))) {
-                $preview = media_get_thumbnail_preview((object)$media);
-                if ($preview) {
-                  $preview['#file'] = (object)$preview['#file'];
-                  $markup = drupal_render($preview);
-                  $matches = array();
-                  preg_match('/img.*src\=\"(.*)\"/U', $markup, $matches);
-                  if (isset($matches[1])) {
-                    $preview = $matches[1];
-                  }
-                }
-              }
+              $preview = mediafront_get_media_preview($media);
             }
 
             // If this instance has a data struct...
@@ -848,8 +873,8 @@ function mediafront_playlist_node( $node ) {
   if ($preview && (!isset($additions["mediafiles"]) || !isset($additions["mediafiles"]["images"]))) {
     $additions["mediafiles"]["images"]["thumbnail"] = $preview;
     $additions["mediafiles"]["images"]["preview"] = str_replace('square_thumbnail', 'large', $preview);
-  }  
-  
+  }
+
   // Now add the CCK fields.
   foreach( $field_additions as $field => $value ) {
     $additions[$field] = $value;
