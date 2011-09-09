@@ -27,21 +27,7 @@ function mediafront_views_plugins() {
         'uses grouping' => FALSE,
         'type' => 'normal',
         'even empty' => TRUE,
-      ),
-      'mediaplayer_advanced' => array(
-        'title' => t('Media Player Advanced'),
-        'help' => t('Shows this view as a Media Player, mapping fields to the playlist elements.'),
-        'handler' => 'mediafront_plugin_style_player_advanced',
-        'theme' => 'mediafront_player_view',
-        'path' => "$path/views",
-        'theme path' => "$path/views",
-        'uses fields' => TRUE,
-        'uses row plugin' => FALSE,
-        'uses options' => TRUE,
-        'uses grouping' => FALSE,
-        'type' => 'normal',
-        'even empty' => TRUE,
-      ),
+      )
     )
   );
   return $plugins;

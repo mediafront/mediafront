@@ -9,7 +9,6 @@ files[] = includes/mediafront.filefield.inc
 files[] = includes/mediafront.field.inc
 files[] = views/mediafront.views.inc
 files[] = views/mediafront_plugin_style_player.inc
-files[] = views/mediafront_plugin_style_player_advanced.inc
 files[] = views/mediafront_handler_field_player.inc
 required = FALSE
 configure = admin/structure/mediafront
