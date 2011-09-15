@@ -59,7 +59,7 @@
     }
 
     // Iterate through all of the nid fields.
-    $("." + jQuery.media.fieldClass).each(function(index) {
+    $(jQuery.media.fieldSelector).each(function(index) {
       // Alter the parent handler so that this becomes a link to the main player.
       $(this).parent().css("cursor", "pointer").bind('click', function( event ) {
         event.preventDefault();

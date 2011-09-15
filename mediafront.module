@@ -1,4 +1,4 @@
-<?php 
+<?php
 define('MEDIAFRONT_DEFAULT_WIDTH', 500);
 define('MEDIAFRONT_DEFAULT_HEIGHT', 350);
 
@@ -40,7 +40,7 @@ function mediafront_menu() {
  * Implementation of hook_theme().
  */
 function mediafront_theme() {
-  
+
   $theme = array();
 
   // Create a basic theme function for showing the media player.
@@ -55,7 +55,7 @@ function mediafront_theme() {
   $theme['mediafront_field'] = array(
     'arguments' => array('node' => NULL, 'preset' => NULL)
   );
-  
+
   $theme = array_merge( $theme, mediafront_preset_theme() );
 
   return $theme;
@@ -126,7 +126,7 @@ function mediafront_field_info() {
 
 /**
  * Implementation of hook_features_api()
- * 
+ *
  */
 function mediafront_features_api() {
   return array(
@@ -434,7 +434,7 @@ function mediafront_array_replace_recursive( $toArray, $fromArray ) {
 
   // Return the joined array
   return $toArray;
-} 
+}
 
 /**
  * Merge the node additions.
@@ -494,7 +494,7 @@ function mediafront_block($op = 'list', $delta = 0, $edit = array()) {
   if ($op == 'list') {
     return mediafront_block_info();
   }
-  
+
   if ($delta == 'mediaplayer') {
     switch($op) {
       case 'configure':
@@ -514,12 +514,12 @@ function mediafront_block($op = 'list', $delta = 0, $edit = array()) {
  * Implementation of hook_block_info
  */
 function mediafront_block_info() {
-  
+
   // Define the media player block.
   $blocks['mediaplayer'] = array(
     'info' => t('Media Player')
   );
-  
+
   // Return the blocks.
   return $blocks;
 }
@@ -535,9 +535,9 @@ function mediafront_block_configure($delta = '') {
       '#title' => 'MediaFront Settings',
       '#description' => 'This is a special media player block that will allow you to place a media player preset within any block region on your website.  In addition, you can link to any view within that page to act as the playlist for this media player.'
     );
-    
-    $form['mediafront']['mediafront_block_preset'] = mediafront_preset_select_form(array('mediafront_preset' => variable_get('mediafront_block_preset', ''))); 
-    
+
+    $form['mediafront']['mediafront_block_preset'] = mediafront_preset_select_form(array('mediafront_preset' => variable_get('mediafront_block_preset', '')));
+
     // Get a list of all views
     $views = views_get_all_views();
     $options = array('' => 'none');
@@ -555,14 +555,14 @@ function mediafront_block_configure($delta = '') {
       '#options' => $options,
       '#default_value' => variable_get('mediafront_block_playlist', '')
     );
-    
+
     // Link this block to a view display.
     $form['mediafront']['mediafront_block_playlist_exclude'] = array(
       '#type' => 'textarea',
       '#title' => 'Exclude View Display',
       '#description' => 'Provide any displays you would like to exclude from the selected view above.',
       '#default_value' => implode("\n", variable_get('mediafront_block_playlist_exclude', array()))
-    );    
+    );
   }
   return $form;
 }
@@ -604,18 +604,18 @@ function mediafront_block_content() {
  * Views pre-render
  */
 function mediafront_views_pre_render($view) {
-  
+
   // Check to make sure this is the block playlist.
   $exclude = variable_get('mediafront_block_playlist_exclude', array());
   if ((variable_get('mediafront_block_playlist', '') == $view->name) && !in_array($view->current_display, $exclude)) {
 
     // Get the preset for this view.
     $preset = variable_get('mediafront_block_preset', '');
-    
+
     // Initialize our javascript.
     $js = 'jQuery.media = jQuery.media ? jQuery.media : {};';
     $js .= 'jQuery.media.nodes = jQuery.media.nodes ? jQuery.media.nodes : [];';
-    
+
     // Iterate through our results, and add the node objects to the page.
     foreach ($view->result as $result) {
       $node = isset($result->_field_data) && isset($result->_field_data['nid']) && isset($result->_field_data['nid']['entity']) ? $result->_field_data['nid']['entity'] : node_load($result->nid);
@@ -625,18 +625,18 @@ function mediafront_views_pre_render($view) {
     // Get the class of the first field.
     $fields = array_keys($view->field);
     $id = in_array('title', $fields) ? 'title' : (in_array('nid', $fields) ? 'nid' : array_shift($fields));
-    $class = 'views-field-' . views_css_safe($id);
-    
-    // The JS file.
-    $js .= 'jQuery.media.fieldClass = "' . $class . '";';
+    $class = '.views-field-' . views_css_safe($id);
+    $view_id = '.view-' . $view->name . '.' . 'view-display-id-' . $view->current_display;
+    $js .= 'jQuery.media.fieldSelector = "' . $view_id . ' ' . $class . '";';
+    $js .= 'console.log(jQuery.media.fieldSelector);';
     $js .= 'jQuery.media.playerId = "mediafront_' . $preset . '";';
-    
+
     // Add this javascript to the main page.
     drupal_add_js($js, 'inline');
-    
+
     // Add the playlist javascript.
-    drupal_add_js(drupal_get_path('module', 'mediafront') . '/js/mediafront.js');    
-  }   
+    drupal_add_js(drupal_get_path('module', 'mediafront') . '/js/mediafront.js');
+  }
 }
 
 /**
@@ -728,7 +728,7 @@ function mediafront_get_media_file( $file ) {
  */
 function mediafront_add_media( &$additions, $file ) {
   $media_added = false;
-  
+
   // Only continue if the file exists.
   if( $file ) {
     // Convert the file to an object.
@@ -810,13 +810,13 @@ function mediafront_playlist_node( $node ) {
   // If they provide the field_mediafront_image field.
   if( $field = _mediafront_get_field( $node, 'field_dashplayer_media', 0 ) ) {
     $media_added = true;
-    $additions["mediafiles"]["media"]["media"] = $field['value'];  
+    $additions["mediafiles"]["media"]["media"] = $field['value'];
   }
 
   // If they provide the field_mediafront_image field.
   if( $field = _mediafront_get_field( $node, 'field_dashplayer_image', 0 ) ) {
     $media_added = true;
-    $additions["mediafiles"]["images"]["image"] = $field['value']; 
+    $additions["mediafiles"]["images"]["image"] = $field['value'];
   }
 
   // If they provide the field_mediafront_media field.
