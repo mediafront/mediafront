@@ -628,7 +628,6 @@ function mediafront_views_pre_render($view) {
     $class = '.views-field-' . views_css_safe($id);
     $view_id = '.view-' . $view->name . '.' . 'view-display-id-' . $view->current_display;
     $js .= 'jQuery.media.fieldSelector = "' . $view_id . ' ' . $class . '";';
-    $js .= 'console.log(jQuery.media.fieldSelector);';
     $js .= 'jQuery.media.playerId = "mediafront_' . $preset . '";';
 
     // Add this javascript to the main page.
