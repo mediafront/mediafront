@@ -569,7 +569,7 @@ function mediafront_views_pre_render($view) {
     // Get the class of the first field.
     $fields = array_keys($view->field);
     $id = in_array('title', $fields) ? 'title' : (in_array('nid', $fields) ? 'nid' : array_shift($fields));
-    $class = 'views-field-' . drupal_clean_css_identifier($id);
+    $class = '.views-field-' . drupal_clean_css_identifier($id);
     $view_id = '.view-' . $view->name . '.' . 'view-display-id-' . $view->current_display;
     $js .= 'jQuery.media.fieldSelector = "' . $view_id . ' ' . $class . '";';
     $js .= 'jQuery.media.playerId = "mediafront_' . $preset . '";';
@@ -702,27 +702,27 @@ function mediafront_add_media( &$additions, $file ) {
  * Returns the field if it exists.
  */
 function _mediafront_get_field( $node, $field_name, $index = -1 ) {
-  $lang = $node->language;
-  if( isset($node->{$field_name}) &&
-    is_array($node->{$field_name}) &&
-    isset($node->{$field_name}[$lang]) &&
-    is_array($node->{$field_name}[$lang]) &&
-    isset($node->{$field_name}[$lang][0]) ) {
-    if( $index >= 0 ) {
-      $field = (array)$node->{$field_name}[$lang][$index];
-      return $field;
-    }
-    else {
-      $fields = array();
-      foreach( $node->{$field_name}[$lang] as $index => $field ) {
-        $fields[$index] = (array)$field;
+  $langs = array($node->language, 'und');
+  foreach ($langs as $lang) {
+    if( isset($node->{$field_name}) &&
+      is_array($node->{$field_name}) &&
+      isset($node->{$field_name}[$lang]) &&
+      is_array($node->{$field_name}[$lang]) &&
+      isset($node->{$field_name}[$lang][0]) ) {
+      if( $index >= 0 ) {
+        $field = (array)$node->{$field_name}[$lang][$index];
+        return $field;
       }
-      return $fields;
+      else {
+        $fields = array();
+        foreach( $node->{$field_name}[$lang] as $index => $field ) {
+          $fields[$index] = (array)$field;
+        }
+        return $fields;
+      }
     }
   }
-  else {
-    return null;
-  }
+  return null;
 }
 
 /**
